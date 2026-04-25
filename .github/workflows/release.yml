@@ -101,12 +101,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build in Arch Linux
-        uses: uraimo/run-on-arch-action@v2
-        with:
-          arch: x86_64
-          distro: archlinux_latest
-          install: |
+      - name: Build in Arch Linux container
+        run: |
+          docker run --rm \
+            -v "$PWD:/workspace" \
+            -w /workspace \
+            archlinux:latest \
+            bash -lc '
             pacman -Syu --noconfirm --needed \
               base-devel \
               nodejs \
@@ -117,10 +118,13 @@ jobs:
               libayatana-appindicator \
               librsvg \
               openssl \
-              pkgconf
-          run: |
-            npm ci
-            ./packaging/arch/build-arch-package.sh
+              pkgconf \
+              webkit2gtk \
+              sudo
+            useradd -m builder
+            chown -R builder:builder /workspace
+            sudo -u builder bash -lc "cd /workspace && npm ci && ./packaging/arch/build-arch-package.sh"
+            '
 
       - name: Upload Arch package artifact
         uses: actions/upload-artifact@v4

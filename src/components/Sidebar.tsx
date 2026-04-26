@@ -1,12 +1,16 @@
-import type { BaseItem, TableItem } from '../types';
+import { useState } from 'react';
+import type { BaseItem, TableItem, ViewItem } from '../types';
 
 interface SidebarProps {
   bases: BaseItem[];
   tables: TableItem[];
+  views: ViewItem[];
   activeBaseId: string | null;
   activeTableId: string | null;
+  activeViewId: string | null;
   onSelectBase: (id: string) => void;
   onSelectTable: (id: string) => void;
+  onSelectView: (id: string | null) => void;
   onCreateBase: () => void;
   onCreateTable: () => void;
   onRenameBase: (id: string) => void;
@@ -21,10 +25,18 @@ interface SidebarProps {
     rename: string;
     delete: string;
     moveFolder: string;
+    tables: string;
+    views: string;
+    allRecords: string;
+    hideSettings: string;
+    showSettings: string;
   };
 }
 
-export default function Sidebar({ bases, tables, activeBaseId, activeTableId, onSelectBase, onSelectTable, onCreateBase, onCreateTable, onRenameBase, onDeleteBase, onMoveBase, onRenameTable, onDeleteTable, labels }: SidebarProps) {
+export default function Sidebar({ bases, tables, views, activeBaseId, activeTableId, activeViewId, onSelectBase, onSelectTable, onSelectView, onCreateBase, onCreateTable, onRenameBase, onDeleteBase, onMoveBase, onRenameTable, onDeleteTable, labels }: SidebarProps) {
+  const [baseMenuOpen, setBaseMenuOpen] = useState(true);
+  const [tableMenuOpen, setTableMenuOpen] = useState(true);
+  const [viewMenuOpen, setViewMenuOpen] = useState(true);
   const folders = Array.from(new Set(bases.map((base) => base.folder || 'Root')));
   return (
     <aside className="sidebar">
@@ -36,6 +48,8 @@ export default function Sidebar({ bases, tables, activeBaseId, activeTableId, on
         </div>
       </div>
       <button className="primary-action" onClick={onCreateBase}>{labels.newBase}</button>
+      <div className="menu-section-heading"><strong>Base</strong><button className="secondary-action" onClick={() => setBaseMenuOpen((open) => !open)}>{baseMenuOpen ? labels.hideSettings : labels.showSettings}</button></div>
+      {baseMenuOpen ? (
       <div className="nav-section">
         {folders.map((folder) => (
           <section key={folder} className="folder-group">
@@ -51,7 +65,10 @@ export default function Sidebar({ bases, tables, activeBaseId, activeTableId, on
           </section>
         ))}
       </div>
+      ) : null}
       <button className="secondary-action" disabled={!activeBaseId} onClick={onCreateTable}>{labels.newTable}</button>
+      <div className="menu-section-heading"><strong>{labels.tables}</strong><button className="secondary-action" onClick={() => setTableMenuOpen((open) => !open)}>{tableMenuOpen ? labels.hideSettings : labels.showSettings}</button></div>
+      {tableMenuOpen ? (
       <div className="nav-section compact">
         {tables.map((table) => (
           <div key={table.id} className={table.id === activeTableId ? 'nav-line table active' : 'nav-line table'}>
@@ -61,6 +78,20 @@ export default function Sidebar({ bases, tables, activeBaseId, activeTableId, on
           </div>
         ))}
       </div>
+      ) : null}
+      <div className="menu-section-heading"><strong>{labels.views}</strong><button className="secondary-action" onClick={() => setViewMenuOpen((open) => !open)}>{viewMenuOpen ? labels.hideSettings : labels.showSettings}</button></div>
+      {viewMenuOpen ? (
+        <div className="nav-section compact">
+          <div className={!activeViewId ? 'nav-line view active' : 'nav-line view'}>
+            <button className="nav-item view" onClick={() => onSelectView(null)}>{labels.allRecords}</button>
+          </div>
+          {views.map((view) => (
+            <div key={view.id} className={view.id === activeViewId ? 'nav-line view active' : 'nav-line view'}>
+              <button className="nav-item view" onClick={() => onSelectView(view.id)}>{view.name}</button>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </aside>
   );
 }

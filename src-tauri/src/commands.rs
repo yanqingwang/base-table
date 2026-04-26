@@ -1,5 +1,7 @@
 use crate::errors::{to_message, AppResult};
-use crate::models::{BaseItem, DimensionCandidate, FieldItem, ImportResult, RecordItem, TableItem};
+use crate::models::{
+    BaseItem, DimensionCandidate, FieldItem, ImportResult, RecordItem, TableItem, ViewItem,
+};
 
 fn conn() -> AppResult<rusqlite::Connection> {
     crate::db::init_db(&crate::db::app_db_path()).map_err(to_message)
@@ -91,6 +93,36 @@ pub fn delete_field(field_id: String) -> AppResult<()> {
 }
 
 #[tauri::command]
+pub fn create_view(
+    table_id: String,
+    name: String,
+    view_type: String,
+    config: serde_json::Value,
+) -> AppResult<String> {
+    crate::db::create_view(&conn()?, &table_id, &name, &view_type, config).map_err(to_message)
+}
+
+#[tauri::command]
+pub fn list_views(table_id: String) -> AppResult<Vec<ViewItem>> {
+    crate::db::list_views(&conn()?, &table_id).map_err(to_message)
+}
+
+#[tauri::command]
+pub fn rename_view(view_id: String, name: String) -> AppResult<()> {
+    crate::db::rename_view(&conn()?, &view_id, &name).map_err(to_message)
+}
+
+#[tauri::command]
+pub fn update_view_config(view_id: String, config: serde_json::Value) -> AppResult<()> {
+    crate::db::update_view_config(&conn()?, &view_id, config).map_err(to_message)
+}
+
+#[tauri::command]
+pub fn delete_view(view_id: String) -> AppResult<()> {
+    crate::db::delete_view(&conn()?, &view_id).map_err(to_message)
+}
+
+#[tauri::command]
 pub fn create_record(table_id: String, data: serde_json::Value) -> AppResult<String> {
     crate::db::create_record(&conn()?, &table_id, data).map_err(to_message)
 }
@@ -145,8 +177,13 @@ fn value_to_string(value: &serde_json::Value) -> String {
 }
 
 #[tauri::command]
-pub fn import_workbook(base_id: String, path: String) -> AppResult<ImportResult> {
-    crate::import::import_workbook(&conn()?, &base_id, &path)
+pub fn workbook_sheet_names(path: String) -> AppResult<Vec<String>> {
+    crate::import::workbook_sheet_names(&path)
+}
+
+#[tauri::command]
+pub fn import_workbook(base_id: String, path: String, overwrite: bool) -> AppResult<ImportResult> {
+    crate::import::import_workbook(&conn()?, &base_id, &path, overwrite)
 }
 
 #[tauri::command]

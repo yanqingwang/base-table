@@ -37,6 +37,16 @@ pub struct RecordItem {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
+pub struct ViewItem {
+    pub id: String,
+    pub table_id: String,
+    pub name: String,
+    pub view_type: String,
+    pub config: serde_json::Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct ImportResult {
     pub table_ids: Vec<String>,
     pub field_ids: Vec<String>,

@@ -79,3 +79,40 @@ fn updates_and_deletes_base_table_and_field_metadata() {
     db::delete_base(&conn, &base_id).expect("base delete should succeed");
     assert!(db::list_bases(&conn).expect("bases should list").is_empty());
 }
+
+#[test]
+fn creates_renames_updates_and_deletes_saved_views() {
+    let conn = db::init_db(":memory:").expect("db init should succeed");
+    let base_id = db::create_base(&conn, "Views Base").expect("base create should succeed");
+    let table_id =
+        db::create_table(&conn, &base_id, "Events").expect("table create should succeed");
+    let view_id = db::create_view(
+        &conn,
+        &table_id,
+        "Next 60 Days",
+        "filter",
+        serde_json::json!({"filters":[{"fieldId":"due","operator":"next_days","value":"60"}]}),
+    )
+    .expect("view create should succeed");
+
+    let views = db::list_views(&conn, &table_id).expect("views should list");
+    assert_eq!(views.len(), 1);
+    assert_eq!(views[0].name, "Next 60 Days");
+    assert_eq!(views[0].config["filters"][0]["operator"], "next_days");
+
+    db::rename_view(&conn, &view_id, "Future Events").expect("view rename should succeed");
+    db::update_view_config(
+        &conn,
+        &view_id,
+        serde_json::json!({"filters":[{"fieldId":"priority","operator":"equals","value":"High"}]}),
+    )
+    .expect("view update should succeed");
+    let renamed = db::list_views(&conn, &table_id).expect("views should list");
+    assert_eq!(renamed[0].name, "Future Events");
+    assert_eq!(renamed[0].config["filters"][0]["value"], "High");
+
+    db::delete_view(&conn, &view_id).expect("view delete should succeed");
+    assert!(db::list_views(&conn, &table_id)
+        .expect("views should list")
+        .is_empty());
+}

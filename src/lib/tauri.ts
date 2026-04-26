@@ -1,12 +1,13 @@
 import { invoke } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
-import type { BaseItem, DimensionCandidate, FieldItem, FieldType, ImportResult, RecordItem, TableItem } from '../types';
+import type { BaseItem, DimensionCandidate, FieldItem, FieldType, ImportResult, RecordItem, TableItem, ViewItem, SavedViewConfig } from '../types';
 
 const browserStore = {
   bases: [] as BaseItem[],
   tables: [] as TableItem[],
   fields: [] as FieldItem[],
   records: [] as RecordItem[],
+  views: [] as ViewItem[],
 };
 
 function canUseTauri() {
@@ -52,6 +53,7 @@ export function deleteBase(baseId: string) {
     browserStore.tables = browserStore.tables.filter((table) => table.baseId !== baseId);
     browserStore.fields = browserStore.fields.filter((field) => !tableIds.has(field.tableId));
     browserStore.records = browserStore.records.filter((record) => !tableIds.has(record.tableId));
+    browserStore.views = browserStore.views.filter((view) => !tableIds.has(view.tableId));
   });
 }
 
@@ -84,6 +86,7 @@ export function deleteTable(tableId: string) {
     browserStore.tables = browserStore.tables.filter((table) => table.id !== tableId);
     browserStore.fields = browserStore.fields.filter((field) => field.tableId !== tableId);
     browserStore.records = browserStore.records.filter((record) => record.tableId !== tableId);
+    browserStore.views = browserStore.views.filter((view) => view.tableId !== tableId);
   });
 }
 
@@ -129,6 +132,36 @@ export function deleteField(fieldId: string) {
   });
 }
 
+export function createView(tableId: string, name: string, viewType: string, config: SavedViewConfig) {
+  return call('create_view', { tableId, name, viewType, config }, () => {
+    const view: ViewItem = { id: id('view'), tableId, name, viewType, config };
+    browserStore.views.push(view);
+    return view.id;
+  });
+}
+
+export function listViews(tableId: string) {
+  return call<ViewItem[]>('list_views', { tableId }, () => browserStore.views.filter((view) => view.tableId === tableId));
+}
+
+export function renameView(viewId: string, name: string) {
+  return call('rename_view', { viewId, name }, () => {
+    browserStore.views = browserStore.views.map((view) => (view.id === viewId ? { ...view, name } : view));
+  });
+}
+
+export function updateViewConfig(viewId: string, config: SavedViewConfig) {
+  return call('update_view_config', { viewId, config }, () => {
+    browserStore.views = browserStore.views.map((view) => (view.id === viewId ? { ...view, config } : view));
+  });
+}
+
+export function deleteView(viewId: string) {
+  return call('delete_view', { viewId }, () => {
+    browserStore.views = browserStore.views.filter((view) => view.id !== viewId);
+  });
+}
+
 export function createRecord(tableId: string, data: Record<string, unknown>) {
   return call('create_record', { tableId, data }, () => {
     const record: RecordItem = { id: id('record'), tableId, data: data as RecordItem['data'] };
@@ -160,8 +193,12 @@ export function dimensionCandidates(tableId: string) {
   });
 }
 
-export function importWorkbook(baseId: string, path: string) {
-  return call<ImportResult>('import_workbook', { baseId, path }, () => ({ tableIds: [], fieldIds: [], recordIds: [] }));
+export function workbookSheetNames(path: string) {
+  return call<string[]>('workbook_sheet_names', { path }, () => []);
+}
+
+export function importWorkbook(baseId: string, path: string, overwrite = false) {
+  return call<ImportResult>('import_workbook', { baseId, path, overwrite }, () => ({ tableIds: [], fieldIds: [], recordIds: [] }));
 }
 
 export function transposeTable(tableId: string) {
@@ -177,6 +214,14 @@ export async function pickExcelFile(): Promise<string | null> {
     return typeof selected === 'string' ? selected : null;
   }
   return window.prompt('Excel file path');
+}
+
+export async function pickAnyFile(): Promise<string | null> {
+  if (canUseTauri()) {
+    const selected = await open({ multiple: false });
+    return typeof selected === 'string' ? selected : null;
+  }
+  return window.prompt('File path');
 }
 
 export async function saveTextFile(defaultPath: string, contents: string): Promise<boolean> {

@@ -7,6 +7,6 @@ describe('i18n messages', () => {
   });
 
   it('returns English labels', () => {
-    expect(t('en-US', 'kanban')).toBe('Kanban');
+    expect(t('en-US', 'kanban')).toBe('Group View');
   });
 });

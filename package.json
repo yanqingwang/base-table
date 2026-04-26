@@ -2,6 +2,7 @@
   "name": "base-table",
   "private": false,
   "version": "0.1.0",
+  "contributors": ["RossWang"],
   "license": "MIT",
   "type": "module",
   "scripts": {

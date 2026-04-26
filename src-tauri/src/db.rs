@@ -1,4 +1,4 @@
-use crate::models::{BaseItem, FieldItem, RecordItem, TableItem};
+use crate::models::{BaseItem, FieldItem, RecordItem, TableItem, ViewItem};
 use rusqlite::{params, Connection, Result};
 
 pub fn app_db_path() -> String {
@@ -207,6 +207,62 @@ pub fn list_fields(conn: &Connection, table_id: &str) -> Result<Vec<FieldItem>> 
         })
     })?;
     rows.collect()
+}
+
+pub fn create_view(
+    conn: &Connection,
+    table_id: &str,
+    name: &str,
+    view_type: &str,
+    config: serde_json::Value,
+) -> Result<String> {
+    let id = uuid::Uuid::new_v4().to_string();
+    let ts = now();
+    conn.execute(
+        "INSERT INTO views (id, table_id, name, view_type, config_json, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        params![id, table_id, name, view_type, config.to_string(), ts, ts],
+    )?;
+    Ok(id)
+}
+
+pub fn list_views(conn: &Connection, table_id: &str) -> Result<Vec<ViewItem>> {
+    let mut stmt = conn.prepare("SELECT id, table_id, name, view_type, config_json FROM views WHERE table_id = ?1 ORDER BY created_at ASC")?;
+    let rows = stmt.query_map(params![table_id], |row| {
+        Ok(ViewItem {
+            id: row.get(0)?,
+            table_id: row.get(1)?,
+            name: row.get(2)?,
+            view_type: row.get(3)?,
+            config: serde_json::from_str::<serde_json::Value>(&row.get::<_, String>(4)?)
+                .unwrap_or_else(|_| serde_json::json!({})),
+        })
+    })?;
+    rows.collect()
+}
+
+pub fn rename_view(conn: &Connection, view_id: &str, name: &str) -> Result<()> {
+    conn.execute(
+        "UPDATE views SET name = ?1, updated_at = ?2 WHERE id = ?3",
+        params![name, now(), view_id],
+    )?;
+    Ok(())
+}
+
+pub fn update_view_config(
+    conn: &Connection,
+    view_id: &str,
+    config: serde_json::Value,
+) -> Result<()> {
+    conn.execute(
+        "UPDATE views SET config_json = ?1, updated_at = ?2 WHERE id = ?3",
+        params![config.to_string(), now(), view_id],
+    )?;
+    Ok(())
+}
+
+pub fn delete_view(conn: &Connection, view_id: &str) -> Result<()> {
+    conn.execute("DELETE FROM views WHERE id = ?1", params![view_id])?;
+    Ok(())
 }
 
 pub fn update_field_config(

@@ -22,4 +22,18 @@ describe('KanbanView', () => {
     expect(screen.getAllByText('Done').length).toBeGreaterThan(0);
     expect(screen.getByText('Ungrouped')).toBeInTheDocument();
   });
+
+  it('uses configured date format on cards', () => {
+    render(
+      <KanbanView
+        fields={[{ id: 'f-date', tableId: 't-1', name: 'Due', fieldType: 'date', ordinal: 0, config: { dateFormat: 'dd/mm/yyyy' } }]}
+        records={[{ id: 'r-1', tableId: 't-1', data: { 'f-date': '2026-04-25' } }]}
+        groupingFieldId="f-date"
+        visibleFieldIds={['f-date']}
+        ungroupedLabel="Ungrouped"
+      />,
+    );
+
+    expect(screen.getAllByText(/25\/04\/2026/).length).toBeGreaterThan(0);
+  });
 });

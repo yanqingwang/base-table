@@ -1,4 +1,5 @@
 import type { FieldItem, RecordItem } from '../types';
+import { formatFieldValue } from '../lib/dates';
 
 interface KanbanViewProps {
   fields: FieldItem[];
@@ -12,7 +13,7 @@ export default function KanbanView({ fields, records, groupingFieldId, visibleFi
   const groupingField = fields.find((field) => field.id === groupingFieldId) ?? fields.find((field) => ['single_select', 'text', 'bool'].includes(field.fieldType));
   const grouped = records.reduce<Record<string, RecordItem[]>>((groups, record) => {
     const rawValue = groupingField ? record.data[groupingField.id] : null;
-    const label = rawValue === null || rawValue === undefined || rawValue === '' ? ungroupedLabel : String(rawValue);
+    const label = !groupingField || rawValue === null || rawValue === undefined || rawValue === '' ? ungroupedLabel : formatFieldValue(groupingField, record);
     return { ...groups, [label]: [...(groups[label] ?? []), record] };
   }, {});
   if (!Object.keys(grouped).includes(ungroupedLabel)) {
@@ -28,7 +29,7 @@ export default function KanbanView({ fields, records, groupingFieldId, visibleFi
             <article className="kanban-card" key={record.id}>
               <strong>{cardTitle(fields, record)}</strong>
               {fields.filter((field) => visibleFieldIds.includes(field.id)).map((field) => (
-                <small key={field.id}>{field.name}: {String(record.data[field.id] ?? '')}</small>
+                <small key={field.id}>{field.name}: {formatFieldValue(field, record)}</small>
               ))}
               <small>{record.id.slice(0, 8)}</small>
             </article>

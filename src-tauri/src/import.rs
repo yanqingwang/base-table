@@ -1,10 +1,16 @@
 use crate::models::ImportResult;
-use calamine::{open_workbook_auto, Reader};
+use calamine::{open_workbook_auto, Data, Reader};
+
+pub fn workbook_sheet_names(path: &str) -> Result<Vec<String>, String> {
+    let workbook = open_workbook_auto(path).map_err(|error| error.to_string())?;
+    Ok(workbook.sheet_names().to_vec())
+}
 
 pub fn import_workbook(
     conn: &rusqlite::Connection,
     base_id: &str,
     path: &str,
+    overwrite: bool,
 ) -> Result<ImportResult, String> {
     let mut workbook = open_workbook_auto(path).map_err(|error| error.to_string())?;
     let sheet_names = workbook.sheet_names().to_vec();
@@ -17,6 +23,18 @@ pub fn import_workbook(
     let mut record_ids = Vec::new();
 
     for sheet_name in sheet_names {
+        if let Some(existing_table) = crate::db::list_tables(conn, base_id)
+            .map_err(|error| error.to_string())?
+            .into_iter()
+            .find(|table| table.name == sheet_name)
+        {
+            if overwrite {
+                crate::db::delete_table(conn, &existing_table.id)
+                    .map_err(|error| error.to_string())?;
+            } else {
+                return Err(format!("table already exists: {sheet_name}"));
+            }
+        }
         let table_id = crate::db::create_table(conn, base_id, &sheet_name)
             .map_err(|error| error.to_string())?;
         let range = workbook
@@ -24,7 +42,7 @@ pub fn import_workbook(
             .map_err(|error| error.to_string())?;
         let rows = range
             .rows()
-            .map(|row| row.iter().map(|cell| cell.to_string()).collect::<Vec<_>>())
+            .map(|row| row.iter().map(cell_to_string).collect::<Vec<_>>())
             .collect::<Vec<_>>();
         let imported = import_rows(conn, &table_id, rows)?;
         table_ids.push(table_id);
@@ -37,6 +55,23 @@ pub fn import_workbook(
         field_ids,
         record_ids,
     })
+}
+
+fn cell_to_string(cell: &Data) -> String {
+    match cell {
+        Data::DateTime(value) if value.is_datetime() => value
+            .as_datetime()
+            .map(|date_time| date_time.date().format("%Y-%m-%d").to_string())
+            .unwrap_or_else(|| cell.to_string()),
+        Data::DateTimeIso(value) => value
+            .split_once('T')
+            .map(|(date, _)| date.to_string())
+            .unwrap_or_else(|| value.clone()),
+        Data::DurationIso(value) => value.clone(),
+        Data::Float(value) if value.fract() == 0.0 => format!("{value:.0}"),
+        Data::Empty => String::new(),
+        _ => cell.to_string(),
+    }
 }
 
 fn import_rows(

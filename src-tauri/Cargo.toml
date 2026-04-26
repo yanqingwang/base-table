@@ -22,7 +22,7 @@ required-features = ["desktop"]
 tauri-build = { version = "2.0.0", features = [] }
 
 [dependencies]
-calamine = "0.26"
+calamine = { version = "0.26", features = ["dates"] }
 chrono = { version = "0.4", features = ["serde"] }
 rusqlite = { version = "0.32.1", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }

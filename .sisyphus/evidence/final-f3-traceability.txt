@@ -1,0 +1,14 @@
+F3 Report QA Verification
+Date: 2026-04-18
+
+Files checked:
+- Reports/OPC1-demand-companies-500-china-2026-04-18.md
+- Reports/OPC1-vendors-top100-hris-china-2026-04-18.md
+
+Verification:
+1. Demand report: Has executive summary, methodology, industry table, top 20 table, CSV link - PASS
+2. Vendor report: Has taxonomy, scoring methodology, top table, CSV link - PASS
+3. AS_OF_DATE mentioned in both reports - PASS
+4. Evidence links present in top opportunity/vendor tables - PASS
+
+Result: PASS

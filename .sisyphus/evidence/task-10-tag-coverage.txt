@@ -1,0 +1,17 @@
+# Task 10 Tag Coverage Check
+
+Generated: 2026-04-18T01:08:24Z
+
+- Rows checked: 100
+- vendor_type empty: 0
+- vendor_tags empty: 0
+- target_segment_fit empty: 0
+- industry_strengths empty: 0
+- vendor_type coverage: complete (software=94, hybrid=5, service=1)
+- vendor_tags vocabulary: canonical only
+- target_segment_fit vocabulary: canonical only
+- industry_strengths rows normalized in rewrite: 63
+- post-check industry_strengths mismatches: 0
+- industry_strengths vocabulary: canonical sector set only
+
+Validation result: PASS

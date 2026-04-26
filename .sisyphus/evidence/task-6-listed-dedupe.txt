@@ -1,0 +1,49 @@
+Task 6 listed-company dedupe evidence
+AS_OF_DATE: 2026-04-18
+
+Backbone decision:
+- Use CSI A500 as the controlled 500-row listed-company backbone to avoid inflating the candidate pool by dumping all index constituents.
+- Cross-check overlaps against the official SSE 50 constituent endpoint; retain the A500 row and annotate overlap provenance in `notes`.
+- Preserve CSI 300 / CSI 500 / SZSE official anchors in row notes for downstream traceability, even though this task keeps the exported backbone at 500 rows.
+
+Source URLs used:
+- A500 extraction page: https://legulegu.com/stockdata/index-basic-composition?indexCode=000510.CSI&date=2026-03-31
+- A500 official factsheet anchor: https://oss-ch.csindex.com.cn/static/html/csindex/public/uploads/indices/detail/files/zh_CN/000510factsheet.pdf
+- CSI 300 official factsheet anchor: https://oss-ch.csindex.com.cn/static/html/csindex/public/uploads/indices/detail/files/en/000300factsheeten.pdf
+- CSI 500 official factsheet anchor: https://oss-ch.csindex.com.cn/static/html/csindex/public/uploads/indices/detail/files/zh_CN/000905factsheet.pdf
+- SSE 50 official page: https://english.sse.com.cn/markets/indices/data/list/constituents/index.shtml?COMPANY_CODE=000016&INDEX_Code=000016
+- SZSE constituent hub anchor: https://www.szse.cn/English/siteMarketData/indices/constituent/index.html
+
+Row counts:
+- raw_csi_a500_rows=500
+- raw_sse50_rows=50
+- combined_raw_rows_pre_backbone_rule=550
+- matched_sse50_overlap_rows=48
+- unmatched_sse50_rows_not_added=2
+- exported_backbone_rows=500
+
+Deduping / inclusion rule:
+- Primary backbone key: ticker from the A500 constituent table.
+- Duplicate sanity check: normalize Chinese company names and ensure one row per ticker/name pair in the final export.
+- When a ticker appears in both A500 and SSE 50, keep the A500 row and append the SSE overlap plus `sse50_in_date` to notes.
+- When an SSE 50 constituent does not appear in the chosen A500 backbone, record it here as an unmatched control rather than expanding the exported pool beyond 500 rows in Task 6.
+
+Overlap sample (10 rows):
+- 603993.SH: kept `洛阳钼业` from A500 backbone; matched SSE 50 name `洛阳钼业`; SSE in-date=2026-04-20
+- 601318.SH: kept `中国平安` from A500 backbone; matched SSE 50 name `中国平安`; SSE in-date=2026-04-20
+- 601857.SH: kept `中国石油` from A500 backbone; matched SSE 50 name `中国石油`; SSE in-date=2026-04-20
+- 600050.SH: kept `中国联通` from A500 backbone; matched SSE 50 name `中国联通`; SSE in-date=2026-04-20
+- 600887.SH: kept `伊利股份` from A500 backbone; matched SSE 50 name `伊利股份`; SSE in-date=2026-04-20
+- 603259.SH: kept `药明康德` from A500 backbone; matched SSE 50 name `药明康德`; SSE in-date=2026-04-20
+- 601628.SH: kept `中国人寿` from A500 backbone; matched SSE 50 name `中国人寿`; SSE in-date=2026-04-20
+- 601398.SH: kept `工商银行` from A500 backbone; matched SSE 50 name `工商银行`; SSE in-date=2026-04-20
+- 688981.SH: kept `中芯国际` from A500 backbone; matched SSE 50 name `中芯国际`; SSE in-date=2026-04-20
+- 601225.SH: kept `陕西煤业` from A500 backbone; matched SSE 50 name `陕西煤业`; SSE in-date=2026-04-20
+
+Unmatched SSE 50 constituents (not added under the 500-row backbone rule):
+- 600809.SH: `山西汾酒`; SSE in-date=2026-04-20
+- 600930.SH: `华电新能`; SSE in-date=2026-04-20
+
+Final distribution snapshots:
+- exchange_counts={"SSE": 214, "STAR": 40, "SZSE": 246}
+- sector_counts={"advanced_manufacturing": 131, "consumer_retail": 16, "energy_chemicals": 35, "finance": 20, "healthcare": 57, "internet_software": 74, "logistics_mobility": 14, "other": 153}

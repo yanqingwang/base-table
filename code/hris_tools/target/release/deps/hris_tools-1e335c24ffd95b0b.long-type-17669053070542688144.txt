@@ -1,0 +1,1 @@
+fn(axum::extract::State<Arc<S>>, Q) -> impl Future<Output = Json<Vec<R>>> {qry}: Handler<_, _>

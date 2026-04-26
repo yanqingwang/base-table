@@ -1,0 +1,78 @@
+{
+  "account": "wangyantsing@aliyun.com",
+  "credential": "Guanaijiaren1",
+  "remoteDir": "",
+  "remoteCacheDir": "",
+  "useGitStyle": false,
+  "conflictStrategy": "diff-match-patch",
+  "oauthResponseText": "n23bUwuCapbtVvaJ0Q6NSJhopdbdy-r01ZKQkQEuKGVBkTfN-kaZHpPnFAANUtGiTHpFat10rdlVLMU1fkBoaeEnFyCbenNQzdhECWmVRhOCkFDWTTK_8lAySaVb06sD-t2BkABqcx-k_M1N2B14vJViyfaUhj-8n0UVHpq9AIeqdlGdnlybbnEcng",
+  "loginMode": "sso",
+  "confirmBeforeSync": true,
+  "confirmBeforeDeleteInAutoSync": true,
+  "syncMode": "loose",
+  "filterRules": {
+    "exclusionRules": [
+      {
+        "expr": "**/.git",
+        "options": {
+          "caseSensitive": false
+        }
+      },
+      {
+        "expr": "**/.DS_Store",
+        "options": {
+          "caseSensitive": false
+        }
+      },
+      {
+        "expr": "**/.trash",
+        "options": {
+          "caseSensitive": false
+        }
+      },
+      {
+        "expr": ".obsidian",
+        "options": {
+          "caseSensitive": false
+        }
+      },
+      {
+        "expr": "Local",
+        "options": {
+          "caseSensitive": false
+        }
+      },
+      {
+        "expr": "hris_tools",
+        "options": {
+          "caseSensitive": false
+        }
+      },
+      {
+        "expr": "Script",
+        "options": {
+          "caseSensitive": false
+        }
+      },
+      {
+        "expr": "base-table",
+        "options": {
+          "caseSensitive": false
+        }
+      },
+      {
+        "expr": "code/*",
+        "options": {
+          "caseSensitive": false
+        }
+      }
+    ],
+    "inclusionRules": []
+  },
+  "skipLargeFiles": {
+    "maxSize": "30 MB"
+  },
+  "realtimeSync": false,
+  "startupSyncDelaySeconds": 0,
+  "autoSyncIntervalSeconds": 300
+}

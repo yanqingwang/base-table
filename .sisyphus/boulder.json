@@ -1,0 +1,129 @@
+{
+  "active_plan": "/home/wang/wk/.sisyphus/plans/opc1-hris-opportunity-bridge.md",
+  "started_at": "2026-04-17T23:33:54.840Z",
+  "session_ids": [
+    "ses_269186873ffeV2T8Mnb2jrQoF0",
+    "ses_26231f4f9fferYF0UkmoNl3pDS",
+    "ses_26231f4f5ffe7791JxRPYu50zz",
+    "ses_2620c0156ffeERi7IK0bzqruIY",
+    "ses_2620c003affeXVIRgiTUtf6HcW"
+  ],
+  "session_origins": {
+    "ses_269186873ffeV2T8Mnb2jrQoF0": "direct",
+    "ses_26231f4f9fferYF0UkmoNl3pDS": "appended",
+    "ses_26231f4f5ffe7791JxRPYu50zz": "appended",
+    "ses_2620c0156ffeERi7IK0bzqruIY": "appended",
+    "ses_2620c003affeXVIRgiTUtf6HcW": "appended"
+  },
+  "plan_name": "opc1-hris-opportunity-bridge",
+  "agent": "atlas",
+  "task_sessions": {
+    "todo:1": {
+      "task_key": "todo:1",
+      "task_label": "1",
+      "task_title": "Define opportunity taxonomy + inclusion/exclusion + evidence threshold",
+      "session_id": "ses_2622f7472ffe7LEdIakFdP5nsj",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-04-17T23:41:02.927Z"
+    },
+    "todo:3": {
+      "task_key": "todo:3",
+      "task_label": "3",
+      "task_title": "Define scoring rubrics (opportunity score + vendor score + match score)",
+      "session_id": "ses_26222b113ffer4Y91QCzrciRBC",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-04-18T00:00:33.654Z"
+    },
+    "todo:4": {
+      "task_key": "todo:4",
+      "task_label": "4",
+      "task_title": "Pilot sample gate (10 companies / 10 vendors / 10 matches)",
+      "session_id": "ses_262083d29ffeefuusj9qNVnPPp",
+      "agent": "librarian",
+      "updated_at": "2026-04-18T00:26:27.678Z"
+    },
+    "todo:6": {
+      "task_key": "todo:6",
+      "task_label": "6",
+      "task_title": "Build listed-company base pool (indices/exchange constituents)",
+      "session_id": "ses_261e08bfeffedV5izqLYPDMCwL",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-04-18T01:09:36.657Z"
+    },
+    "todo:8": {
+      "task_key": "todo:8",
+      "task_label": "8",
+      "task_title": "Harvest demand-side opportunity signals (last 3 months) for the 500-company set",
+      "session_id": "ses_261b66a6affeembaExEHjYixQC",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-04-18T02:16:10.398Z"
+    },
+    "todo:11": {
+      "task_key": "todo:11",
+      "task_label": "11",
+      "task_title": "Define matching logic + rationale templates (opportunity → vendor shortlist)",
+      "session_id": "ses_2619f4227fferzFoYtowod7Xub",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-04-18T02:23:12.138Z"
+    },
+    "todo:12": {
+      "task_key": "todo:12",
+      "task_label": "12",
+      "task_title": "Produce opportunity matching master table (CSV/XLSX) + report summary tables",
+      "session_id": "ses_261992a1dffe2SSQvbCfUDYk5R",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-04-18T02:25:05.387Z"
+    },
+    "todo:13": {
+      "task_key": "todo:13",
+      "task_label": "13",
+      "task_title": "Create outreach action pack (scripts + questionnaire + tracking SOP)",
+      "session_id": "ses_26191d203ffeeBRNGHYEbDuofX",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-04-18T02:33:15.785Z"
+    },
+    "todo:14": {
+      "task_key": "todo:14",
+      "task_label": "14",
+      "task_title": "Draft demand opportunities report (MD) using existing report pattern",
+      "session_id": "ses_2618c8f23ffeEtx6wGxJkI9Ynd",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-04-18T02:38:25.397Z"
+    },
+    "todo:15": {
+      "task_key": "todo:15",
+      "task_label": "15",
+      "task_title": "Draft vendor Top100 report (MD) using existing report pattern",
+      "session_id": "ses_26187de4ffferi2cHqWewU0mLb",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-04-18T02:46:43.397Z"
+    },
+    "todo:19": {
+      "task_key": "todo:19",
+      "task_label": "19",
+      "task_title": "Final packaging: cross-links, appendices, and change-log template",
+      "session_id": "ses_26183d4a0ffeolzul0QBgg4FsH",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-04-18T02:47:35.419Z"
+    },
+    "final-wave:f1": {
+      "task_key": "final-wave:f1",
+      "task_label": "F1",
+      "task_title": "Scope & guardrail compliance audit",
+      "session_id": "ses_261805ee3ffeIio5H8ORE2L4Oy",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-04-18T02:56:06.039Z"
+    }
+  }
+}

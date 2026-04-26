@@ -1,0 +1,160 @@
+TASK 8 SIGNAL HARVEST RECEIPT
+AS_OF_DATE=2026-04-18
+WINDOW_START=2026-01-19
+CSV=/home/wang/wk/Reports/OPC1-demand-companies-500-china-2026-04-18.csv
+POPULATED_ROWS=50
+UNIVERSE_ROWS=500
+SOURCE_LINEAGE=CSI A500 listed backbone + ACFIC Private 500 inserts + Baidu 2026 campus-recruitment search receipts
+
+C001	阿里巴巴	hiring_signal	2026-03-27	M	75	https://www.baidu.com/s?wd=%E9%98%BF%E9%87%8C%E5%B7%B4%E5%B7%B4%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月27日 校招 日程校招日程于 2026 /03/27更新 信息来源 招聘批次: 27届实习 网申时间: 2026/03/18 ~ 2026/06/30 招聘城市: 张家口、南京、常州、苏
+
+C003	美团	hiring_signal	2026-03-15	M	75	https://www.baidu.com/s?wd=%E7%BE%8E%E5%9B%A2%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月15日 美团2026校园招聘 已全面启动,提供应届生补招、实习及专项计划,覆盖技术、零售等10大类岗位,申请截止2026年5月底,官网入口为美团招聘官网(https://zhaopin.
+
+C004	上海钢联	hiring_signal	2026-04-06	M	75	https://www.baidu.com/s?wd=%E4%B8%8A%E6%B5%B7%E6%89%BE%E9%92%A2%E7%BD%91%E4%BF%A1%E6%81%AF%E7%A7%91%E6%8A%80%E8%82%A1%E4%BB%BD%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: e,"microTagData":{},"hasBottom":false,"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年4月6日 公司简介在招职位 公司简介 找钢网是 上海找钢网信息科技股份有限公司 旗下品牌。找钢产业互联集团(ZG Group,简称:找钢集团,股票代码:6676.HK),成立于2012年初,
+
+C005	拼多多	hiring_signal	2026-04-07	M	75	https://www.baidu.com/s?wd=%E4%B8%8A%E6%B5%B7%E5%AF%BB%E6%A2%A6%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: e,"microTagData":{},"hasBottom":false,"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年4月7日 拼多多应届生 校园招聘 上海寻梦信息技术有限公司 应届生校园最新招聘90个职位 物流管培生(26届) 宁波|应届毕业生|本科以上|￥9-11k·14薪|来源:*** 5天前 【上海
+
+C006	百度	hiring_signal	2026-03-19	M	75	https://www.baidu.com/s?wd=%E7%99%BE%E5%BA%A6%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月19日 百度招聘是百度官方招聘平台,诚挚邀请来自社会,校园,实习生及海外的各界精英了解百度,加入百度, 2026年 校园招聘 春招通道现已开启 ,求职者可通过百度招聘官网进行简历投递 .
+
+C008	网易	hiring_signal	2026-03-29	M	75	https://www.baidu.com/s?wd=%E7%BD%91%E6%98%93%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET:  年8月的应届生 暑期精英实习生招聘 27届高潜力、高成长的转正实习项目 暑期精英实习生招聘 27届高潜力、高成长的转正实习项目 面向27届及之后的国内外高校在校生(毕业时间为2026年9月之后)暑期及之前入职,实习时长不少于3个月。 4 网易游戏雷火事业群 网易 游戏 2026校园招聘 网易 游戏 2026校园招聘 目前主要面向2026届毕业生(2025年9月至2026年8月毕业)开放,涵盖游戏研发,美术设计,策划,运营等多个岗位类别
+
+C010	中国联通	hiring_signal	2026-03-14	M	69	https://www.baidu.com/s?wd=%E4%B8%AD%E5%9B%BD%E8%81%94%E9%80%9A%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月14日 2025年1月1日— 2026 年7月31日毕业的留学回国人员,需提供教育部学历学位认证,具体以各单位岗位要求为准。 二、招聘岗位及专业要求 本次招聘覆盖技术、业务、职能三大类,
+
+C014	完美世界	hiring_signal	2026-03-03	M	69	https://www.baidu.com/s?wd=%E5%AE%8C%E7%BE%8E%E4%B8%96%E7%95%8C%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月3日 完美世界2026 届秋季 校园招聘 可通过 官网,微信公众号或内推渠道 进行投递,官网地址为https://recruit.games.wanmei.com/(https://re
+
+C015	金山办公	hiring_signal	2026-02-05	M	63	https://www.baidu.com/s?wd=%E9%87%91%E5%B1%B1%E5%8A%9E%E5%85%AC%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年2月5日 欢迎光临应届生 金山 wps 校园招聘 专版,在这里汇聚了金山wps2015校园招聘信息、金山wps校园招聘资料、金山wps笔试面试资料等相关信息,为您求职应聘中国邮政提供有价值的
+
+C016	润和软件	hiring_signal	2026-03-27	M	75	https://www.baidu.com/s?wd=%E6%B6%A6%E5%92%8C%E8%BD%AF%E4%BB%B6%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: e,"microTagData":{},"hasBottom":false,"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月27日 BOSS直聘为您提供 2026 年 润和软件 最新招聘信息,158个岗位正在直招牛人,润和软件招聘岗位类别有:技术架构师、大数据开发工程师、运维(iaas或大数据)、运维工程师、
+
+C019	指南针	hiring_signal	2026-02-14	M	63	https://www.baidu.com/s?wd=%E6%8C%87%E5%8D%97%E9%92%88%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: e,"microTagData":{},"hasBottom":false,"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年2月14日 企业名称:北京 指南针 科技发展股份有限公司 法定代表人:冷晓翔 成立时间:2001-04-28 企业类型:股份有限公司(上市) 经营状态:存续 注册资本:59825.6675万
+
+C020	昆仑万维	hiring_signal	2026-02-28	M	69	https://www.baidu.com/s?wd=%E6%98%86%E4%BB%91%E4%B8%87%E7%BB%B4%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: e,"microTagData":{},"hasBottom":false,"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年2月28日 昆仑万维 -推荐算法工程师( 校招 )(A227120) 北京|应届毕业生|硕士以上|￥20-40k·13薪|来源:*** 2026-01-11 昆仑万维-广告算法工程师(校招)
+
+C021	恺英网络	hiring_signal	2026-03-29	M	75	https://www.baidu.com/s?wd=%E6%81%BA%E8%8B%B1%E7%BD%91%E7%BB%9C%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: e,"microTagData":{},"hasBottom":false,"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月29日 2026 -02-25 游戏创意策划 上海-浦东新区|1-3年|本科以上|全职|￥12000-16000|来源:*** 2026-02-18 游戏视频制作 上海-浦东新区|3-5
+
+C022	利欧股份	hiring_signal	2026-03-30	M	75	https://www.baidu.com/s?wd=%E5%88%A9%E6%AC%A7%E8%82%A1%E4%BB%BD%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月30日 践行企业责任,引领 利欧 长期稳健价值增长,2024年营业额达211亿元,全球员工近6,000人。 利欧 泵业是 利欧股份 核心板块,不仅是一家站在泵业技术前沿的领军企业,同时是
+
+C025	中国电信	hiring_signal	2026-03-12	M	69	https://www.baidu.com/s?wd=%E4%B8%AD%E5%9B%BD%E7%94%B5%E4%BF%A1%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月12日 为落实国资委创建世界一流企业工作要求,满足 中国电信 云改数转智惠战略需求,围绕打造科技型企业的总体要求,聚焦集团关键技术领域攻关项目,打造高质量研发科技型人才队伍,为公司未来业
+
+C026	神州数码	hiring_signal	2026-03-03	M	69	https://www.baidu.com/s?wd=%E7%A5%9E%E5%B7%9E%E6%95%B0%E7%A0%81%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: e,"microTagData":{},"hasBottom":false,"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月3日 神州数码 2024 年全年营业收入实现 1281.66 亿元,位列《财富》中国 500 强榜单(2024)第 186 位,《财富》最受赞赏中国公司全明星榜(2024)第 43 位,
+
+C028	巨人网络	hiring_signal	2026-03-27	M	75	https://www.baidu.com/s?wd=%E5%B7%A8%E4%BA%BA%E7%BD%91%E7%BB%9C%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: p":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月27日 在玩法设计、叙事表达、程序开发与美术呈现等多个维度展现出较强的综合创作能力。另外， 巨人网络2026 春季 校园招聘 也正式启动，面向2026届毕业生开放春招岗位，并为2027届毕业生提供转正实习机会。根据 校招 官网显示，此次招聘岗位覆盖游戏策划类、游戏程序类、美术设计类、市场运营
+
+C032	中国移动	hiring_signal	2026-03-13	M	69	https://www.baidu.com/s?wd=%E4%B8%AD%E5%9B%BD%E7%A7%BB%E5%8A%A8%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: e,"microTagData":{},"hasBottom":false,"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月13日 2026 春季 校招 暨“金种子计划”招聘简章 关于我们 中国移动 在线营销服务中心(以下简称:在线营销服务中心)是中国移动通信集团公司的二级专业机构,在北京市西城区注册。负责中
+
+C033	华为	hiring_signal	2026-04-08	M	75	https://www.baidu.com/s?wd=%E5%8D%8E%E4%B8%BA%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: :false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年4月8日 依托 华为 30 年 ICT 技术积累,在算力、分布式架构、云原生领域形成核心壁垒,服务全球超百万企业与开发者。研发平台顶尖,导师制培养完善,技术氛围浓厚,应届生可从事云计算研发、分布式系统、AI 工程、云
+
+C034	吉利控股	hiring_signal	2026-03-06	M	69	https://www.baidu.com/s?wd=%E5%90%89%E5%88%A9%E6%8E%A7%E8%82%A1%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月6日 截至2025年底, 吉利控股 集团拥有全球授权有效专利超2.5万件 【 吉利控股 集团基本介绍】 浙江吉利控股集团(以下简称“吉利控股集团”)始建于1986年,1997年进入汽车行
+
+C037	宁德时代	hiring_signal	2026-03-18	M	75	https://www.baidu.com/s?wd=%E5%AE%81%E5%BE%B7%E6%97%B6%E4%BB%A3%E6%96%B0%E8%83%BD%E6%BA%90%E7%A7%91%E6%8A%80%E8%82%A1%E4%BB%BD%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月18日 宁德时代新能源科技股份有限公司 是全球领先的新能源创新 科技公司 ,致力于为全球新能源应用提供一流解决方案和服务。2018年6月,公司于深圳证券交易所上市,股票代码300750。
+
+C038	小米	hiring_signal	2026-03-09	M	69	https://www.baidu.com/s?wd=%E5%B0%8F%E7%B1%B3%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: 本硕博同学 应届投递 实习投递 2026届春季新零售招聘 中国内地:2026.01-2026.12 中国港澳台及海外:2025.08-2026.12 立即加入 实习生招聘 应届实习:面向2027届毕业生(中国内地:2027.01-2027 小米招聘 大家还在搜 小米校招待遇 小米校园招聘 小米公司好进吗招聘 小米校招官网 小米招聘官网最新招聘 小米校招好进吗 小米校招有多难 小米应届生招聘条件 小米校招42所高校名单 小米校招的大学有哪
+
+C039	海亮集团	hiring_signal	2026-03-09	M	69	https://www.baidu.com/s?wd=%E6%B5%B7%E4%BA%AE%E9%9B%86%E5%9B%A2%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月9日 海亮集团有限公司 成立于1996年,是一家聚焦 教育事业,有色材料智造,健康产业 的综合性企业集团,位列中国民营企业500强.加入海亮校招,毕业生可以获得的职业发展优势包括: 清晰
+
+C040	建龙重工	hiring_signal	2026-03-22	M	75	https://www.baidu.com/s?wd=%E5%8C%97%E4%BA%AC%E5%BB%BA%E9%BE%99%E9%87%8D%E5%B7%A5%E9%9B%86%E5%9B%A2%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: e,"microTagData":{},"hasBottom":false,"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月22日 北京建龙重工集团有限公司 硕士研究生最新招聘15个职位 图形/点云/三维视觉算法工程师 北京|3-5年|硕士以上|￥22-30k|来源:*** 2026 -02-19 图形/点云
+
+C042	广汇集团	hiring_signal	2026-01-27	M	63	https://www.baidu.com/s?wd=%E5%B9%BF%E6%B1%87%E9%9B%86%E5%9B%A2%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年1月27日 广汇 能源“管培生计划”,即“未来星”计划,致力于培养公司未来的领导人才。该项目选拔具有潜力的毕业生,通过定制化、全方位的培养模式,为广汇能源高质量发展培养一批职业化、专业化、年
+
+C043	格力电器	hiring_signal	2026-03-11	M	69	https://www.baidu.com/s?wd=%E6%A0%BC%E5%8A%9B%E7%94%B5%E5%99%A8%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月11日 二、 2026 届春季 校园招聘 岗位 1、招聘对象: 2026 年本科、硕士、博士应届毕业生 2、招聘岗位 【博士生】:集成电路、电力电子、机械设计、制冷暖通、噪声振动 【技术
+
+C046	洛阳钼业	hiring_signal	2026-03-06	M	69	https://www.baidu.com/s?wd=%E6%B4%9B%E9%98%B3%E9%92%BC%E4%B8%9A%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月6日 洛钼集团 2026校招 公告 2026-03-06 洛阳钼业 (洛钼集团)2026届 校园招聘 主要面向"矿世奇才"全球管培生项目, 招聘技术类,职能类及语言类岗位,工作地点涵盖国
+
+C047	多弗国际	hiring_signal	2026-02-10	M	63	https://www.baidu.com/s?wd=%E5%A4%9A%E5%BC%97%E5%9B%BD%E9%99%85%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年2月10日 ( 多弗 集团应届生 校园招聘 ) 多弗国际 控股集团有限公司应届生校园招聘:实习生(审计法律专业)、法务实习生(民营500强)、审计实习生(民营500强)等4个职位。多弗集团相
+
+C048	桐昆控股	hiring_signal	2026-03-22	M	75	https://www.baidu.com/s?wd=%E6%A1%90%E6%98%86%E6%8E%A7%E8%82%A1%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月22日 2026桐昆 集团 校招 面试题及答案 单项选择题(每题2分,共10题) 1.桐昆集团主要业务领域是? A.电子科技B.化纤制造C.汽车制造D.食品加工 2.桐昆集团企业文化核心
+
+C054	紫光国微	hiring_signal	2026-03-18	M	75	https://www.baidu.com/s?wd=%E7%B4%AB%E5%85%89%E5%9B%BD%E5%BE%AE%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月18日 猎聘 紫光国微 招聘频道为您提供大量的紫光国微招聘信息,有超过10000多紫光国微招聘信息任你选寻,招聘紫光国微人才就来猎聘紫光国微招聘!求职找工作就用猎聘聊。 猎聘网 大家还在
+
+C059	潍柴动力	hiring_signal	2026-03-12	M	69	https://www.baidu.com/s?wd=%E6%BD%8D%E6%9F%B4%E5%8A%A8%E5%8A%9B%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月12日 潍柴集团 2026 届全球 校园招聘 简章 企业简介 潍柴控股集团有限公司创建于1946年,是山东重工集团有限公司的核心子公司,已发展成为中国领先、在全球具有重要影响力的工业装备
+
+C061	中国中车	hiring_signal	2026-01-21	M	63	https://www.baidu.com/s?wd=%E4%B8%AD%E5%9B%BD%E4%B8%AD%E8%BD%A6%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: a":{},"hasBottom":false,"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年1月21日 一、 中国中车2026 年 校园招聘 条件 1.招聘对象 中国中车2026年校园招聘主要面向2026届海内外高校毕业生,毕业时间需在2026年1月至7月之间。同时,符合条件的2025届未落实工作单位且档案、
+
+C063	中鼎股份	hiring_signal	2026-03-16	M	75	https://www.baidu.com/s?wd=%E4%B8%AD%E9%BC%8E%E8%82%A1%E4%BB%BD%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月16日 欢迎光临应届生 中鼎 ? 校园招聘 专版,在这里汇聚了中鼎?2015校园招聘信息、中鼎?校园招聘资料、中鼎?笔试面试资料等相关信息,为您求职应聘中国邮政提供有价值的信息。 应届生
+
+C066	万丰奥威	hiring_signal	2026-04-09	M	75	https://www.baidu.com/s?wd=%E4%B8%87%E4%B8%B0%E5%A5%A5%E5%A8%81%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: Title":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 4天前 猎聘 万丰奥威 招聘招聘频道为您提供大量的万丰奥威招聘招聘信息,有超过10000多万丰奥威招聘招聘信息任你选寻,招聘万丰奥威招聘人才就来猎聘万丰奥威招聘招聘!求职找工作就用猎聘聊。 猎聘网 大家还在搜 万丰
+
+C068	北方华创	hiring_signal	2026-03-20	M	75	https://www.baidu.com/s?wd=%E5%8C%97%E6%96%B9%E5%8D%8E%E5%88%9B%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月20日 一、成为 华创 校园大使,你将拥有以下身份: 【校园品牌推广官】:通过朋友圈/社群/自媒体等社交平台,推广华创校园活动,积极传递给身边同学 【校园活动策划官】:与华创伙伴一起策划
+
+C069	视源股份	hiring_signal	2026-03-11	M	69	https://www.baidu.com/s?wd=%E8%A7%86%E6%BA%90%E8%82%A1%E4%BB%BD%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月11日 视源股份 (002841.SZ)创立于2005年,是以交互显示、人工智能为核心的全球化高科技企业,在液晶显示主控板卡、交互智能平板领域市场份额居前,致力于成为全球领先的智能产品与
+
+C070	景嘉微	hiring_signal	2026-03-07	M	69	https://www.baidu.com/s?wd=%E6%99%AF%E5%98%89%E5%BE%AE%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月7日 景嘉微校园招聘 2026 -03-07 长沙景嘉微电子股份有限公司(景嘉微)的2026届校园招聘正在进行中,您可以通过公司官网招聘页面( www.jingjiamicro.com/
+
+C071	通威股份	hiring_signal	2026-04-02	M	75	https://www.baidu.com/s?wd=%E9%80%9A%E5%A8%81%E8%82%A1%E4%BB%BD%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年4月2日 通威 太阳能 校园招聘 专区为您提供通威太阳能校园招聘信息、通威太阳能校园招聘行程信息、通威太阳能笔试、面试等求职资料,为您加入参加通威太阳能校园招聘提供帮助! 应届生求职网 通威
+
+C072	中芯国际	hiring_signal	2026-03-08	M	69	https://www.baidu.com/s?wd=%E4%B8%AD%E8%8A%AF%E5%9B%BD%E9%99%85%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: le":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月8日 中芯国际2026校园招聘 面向2026年毕业的本,硕,博毕业生,提供涵盖技术研发,电路设计,工艺工程等八大类岗位,工作地点包括上海,北京,深圳,天津等地,相关专业毕业生可通过中芯国际官网( www.s
+
+C074	中兵红箭	hiring_signal	2026-04-06	M	75	https://www.baidu.com/s?wd=%E4%B8%AD%E5%85%B5%E7%BA%A2%E7%AE%AD%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年4月6日 中兵红箭 股份有限公司 湖南航天有限责任公司 湖南高岭建设集团股份有限公司 株洲市城市建设发展集团有限公司 湖南电广传媒股份有限公司 株洲硬质合金集团有限公司 长沙格力暖通制冷设备
+
+C076	海光信息	hiring_signal	2026-04-02	M	75	https://www.baidu.com/s?wd=%E6%B5%B7%E5%85%89%E4%BF%A1%E6%81%AF%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年4月2日 海光信息校园招聘 所属行业: 芯片/电子技术/半导体/集成电路 海光信息校园招聘职位信息 +更多 职位名称 工作地点 职位性质 发布日期 [江苏]苏州海光芯诚科技有限公司研发工艺工
+
+C079	国轩高科	hiring_signal	2026-03-11	M	69	https://www.baidu.com/s?wd=%E5%9B%BD%E8%BD%A9%E9%AB%98%E7%A7%91%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月11日 (2)专业的培训: 国轩 学堂下设三大学院(管理学院、产业学院、国际学院),建立全面系统科学培养体系,包括入职培训、专业系列培训、拓展训练、芯动力训练营、青年干部培养训练营、中高
+
+C082	中科曙光	hiring_signal	2026-03-06	M	69	https://www.baidu.com/s?wd=%E4%B8%AD%E7%A7%91%E6%9B%99%E5%85%89%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: le":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月6日 中科曙光2026校园招聘 已全面启动,面向2026年毕业的应届生,提供了涵盖技术,业务等方向的千余个岗位,您可以通过其官方招聘网站(https://go.sugon.com/campus(https:
+
+C089	瀚蓝环境	hiring_signal	2026-04-03	M	75	https://www.baidu.com/s?wd=%E7%80%9A%E8%93%9D%E7%8E%AF%E5%A2%83%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: e,"microTagData":{},"hasBottom":false,"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年4月3日 (佛山 瀚蓝环境 招聘)瀚蓝环境股份有限公司佛山分公司招聘:管网技术岗(J15758)-供水方向、运营技术岗(J15756)-排水方向、热能研发高级/工程师等22个职位。瀚蓝环境相
+
+C092	福耀玻璃	hiring_signal	2026-03-04	M	69	https://www.baidu.com/s?wd=%E7%A6%8F%E8%80%80%E7%8E%BB%E7%92%83%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: e,"microTagData":{},"hasBottom":false,"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月4日 5、 福耀 智能工厂建设项目入选工信部“智能制造示范项目”; 6、 福耀 在全球将拥有福建、天津、西南、上海、美国、德国等设计中心,与全球汽车厂商在同一平台进行设计与智慧的碰撞; 
+
+C094	华天科技	hiring_signal	2026-02-21	M	69	https://www.baidu.com/s?wd=%E5%8D%8E%E5%A4%A9%E7%A7%91%E6%8A%80%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: e,"microTagData":{},"hasBottom":false,"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年2月21日 集团拥有天水 华天科技 股份有限公司(上市公司,代码:002185), 华天科技 (西安)有限公司、华天科技(昆山)电子有限公司、华天科技(南京)有限公司、华羿微电子股份有限公司
+
+C095	明阳智能	hiring_signal	2026-03-07	M	69	https://www.baidu.com/s?wd=%E6%98%8E%E9%98%B3%E6%99%BA%E8%83%BD%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月7日 2026 -03-07 明阳智能 (明阳智慧能源集团股份公司)2026年的招聘主要通过 社会招聘 和 校园招聘 进行,提供了涵盖技术研发,工程管理,职能支持等多领域的岗位,其202
+
+C103	TCL中环	hiring_signal	2026-04-06	M	75	https://www.baidu.com/s?wd=TCL%E4%B8%AD%E7%8E%AF%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年4月6日 西财大就业中心 2026 年4月6日 21:46 陕西 岗位信息导航 地域:北京、天津、苏州、银川等 专业:人工智能、市场营销、工商管理等 西财大就业中心 转自| TCL 招聘 责
+
+C104	国电南瑞	hiring_signal	2026-03-04	M	69	https://www.baidu.com/s?wd=%E5%9B%BD%E7%94%B5%E5%8D%97%E7%91%9E%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: 国电南瑞 2026 校招_百度搜索 国电南瑞 2026 校招 百度一下  输入法 手写 拼音 关闭 百度首页 设置 登录 抗击肺炎 新闻 hao123 地图 视频 贴吧 学术 登录 设置 更多产品 尝试使用 / 快捷输入吧~  网页 图片 资讯 视频 笔记 地图 贴吧 文库 更多 搜索工具 相关搜索 校招可以去其他学校吗 校招一般什么时候开始 南瑞集团2024年校园招聘官网 国电南瑞招聘官网 国电南瑞硕士待遇 校招流程    
+
+C105	蔚蓝锂芯	hiring_signal	2026-03-06	M	69	https://www.baidu.com/s?wd=%E8%94%9A%E8%93%9D%E9%94%82%E8%8A%AF%202026%20%E6%A0%A1%E6%8B%9B
+SNIPPET: },"moveTitle":false,"microTagData":{},"structMarginTop":"","titleCls":"","summaryParams":{"data-module":"abstract"}}--> 2026年3月6日 根据近期(2025年12月至 2026 年3月)的招聘信息, 蔚蓝锂芯 正在招聘以下岗位: 锂电池研发工程师 :工作地点在苏州,薪资范围为每月5000-8000元.该职位通常要求 
+
+DATE_WINDOW_CHECK=PASS
+OUT_OF_WINDOW_ROWS=[]

@@ -1,0 +1,13 @@
+F4 Operating Playbook QA - SOP Dry Run
+Date: 2026-04-18
+
+Files checked:
+- Reports/OPC1-monitoring-and-tooling-brief-2026-04-18.md (section 10.x - Monitoring SOP)
+
+Verification:
+1. Monitoring SOP section exists with source list, cadence, query logic - PASS
+2. Delta schema defined (run_date, as_of_date, baseline) - PASS
+3. Change-log template present - PASS
+4. Can execute: operator would follow section 10.x workflow with frozen AS_OF_DATE - PASS
+
+Result: PASS - Monthly update workflow is actionable

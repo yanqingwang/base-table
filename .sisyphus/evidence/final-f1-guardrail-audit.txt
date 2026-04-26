@@ -1,0 +1,122 @@
+F1 Guardrail Audit — OPC1 Scope & Compliance
+Date: 2026-04-18
+Plan: .sisyphus/plans/opc1-hris-opportunity-bridge.md
+
+Files checked
+- .sisyphus/plans/opc1-hris-opportunity-bridge.md
+- Reports/
+- Reports/OPC1-demand-companies-500-china-2026-04-18.md
+- Reports/OPC1-demand-companies-500-china-2026-04-18.csv
+- Reports/OPC1-vendors-top100-hris-china-2026-04-18.md
+- Reports/OPC1-vendors-top100-hris-china-2026-04-18.csv
+- Reports/OPC1-opportunity-matching-china-2026-04-18.csv
+- Reports/OPC1-monitoring-and-tooling-brief-2026-04-18.md
+
+Guardrail 1 — No agent-executed outreach (scripts are templates only)
+Plan requirement
+- .sisyphus/plans/opc1-hris-opportunity-bridge.md:77-80
+  - "不承诺代理自动拨号/发信；外联执行由你/团队完成"
+
+Search results
+- Reports/OPC1-monitoring-and-tooling-brief-2026-04-18.md:1203
+  - "Use these templates only ... until the operator has a verified contact path."
+- Reports/OPC1-monitoring-and-tooling-brief-2026-04-18.md:1242
+  - "Operator note: ..."
+- Reports/OPC1-monitoring-and-tooling-brief-2026-04-18.md:1277
+  - "The operator should cover 4 points only"
+- Reports/OPC1-monitoring-and-tooling-brief-2026-04-18.md:1342
+  - "This SOP keeps outreach updates tied ..."
+- Reports/OPC1-monitoring-and-tooling-brief-2026-04-18.md:1508
+  - "no autonomous outbound email, calling, or messaging"
+- Negative finding: no match found in current OPC1 deliverables for phrasing that an agent will itself email or call.
+
+Verdict
+- PASS. Outreach content exists as operator-run templates/SOP, not as autonomous agent execution.
+
+Guardrail 2 — No fabricated commission numbers; compensation marked needs_confirmation / not_disclosed when unverified
+Plan requirement
+- .sisyphus/plans/opc1-hris-opportunity-bridge.md:80
+  - "对佣金/报酬：没有公开证据的一律标注 needs_confirmation，不编造数值"
+
+Search results
+- Reports/OPC1-opportunity-matching-china-2026-04-18.csv:1
+  - Header includes `term_status`; no `compensation_rate` column exists.
+- Reports/OPC1-opportunity-matching-china-2026-04-18.csv:2-86 sampled
+  - Rows use `term_status=needs_confirmation`.
+- Reports/OPC1-vendors-top100-hris-china-2026-04-18.csv:1
+  - No `compensation_rate` or commission numeric field exists.
+- Reports/OPC1-vendors-top100-hris-china-2026-04-18.md:153-163
+  - Confidence is explicitly not commission-truth; any commission / partner terms require later official verification.
+- Reports/OPC1-monitoring-and-tooling-brief-2026-04-18.md:1208
+  - Do not claim referral / reseller / implementation / commission arrangement as fact unless publicly confirmed.
+- Reports/OPC1-monitoring-and-tooling-brief-2026-04-18.md:1509
+  - "no automatic commission-rate inference from weak evidence"
+- Negative finding: grep across `Reports/OPC1-*.csv` found no `compensation_rate` field and no numeric commission-rate entries.
+
+Verdict
+- PASS. No fabricated commission numbers found; current matching rows keep terms at `needs_confirmation`, and the brief forbids unsupported commission claims.
+
+Guardrail 3 — Monitoring is SOP / PRD only, not a production crawler
+Plan requirement
+- .sisyphus/plans/opc1-hris-opportunity-bridge.md:78
+  - "不把‘自动盯盘’扩展成生产级爬虫平台"
+
+Search results
+- Reports/OPC1-monitoring-and-tooling-brief-2026-04-18.md:62
+  - Monitoring brief described as canonical schema / SOP contract.
+- Reports/OPC1-monitoring-and-tooling-brief-2026-04-18.md:849-852
+  - "Monitoring SOP for monthly updates" and "It is intentionally a runbook/spec, not a crawler architecture."
+- Reports/OPC1-monitoring-and-tooling-brief-2026-04-18.md:861
+  - "Scope excludes production crawling ..."
+- Reports/OPC1-monitoring-and-tooling-brief-2026-04-18.md:1383-1396
+  - Tooling section is an MVP PRD; "not a crawler platform ... or production data platform"
+- Reports/OPC1-monitoring-and-tooling-brief-2026-04-18.md:1507
+  - "no production-grade crawler platform"
+
+Verdict
+- PASS. The monitoring deliverable is explicitly framed as SOP + MVP PRD and explicitly excludes production crawling.
+
+Guardrail 4 — Top100 is HRIS-opportunity-relevant, not a generic ranking
+Plan requirement
+- .sisyphus/plans/opc1-hris-opportunity-bridge.md:79
+  - "不把 Top100 做成‘泛 HR 软件排行榜’"
+
+Search results
+- Reports/OPC1-vendors-top100-hris-china-2026-04-18.md:1
+  - Title explicitly says HRIS vendors Top100.
+- Reports/OPC1-vendors-top100-hris-china-2026-04-18.md:12
+  - Scope covers HRIS / Core HR / Payroll / WFM / ATS / Analytics / Implementation.
+- Reports/OPC1-vendors-top100-hris-china-2026-04-18.md:24-26
+  - Report scope includes vendor classification, scoring, and commercial-availability caution.
+- Reports/OPC1-vendors-top100-hris-china-2026-04-18.md:49
+  - Includes implementation/services, i.e. delivery relevance.
+- Reports/OPC1-vendors-top100-hris-china-2026-04-18.md:163
+  - Partner terms require separate verification; ranking is used for screening/matching, not generic hype ranking.
+- Reports/OPC1-vendors-top100-hris-china-2026-04-18.csv:1-11
+  - Fields are HRIS-relevant (`vendor_tags`, `target_segment_fit`, `industry_strengths`, `visibility_level`, `vendor_score`, `notes`).
+
+Verdict
+- PASS. The vendor deliverable is framed around HRIS capability, fit, and delivery/matching relevance rather than a generic HR software popularity list.
+
+Guardrail 5 — Deliverables are all in Reports/
+Plan requirement
+- .sisyphus/plans/opc1-hris-opportunity-bridge.md:7-12, 60-69
+  - Final deliverables must land in `Reports/`.
+
+Reports directory findings
+- Reports/OPC1-demand-companies-500-china-2026-04-18.md
+- Reports/OPC1-demand-companies-500-china-2026-04-18.csv
+- Reports/OPC1-vendors-top100-hris-china-2026-04-18.md
+- Reports/OPC1-vendors-top100-hris-china-2026-04-18.csv
+- Reports/OPC1-opportunity-matching-china-2026-04-18.csv
+- Reports/OPC1-monitoring-and-tooling-brief-2026-04-18.md
+
+Verdict
+- PASS. The current OPC1 deliverables checked for this audit are located under `Reports/`.
+
+Overall verdict
+PASS
+
+Notes
+- This is an F1 scope/guardrail audit only. It does not assess completeness targets such as exact Top100 row count, exact 500-row demand coverage, or missing XLSX companions.
+- A legacy file, `Reports/OPC1-HRIS-Market-Opportunity-Analysis-China-2026.md`, contains older outreach-oriented wording but is not one of the current plan deliverables audited above.

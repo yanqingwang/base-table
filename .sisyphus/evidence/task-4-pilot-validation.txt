@@ -1,0 +1,27 @@
+OPC1 Task 4 Pilot Validation
+AS_OF_DATE=2026-04-18
+WINDOW_START=2026-01-19
+FILES=OPC1-demand-companies-500-china-2026-04-18.csv, OPC1-vendors-top100-hris-china-2026-04-18.csv, OPC1-opportunity-matching-china-2026-04-18.csv
+
+[PASS] row_count_companies: count=10 expected=10
+[PASS] row_count_vendors: count=10 expected=10
+[PASS] row_count_matches: count=10 expected=10
+[PASS] required_non_empty_companies: ok
+[PASS] required_non_empty_vendors: ok
+[PASS] required_non_empty_matches: ok
+[PASS] company_id_unique: unique=10 rows=10
+[PASS] vendor_id_unique: unique=10 rows=10
+[PASS] match_id_unique: unique=10 rows=10
+[PASS] match_company_refs_exist: ok
+[PASS] match_vendor_refs_exist: ok
+[PASS] match_denormalized_names_match: ok
+[PASS] company_rows_have_universe_source_url: ok
+[PASS] vendor_rows_have_evidence_url: ok
+[PASS] match_rows_have_evidence_url: ok
+[PASS] company_universe_as_of_frozen: ok (company freshness uses universe_source_url + universe_as_of per schema)
+[PASS] vendor_evidence_within_window: ok
+[PASS] vendor_as_of_date_frozen: ok
+[PASS] match_evidence_within_window: ok
+
+SUMMARY: 19/19 checks passed
+OVERALL=PASS

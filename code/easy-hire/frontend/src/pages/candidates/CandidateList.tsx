@@ -10,17 +10,18 @@ const CandidateList: React.FC = () => {
   const [data, setData] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
+  const [sourceFilter, setSourceFilter] = useState<string | undefined>();
   const [searchText, setSearchText] = useState('');
 
   const fetchData = () => {
     setLoading(true);
-    api.candidates.list({ status: statusFilter, q: searchText || undefined })
+    api.candidates.list({ status: statusFilter, q: searchText || undefined, source: sourceFilter })
       .then(setData)
       .catch(() => message.error('Failed to load candidates'))
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchData(); }, [statusFilter, searchText]);
+  useEffect(() => { fetchData(); }, [statusFilter, sourceFilter, searchText]);
 
   const handleDelete = (id: string) => {
     api.candidates.delete(id)
@@ -77,6 +78,19 @@ const CandidateList: React.FC = () => {
             { value: 'offered', label: 'Offered' },
             { value: 'hired', label: 'Hired' },
             { value: 'rejected', label: 'Rejected' },
+          ]}
+        />
+        <Select
+          placeholder="Filter source"
+          value={sourceFilter}
+          onChange={setSourceFilter}
+          allowClear
+          style={{ width: 150 }}
+          options={[
+            { value: 'agency', label: 'Agency' },
+            { value: 'direct', label: 'Direct' },
+            { value: 'referral', label: 'Referral' },
+            { value: 'other', label: 'Other' },
           ]}
         />
       </Space>

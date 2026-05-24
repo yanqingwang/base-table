@@ -1,9 +1,52 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Descriptions, Tag, Spin, Button, Space, Typography, Table, message, Select, Input, Form } from 'antd';
+import {
+  Card, Descriptions, Tag, Spin, Button, Space, Typography, Table, message, Select,
+  Input, Form, DatePicker, InputNumber, Collapse,
+} from 'antd';
 import { ArrowLeftOutlined, SaveOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import api, { Candidate, Interview } from '../../api/client';
 import StatusTag from '../../components/StatusTag';
+
+const { TextArea } = Input;
+
+const countryOptions = [
+  { value: 'PH', label: 'Philippines' },
+  { value: 'MY', label: 'Malaysia' },
+  { value: 'TH', label: 'Thailand' },
+  { value: 'SG', label: 'Singapore' },
+  { value: 'ID', label: 'Indonesia' },
+  { value: 'VN', label: 'Vietnam' },
+  { value: 'MM', label: 'Myanmar' },
+  { value: 'KH', label: 'Cambodia' },
+  { value: 'LA', label: 'Laos' },
+  { value: 'BN', label: 'Brunei' },
+];
+
+const genderOptions = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+  { value: 'other', label: 'Other' },
+];
+
+const educationLevelOptions = [
+  { value: 'none', label: 'None' },
+  { value: 'primary', label: 'Primary' },
+  { value: 'secondary', label: 'Secondary' },
+  { value: 'high_school', label: 'High School' },
+  { value: 'vocational', label: 'Vocational' },
+  { value: 'bachelor', label: 'Bachelor' },
+  { value: 'master', label: 'Master' },
+  { value: 'doctorate', label: 'Doctorate' },
+];
+
+const sourceOptions = [
+  { value: 'direct', label: 'Direct' },
+  { value: 'agency', label: 'Agency' },
+  { value: 'referral', label: 'Referral' },
+  { value: 'other', label: 'Other' },
+];
 
 const CandidateDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -36,10 +79,32 @@ const CandidateDetail: React.FC = () => {
 
   useEffect(() => { fetchData(); }, [id]);
 
-  const handleUpdate = async (values: any) => {
+  useEffect(() => {
+    if (editing && candidate) {
+      const values: Record<string, unknown> = { ...candidate };
+      if (candidate.skills) {
+        try { values.skills = JSON.parse(candidate.skills); } catch { values.skills = []; }
+      } else {
+        values.skills = [];
+      }
+      if (candidate.date_of_birth) {
+        values.date_of_birth = dayjs(candidate.date_of_birth);
+      }
+      form.setFieldsValue(values);
+    }
+  }, [editing, candidate, form]);
+
+  const handleUpdate = async (values: Record<string, unknown>) => {
     if (!id) return;
     try {
-      await api.candidates.update(id, values);
+      const payload: Record<string, unknown> = { ...values };
+      if (payload.date_of_birth && dayjs.isDayjs(payload.date_of_birth)) {
+        payload.date_of_birth = (payload.date_of_birth as dayjs.Dayjs).format('YYYY-MM-DD');
+      }
+      if (Array.isArray(payload.skills)) {
+        payload.skills = JSON.stringify(payload.skills);
+      }
+      await api.candidates.update(id, payload as Partial<Candidate>);
       message.success('Updated');
       setEditing(false);
       fetchData();
@@ -51,7 +116,7 @@ const CandidateDetail: React.FC = () => {
   const handleStatusChange = async (status: string) => {
     if (!id) return;
     try {
-      await api.candidates.update(id, { status } as any);
+      await api.candidates.update(id, { status } as Partial<Candidate>);
       message.success(`Status changed to ${status}`);
       fetchData();
     } catch {
@@ -78,7 +143,7 @@ const CandidateDetail: React.FC = () => {
             <Select value={candidate.status} onChange={handleStatusChange} style={{ width: 140 }}
               options={statusOptions.map((s) => ({ value: s, label: s }))}
             />
-            <Button type="primary" onClick={() => { form.setFieldsValue(candidate); setEditing(!editing); }}>
+            <Button type="primary" onClick={() => setEditing(!editing)}>
               {editing ? 'Cancel' : 'Edit'}
             </Button>
           </Space>
@@ -86,24 +151,156 @@ const CandidateDetail: React.FC = () => {
       >
         {editing ? (
           <Form form={form} layout="vertical" onFinish={handleUpdate} initialValues={candidate}>
-            <Form.Item name="name" label="Name" rules={[{ required: true }]}>
-              <Input />
-            </Form.Item>
-            <Form.Item name="phone" label="Phone"><Input /></Form.Item>
-            <Form.Item name="email" label="Email"><Input /></Form.Item>
-            <Form.Item name="notes" label="Notes"><Input.TextArea rows={3} /></Form.Item>
+            <Collapse
+              defaultActiveKey={['basic']}
+              items={[
+                {
+                  key: 'basic',
+                  label: 'Basic Information',
+                  children: (
+                    <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                      <Form.Item name="name" label="Name" rules={[{ required: true, message: 'Name is required' }]}>
+                        <Input />
+                      </Form.Item>
+                      <Form.Item name="phone" label="Phone"><Input /></Form.Item>
+                      <Form.Item name="email" label="Email"><Input /></Form.Item>
+                      <Form.Item name="id_number" label="ID Number"><Input /></Form.Item>
+                      <Form.Item name="country_code" label="Country">
+                        <Select options={countryOptions} />
+                      </Form.Item>
+                      <Form.Item name="date_of_birth" label="Date of Birth">
+                        <DatePicker style={{ width: '100%' }} />
+                      </Form.Item>
+                      <Form.Item name="gender" label="Gender">
+                        <Select options={genderOptions} placeholder="Select gender" allowClear />
+                      </Form.Item>
+                      <Form.Item name="nationality" label="Nationality"><Input /></Form.Item>
+                    </Space>
+                  ),
+                },
+                {
+                  key: 'address',
+                  label: 'Address',
+                  children: (
+                    <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                      <Form.Item name="address" label="Address"><Input /></Form.Item>
+                      <Form.Item name="city" label="City"><Input /></Form.Item>
+                      <Form.Item name="province" label="Province"><Input /></Form.Item>
+                      <Form.Item name="postal_code" label="Postal Code"><Input /></Form.Item>
+                    </Space>
+                  ),
+                },
+                {
+                  key: 'education',
+                  label: 'Education',
+                  children: (
+                    <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                      <Form.Item name="education_level" label="Education Level">
+                        <Select options={educationLevelOptions} placeholder="Select level" allowClear />
+                      </Form.Item>
+                      <Form.Item name="education_school" label="School"><Input /></Form.Item>
+                      <Form.Item name="education_major" label="Major"><Input /></Form.Item>
+                      <Form.Item name="education_year" label="Graduation Year"><Input placeholder="e.g. 2020" /></Form.Item>
+                    </Space>
+                  ),
+                },
+                {
+                  key: 'work',
+                  label: 'Work Experience',
+                  children: (
+                    <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                      <Form.Item name="work_experience_years" label="Years of Experience">
+                        <InputNumber min={0} precision={0} style={{ width: '100%' }} />
+                      </Form.Item>
+                      <Form.Item name="previous_employer" label="Previous Employer"><Input /></Form.Item>
+                      <Form.Item name="previous_position" label="Previous Position"><Input /></Form.Item>
+                      <Form.Item name="previous_duration" label="Previous Duration"><Input placeholder="e.g. 2 years" /></Form.Item>
+                      <Form.Item name="previous_duties" label="Previous Duties">
+                        <TextArea rows={2} />
+                      </Form.Item>
+                    </Space>
+                  ),
+                },
+                {
+                  key: 'skills',
+                  label: 'Skills & Certifications',
+                  children: (
+                    <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                      <Form.Item name="skills" label="Skills">
+                        <Select mode="tags" placeholder="Type and press Enter to add skills" />
+                      </Form.Item>
+                      <Form.Item name="languages" label="Languages"><Input /></Form.Item>
+                      <Form.Item name="certifications" label="Certifications"><Input /></Form.Item>
+                    </Space>
+                  ),
+                },
+                {
+                  key: 'emergency',
+                  label: 'Emergency Contact',
+                  children: (
+                    <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                      <Form.Item name="emergency_contact_name" label="Contact Name"><Input /></Form.Item>
+                      <Form.Item name="emergency_contact_phone" label="Contact Phone"><Input /></Form.Item>
+                      <Form.Item name="emergency_contact_relation" label="Relation"><Input /></Form.Item>
+                    </Space>
+                  ),
+                },
+                {
+                  key: 'other',
+                  label: 'Other',
+                  children: (
+                    <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                      <Form.Item name="source" label="Source">
+                        <Select options={sourceOptions} />
+                      </Form.Item>
+                      <Form.Item name="resume_text" label="Resume Text">
+                        <TextArea rows={3} />
+                      </Form.Item>
+                      <Form.Item name="resume_file_url" label="Resume File URL"><Input /></Form.Item>
+                      <Form.Item name="profile_photo_url" label="Profile Photo URL"><Input /></Form.Item>
+                      <Form.Item name="notes" label="Notes">
+                        <TextArea rows={3} />
+                      </Form.Item>
+                    </Space>
+                  ),
+                },
+              ]}
+              style={{ marginBottom: 16 }}
+            />
             <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>Save</Button>
           </Form>
         ) : (
           <Descriptions column={2} size="small">
-            <Descriptions.Item label="Phone">{candidate.phone || '-'}</Descriptions.Item>
-            <Descriptions.Item label="Email">{candidate.email || '-'}</Descriptions.Item>
-            <Descriptions.Item label="ID Number">{candidate.id_number || '-'}</Descriptions.Item>
-            <Descriptions.Item label="Country">{candidate.country_code}</Descriptions.Item>
+            <Descriptions.Item label="Name">{candidate.name}</Descriptions.Item>
             <Descriptions.Item label="Status"><StatusTag status={candidate.status} /></Descriptions.Item>
+            <Descriptions.Item label="Phone">{candidate.phone ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="Email">{candidate.email ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="ID Number">{candidate.id_number ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="Country">{candidate.country_code}</Descriptions.Item>
+            <Descriptions.Item label="Date of Birth">{candidate.date_of_birth ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="Gender">{candidate.gender ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="Nationality">{candidate.nationality ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="Address">{candidate.address ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="City">{candidate.city ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="Province">{candidate.province ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="Postal Code">{candidate.postal_code ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="Education Level">{candidate.education_level ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="School">{candidate.education_school ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="Major">{candidate.education_major ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="Graduation Year">{candidate.education_year ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="Years of Experience">{candidate.work_experience_years ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="Previous Employer">{candidate.previous_employer ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="Previous Position">{candidate.previous_position ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="Previous Duration">{candidate.previous_duration ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="Previous Duties">{candidate.previous_duties ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="Languages">{candidate.languages ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="Certifications">{candidate.certifications ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="Emergency Contact">{candidate.emergency_contact_name ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="Emergency Phone">{candidate.emergency_contact_phone ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="Emergency Relation">{candidate.emergency_contact_relation ?? '-'}</Descriptions.Item>
             <Descriptions.Item label="Source">{candidate.source}</Descriptions.Item>
             <Descriptions.Item label="Skills">{candidate.skills}</Descriptions.Item>
-            <Descriptions.Item label="Notes">{candidate.notes || '-'}</Descriptions.Item>
+            <Descriptions.Item label="Notes">{candidate.notes ?? '-'}</Descriptions.Item>
             <Descriptions.Item label="Created">{new Date(candidate.created_at).toLocaleString()}</Descriptions.Item>
           </Descriptions>
         )}

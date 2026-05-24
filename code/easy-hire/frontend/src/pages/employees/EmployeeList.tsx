@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Typography, Spin, Modal, Form, Input, Select, Tag, message } from 'antd';
+import { Table, Button, Typography, Spin, Modal, Form, Input, Select, Tag, DatePicker, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import api, { Employee, Candidate } from '../../api/client';
 import StatusTag from '../../components/StatusTag';
@@ -31,9 +31,14 @@ const EmployeeList: React.FC = () => {
     }
   };
 
-  const handleCreate = async (values: { candidate_id: string; employee_code?: string; department?: string; position?: string }) => {
+  const handleCreate = async (values: { candidate_id: string; employee_code?: string; department?: string; position?: string; contract_start?: any; contract_end?: any }) => {
     try {
-      await api.employees.create(values);
+      const payload = {
+        ...values,
+        contract_start: values.contract_start ? values.contract_start.format('YYYY-MM-DD') : undefined,
+        contract_end: values.contract_end ? values.contract_end.format('YYYY-MM-DD') : undefined,
+      };
+      await api.employees.create(payload);
       message.success('Employee created');
       setModalOpen(false);
       form.resetFields();
@@ -91,6 +96,12 @@ const EmployeeList: React.FC = () => {
           </Form.Item>
           <Form.Item name="position" label="Position">
             <Input placeholder="e.g. Factory Worker" />
+          </Form.Item>
+          <Form.Item name="contract_start" label="Contract Start">
+            <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item name="contract_end" label="Contract End">
+            <DatePicker style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit">Create Employee</Button>

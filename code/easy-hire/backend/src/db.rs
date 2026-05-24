@@ -1621,12 +1621,9 @@ impl D {
         Ok(())
     }
 
-    pub fn list_users(&self) -> Result<Vec<User>, E> {
+    pub fn list_users(&self, role: Option<&str>) -> Result<Vec<User>, E> {
         let c = self.conn()?;
-        let mut stmt = c.prepare(
-            "SELECT id, email, phone, password_hash, role, name, company_id, language_pref, active, created_at, updated_at FROM users ORDER BY created_at DESC"
-        )?;
-        let rows = stmt.query_map([], |row| {
+        let map_row = |row: &rusqlite::Row| -> rusqlite::Result<User> {
             Ok(User {
                 id: row.get(0)?,
                 email: row.get(1)?,
@@ -1640,8 +1637,23 @@ impl D {
                 created_at: row.get(9)?,
                 updated_at: row.get(10)?,
             })
-        })?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
+        };
+        match role {
+            Some(r) => {
+                let mut stmt = c.prepare(
+                    "SELECT id, email, phone, password_hash, role, name, company_id, language_pref, active, created_at, updated_at FROM users WHERE role = ?1 ORDER BY created_at DESC"
+                )?;
+                let rows = stmt.query_map(params![r], map_row)?;
+                Ok(rows.filter_map(|r| r.ok()).collect())
+            }
+            None => {
+                let mut stmt = c.prepare(
+                    "SELECT id, email, phone, password_hash, role, name, company_id, language_pref, active, created_at, updated_at FROM users ORDER BY created_at DESC"
+                )?;
+                let rows = stmt.query_map([], map_row)?;
+                Ok(rows.filter_map(|r| r.ok()).collect())
+            }
+        }
     }
 
     pub fn create_round(&self, r: &InterviewRound) -> Result<(), E> {

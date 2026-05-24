@@ -9,7 +9,7 @@ use axum::{
     routing::{get, post, put},
     Json,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tower_http::cors::{CorsLayer, Any};
 
@@ -39,6 +39,26 @@ pub struct CandidateQuery {
 #[derive(Deserialize)]
 pub struct InterviewQuery {
     pub status: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub struct UsersQuery {
+    pub role: Option<String>,
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserResponse {
+    pub id: String,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub role: String,
+    pub name: String,
+    pub company_id: Option<String>,
+    pub language_pref: String,
+    pub active: i64,
+    pub created_at: String,
+    pub updated_at: String,
 }
 
 #[derive(Deserialize)]
@@ -198,6 +218,7 @@ pub fn router(state: Arc<S>) -> Router {
     Router::new()
         .route("/api/v1/health", get(health))
         .route("/api/v1/stats", get(stats))
+        .route("/api/v1/users", get(list_users))
         .route("/api/v1/auth/login", post(auth_login))
         .route("/api/v1/auth/register", post(auth_register))
         .route("/api/v1/auth/refresh", post(auth_refresh))
@@ -298,6 +319,31 @@ async fn auth_refresh(
 ) -> Result<Json<serde_json::Value>, E> {
     let token = auth::create_token(&auth_user.id, &auth_user.role)?;
     Ok(Json(serde_json::json!({"token": token})))
+}
+
+async fn list_users(
+    State(s): State<Arc<S>>,
+    _auth_user: AuthUser,
+    Query(q): Query<UsersQuery>,
+) -> Json<Vec<UserResponse>> {
+    Json(
+        s.db.list_users(q.role.as_deref())
+            .unwrap_or_default()
+            .into_iter()
+            .map(|u| UserResponse {
+                id: u.id,
+                email: u.email,
+                phone: u.phone,
+                role: u.role,
+                name: u.name,
+                company_id: u.company_id,
+                language_pref: u.language_pref,
+                active: u.active,
+                created_at: u.created_at,
+                updated_at: u.updated_at,
+            })
+            .collect(),
+    )
 }
 
 async fn list_candidates(

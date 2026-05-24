@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Space, Typography, Spin, Modal, Input, Card, Descriptions, message } from 'antd';
+import { Table, Button, Space, Typography, Spin, Modal, Input, Card, Descriptions, message, Select } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, SwapOutlined } from '@ant-design/icons';
 import api, { Approval, Candidate } from '../../api/client';
 import StatusTag from '../../components/StatusTag';
@@ -11,6 +11,8 @@ const ApprovalList: React.FC = () => {
   const [actionModal, setActionModal] = useState<{ open: boolean; id: string; action: 'approve' | 'reject' | 'transfer' }>({ open: false, id: '', action: 'approve' });
   const [comments, setComments] = useState('');
   const [transferTo, setTransferTo] = useState('');
+  const [users, setUsers] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   const fetchData = () => {
     setLoading(true);
@@ -28,6 +30,14 @@ const ApprovalList: React.FC = () => {
       })
       .catch(() => message.error('Failed to load approvals'))
       .finally(() => setLoading(false));
+  };
+
+  const fetchUsers = () => {
+    setLoadingUsers(true);
+    api.users.list('manager')
+      .then(setUsers)
+      .catch(() => message.error('Failed to load users'))
+      .finally(() => setLoadingUsers(false));
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -49,6 +59,7 @@ const ApprovalList: React.FC = () => {
       setActionModal({ open: false, id: '', action: 'approve' });
       setComments('');
       setTransferTo('');
+      setUsers([]);
       fetchData();
     } catch {
       message.error('Action failed');
@@ -116,12 +127,23 @@ const ApprovalList: React.FC = () => {
         title={actionModal.action === 'approve' ? 'Approve' : actionModal.action === 'reject' ? 'Reject' : 'Transfer'}
         open={actionModal.open}
         onOk={handleAction}
-        onCancel={() => setActionModal({ open: false, id: '', action: 'approve' })}
+        onCancel={() => { setActionModal({ open: false, id: '', action: 'approve' }); setUsers([]); }}
       >
         {actionModal.action === 'transfer' && (
           <div style={{ marginBottom: 16 }}>
-            <Typography.Text>Transfer to User ID:</Typography.Text>
-            <Input placeholder="User UUID" value={transferTo} onChange={(e) => setTransferTo(e.target.value)} style={{ marginTop: 8 }} />
+            <Typography.Text>Transfer To:</Typography.Text>
+            <Select
+              showSearch
+              placeholder="Select a user"
+              loading={loadingUsers}
+              style={{ width: '100%', marginTop: 8 }}
+              value={transferTo || undefined}
+              onChange={(val) => setTransferTo(val)}
+              onFocus={fetchUsers}
+              filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+              options={users.map((u: any) => ({ value: u.id, label: `${u.name} (${u.role})` }))}
+              notFoundContent={loadingUsers ? 'Loading...' : 'No users found'}
+            />
           </div>
         )}
         <Typography.Text>Comments:</Typography.Text>

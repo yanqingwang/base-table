@@ -42,9 +42,31 @@ export interface Candidate {
   email: string | null;
   id_number: string | null;
   country_code: string;
+  date_of_birth: string | null;
+  gender: string | null;
+  nationality: string | null;
+  address: string | null;
+  city: string | null;
+  province: string | null;
+  postal_code: string | null;
+  education_level: string | null;
+  education_school: string | null;
+  education_major: string | null;
+  education_year: string | null;
+  work_experience_years: number | null;
+  previous_employer: string | null;
+  previous_position: string | null;
+  previous_duration: string | null;
+  previous_duties: string | null;
+  languages: string | null;
+  certifications: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
+  emergency_contact_relation: string | null;
   skills: string;
   resume_text: string | null;
   resume_file_url: string | null;
+  profile_photo_url: string | null;
   status: string;
   source: string;
   notes: string | null;
@@ -272,6 +294,10 @@ const api = {
       client.post<AuthResponse>('/auth/register', data).then((r) => r.data),
     me: () => client.get<User>('/auth/me').then((r) => r.data),
   },
+  users: {
+    list: (role?: string) =>
+      client.get<User[]>('/users', { params: { role } }).then((r) => r.data),
+  },
   candidates: {
     list: (params?: { status?: string; source?: string; q?: string }) =>
       client.get<Candidate[]>('/candidates', { params }).then((r) => r.data),
@@ -339,7 +365,7 @@ const api = {
   },
   employees: {
     list: () => client.get<Employee[]>('/employees').then((r) => r.data),
-    create: (data: { candidate_id: string; employee_code?: string; department?: string; position?: string }) =>
+    create: (data: { candidate_id: string; employee_code?: string; department?: string; position?: string; contract_start?: string; contract_end?: string }) =>
       client.post<Employee>('/employees', data).then((r) => r.data),
     get: (id: string) => client.get<Employee>(`/employees/${id}`).then((r) => r.data),
   },

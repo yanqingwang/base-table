@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Tag } from 'antd';
+import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Tag, Switch } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import api, { Course as ApiCourse } from '../../api/client';
 
@@ -26,6 +26,7 @@ const CourseList: React.FC = () => {
   useEffect(() => { fetchCourses(); }, []);
 
   const handleCreate = async (values: any) => {
+    values.mandatory = values.mandatory ? 1 : 0;
     try {
       await api.courses.create(values);
       message.success('Course created');
@@ -68,8 +69,8 @@ const CourseList: React.FC = () => {
           </Form.Item>
           <Form.Item name="duration_minutes" label="Duration (minutes)"><InputNumber min={0} style={{ width: '100%' }} /></Form.Item>
           <Form.Item name="pass_score" label="Pass Score (%)" initialValue={80}><InputNumber min={0} max={100} style={{ width: '100%' }} /></Form.Item>
-          <Form.Item name="mandatory" label="Mandatory" valuePropName="checked" getValueFromEvent={(e: any) => e ? 1 : 0}>
-            <Select><Option value={1}>Yes</Option><Option value={0}>No</Option></Select>
+          <Form.Item name="mandatory" label="Mandatory" valuePropName="checked">
+            <Switch />
           </Form.Item>
         </Form>
       </Modal>

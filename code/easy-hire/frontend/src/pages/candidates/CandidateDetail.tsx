@@ -128,7 +128,7 @@ const CandidateDetail: React.FC = () => {
   if (loading) return <Spin size="large" style={{ display: 'block', margin: '100px auto' }} />;
   if (!candidate) return <Typography.Text type="danger">Candidate not found</Typography.Text>;
 
-  const statusOptions = ['new', 'screened', 'interviewing', 'offered', 'hired', 'rejected'];
+  const statusOptions = ['new', 'applied', 'screened', 'interviewing', 'offered', 'signed', 'hired', 'rejected'];
 
   return (
     <div>

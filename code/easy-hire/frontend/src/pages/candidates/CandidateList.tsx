@@ -73,9 +73,11 @@ const CandidateList: React.FC = () => {
           style={{ width: 150 }}
           options={[
             { value: 'new', label: 'New' },
+            { value: 'applied', label: 'Applied' },
             { value: 'screened', label: 'Screened' },
             { value: 'interviewing', label: 'Interviewing' },
             { value: 'offered', label: 'Offered' },
+            { value: 'signed', label: 'Signed' },
             { value: 'hired', label: 'Hired' },
             { value: 'rejected', label: 'Rejected' },
           ]}

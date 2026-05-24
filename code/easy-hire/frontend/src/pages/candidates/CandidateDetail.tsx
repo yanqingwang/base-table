@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useLayoutEffect, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Card, Descriptions, Tag, Spin, Button, Space, Typography, Table, message, Select,
@@ -79,7 +79,7 @@ const CandidateDetail: React.FC = () => {
 
   useEffect(() => { fetchData(); }, [id]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (editing && candidate) {
       const values: Record<string, unknown> = { ...candidate };
       if (candidate.skills) {
@@ -90,6 +90,7 @@ const CandidateDetail: React.FC = () => {
       if (candidate.date_of_birth) {
         values.date_of_birth = dayjs(candidate.date_of_birth);
       }
+      form.resetFields();
       form.setFieldsValue(values);
     }
   }, [editing, candidate, form]);
@@ -150,124 +151,110 @@ const CandidateDetail: React.FC = () => {
         }
       >
         {editing ? (
-          <Form form={form} layout="vertical" onFinish={handleUpdate} initialValues={candidate}>
+          <Form form={form} layout="vertical" onFinish={handleUpdate}>
             <Collapse
               defaultActiveKey={['basic']}
+              style={{ marginBottom: 16 }}
               items={[
                 {
                   key: 'basic',
                   label: 'Basic Information',
-                  children: (
-                    <Space direction="vertical" style={{ width: '100%' }} size={12}>
-                      <Form.Item name="name" label="Name" rules={[{ required: true, message: 'Name is required' }]}>
-                        <Input />
-                      </Form.Item>
-                      <Form.Item name="phone" label="Phone"><Input /></Form.Item>
-                      <Form.Item name="email" label="Email"><Input /></Form.Item>
-                      <Form.Item name="id_number" label="ID Number"><Input /></Form.Item>
-                      <Form.Item name="country_code" label="Country">
-                        <Select options={countryOptions} />
-                      </Form.Item>
-                      <Form.Item name="date_of_birth" label="Date of Birth">
-                        <DatePicker style={{ width: '100%' }} />
-                      </Form.Item>
-                      <Form.Item name="gender" label="Gender">
-                        <Select options={genderOptions} placeholder="Select gender" allowClear />
-                      </Form.Item>
-                      <Form.Item name="nationality" label="Nationality"><Input /></Form.Item>
-                    </Space>
-                  ),
+                  children: (<>
+                    <Form.Item name="name" label="Name" rules={[{ required: true, message: 'Name is required' }]}>
+                      <Input />
+                    </Form.Item>
+                    <Form.Item name="phone" label="Phone"><Input /></Form.Item>
+                    <Form.Item name="email" label="Email"><Input /></Form.Item>
+                    <Form.Item name="id_number" label="ID Number"><Input /></Form.Item>
+                    <Form.Item name="country_code" label="Country">
+                      <Select options={countryOptions} />
+                    </Form.Item>
+                    <Form.Item name="date_of_birth" label="Date of Birth">
+                      <DatePicker style={{ width: '100%' }} />
+                    </Form.Item>
+                    <Form.Item name="gender" label="Gender">
+                      <Select options={genderOptions} placeholder="Select gender" allowClear />
+                    </Form.Item>
+                    <Form.Item name="nationality" label="Nationality"><Input /></Form.Item>
+                  </>),
                 },
                 {
                   key: 'address',
                   label: 'Address',
-                  children: (
-                    <Space direction="vertical" style={{ width: '100%' }} size={12}>
-                      <Form.Item name="address" label="Address"><Input /></Form.Item>
-                      <Form.Item name="city" label="City"><Input /></Form.Item>
-                      <Form.Item name="province" label="Province"><Input /></Form.Item>
-                      <Form.Item name="postal_code" label="Postal Code"><Input /></Form.Item>
-                    </Space>
-                  ),
+                  children: (<>
+                    <Form.Item name="address" label="Address"><Input /></Form.Item>
+                    <Form.Item name="city" label="City"><Input /></Form.Item>
+                    <Form.Item name="province" label="Province"><Input /></Form.Item>
+                    <Form.Item name="postal_code" label="Postal Code"><Input /></Form.Item>
+                  </>),
                 },
                 {
                   key: 'education',
                   label: 'Education',
-                  children: (
-                    <Space direction="vertical" style={{ width: '100%' }} size={12}>
-                      <Form.Item name="education_level" label="Education Level">
-                        <Select options={educationLevelOptions} placeholder="Select level" allowClear />
-                      </Form.Item>
-                      <Form.Item name="education_school" label="School"><Input /></Form.Item>
-                      <Form.Item name="education_major" label="Major"><Input /></Form.Item>
-                      <Form.Item name="education_year" label="Graduation Year"><Input placeholder="e.g. 2020" /></Form.Item>
-                    </Space>
-                  ),
+                  children: (<>
+                    <Form.Item name="education_level" label="Education Level">
+                      <Select options={educationLevelOptions} placeholder="Select level" allowClear />
+                    </Form.Item>
+                    <Form.Item name="education_school" label="School"><Input /></Form.Item>
+                    <Form.Item name="education_major" label="Major"><Input /></Form.Item>
+                    <Form.Item name="education_year" label="Graduation Year"><Input placeholder="e.g. 2020" /></Form.Item>
+                  </>),
                 },
                 {
                   key: 'work',
                   label: 'Work Experience',
-                  children: (
-                    <Space direction="vertical" style={{ width: '100%' }} size={12}>
-                      <Form.Item name="work_experience_years" label="Years of Experience">
-                        <InputNumber min={0} precision={0} style={{ width: '100%' }} />
-                      </Form.Item>
-                      <Form.Item name="previous_employer" label="Previous Employer"><Input /></Form.Item>
-                      <Form.Item name="previous_position" label="Previous Position"><Input /></Form.Item>
-                      <Form.Item name="previous_duration" label="Previous Duration"><Input placeholder="e.g. 2 years" /></Form.Item>
-                      <Form.Item name="previous_duties" label="Previous Duties">
-                        <TextArea rows={2} />
-                      </Form.Item>
-                    </Space>
-                  ),
+                  children: (<>
+                    <Form.Item name="work_experience_years" label="Years of Experience">
+                      <InputNumber min={0} precision={0} style={{ width: '100%' }} />
+                    </Form.Item>
+                    <Form.Item name="previous_employer" label="Previous Employer"><Input /></Form.Item>
+                    <Form.Item name="previous_position" label="Previous Position"><Input /></Form.Item>
+                    <Form.Item name="previous_duration" label="Previous Duration"><Input placeholder="e.g. 2 years" /></Form.Item>
+                    <Form.Item name="previous_duties" label="Previous Duties">
+                      <TextArea rows={2} />
+                    </Form.Item>
+                  </>),
                 },
                 {
                   key: 'skills',
                   label: 'Skills & Certifications',
-                  children: (
-                    <Space direction="vertical" style={{ width: '100%' }} size={12}>
-                      <Form.Item name="skills" label="Skills">
-                        <Select mode="tags" placeholder="Type and press Enter to add skills" />
-                      </Form.Item>
-                      <Form.Item name="languages" label="Languages"><Input /></Form.Item>
-                      <Form.Item name="certifications" label="Certifications"><Input /></Form.Item>
-                    </Space>
-                  ),
+                  children: (<>
+                    <Form.Item name="skills" label="Skills">
+                      <Select mode="tags" placeholder="Type and press Enter to add skills" />
+                    </Form.Item>
+                    <Form.Item name="languages" label="Languages"><Input /></Form.Item>
+                    <Form.Item name="certifications" label="Certifications"><Input /></Form.Item>
+                  </>),
                 },
                 {
                   key: 'emergency',
                   label: 'Emergency Contact',
-                  children: (
-                    <Space direction="vertical" style={{ width: '100%' }} size={12}>
-                      <Form.Item name="emergency_contact_name" label="Contact Name"><Input /></Form.Item>
-                      <Form.Item name="emergency_contact_phone" label="Contact Phone"><Input /></Form.Item>
-                      <Form.Item name="emergency_contact_relation" label="Relation"><Input /></Form.Item>
-                    </Space>
-                  ),
+                  children: (<>
+                    <Form.Item name="emergency_contact_name" label="Contact Name"><Input /></Form.Item>
+                    <Form.Item name="emergency_contact_phone" label="Contact Phone"><Input /></Form.Item>
+                    <Form.Item name="emergency_contact_relation" label="Relation"><Input /></Form.Item>
+                  </>),
                 },
                 {
                   key: 'other',
                   label: 'Other',
-                  children: (
-                    <Space direction="vertical" style={{ width: '100%' }} size={12}>
-                      <Form.Item name="source" label="Source">
-                        <Select options={sourceOptions} />
-                      </Form.Item>
-                      <Form.Item name="resume_text" label="Resume Text">
-                        <TextArea rows={3} />
-                      </Form.Item>
-                      <Form.Item name="resume_file_url" label="Resume File URL"><Input /></Form.Item>
-                      <Form.Item name="profile_photo_url" label="Profile Photo URL"><Input /></Form.Item>
-                      <Form.Item name="notes" label="Notes">
-                        <TextArea rows={3} />
-                      </Form.Item>
-                    </Space>
-                  ),
+                  children: (<>
+                    <Form.Item name="source" label="Source">
+                      <Select options={sourceOptions} />
+                    </Form.Item>
+                    <Form.Item name="resume_text" label="Resume Text">
+                      <TextArea rows={3} />
+                    </Form.Item>
+                    <Form.Item name="resume_file_url" label="Resume File URL"><Input /></Form.Item>
+                    <Form.Item name="profile_photo_url" label="Profile Photo URL"><Input /></Form.Item>
+                    <Form.Item name="notes" label="Notes">
+                      <TextArea rows={3} />
+                    </Form.Item>
+                  </>),
                 },
               ]}
-              style={{ marginBottom: 16 }}
             />
-            <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>Save</Button>
+            <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>Save Changes</Button>
           </Form>
         ) : (
           <Descriptions column={2} size="small">

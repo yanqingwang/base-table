@@ -135,6 +135,7 @@ export interface Employee {
   training_completed: number;
   ehs_certified: number;
   status: string;
+  sf_sync_status?: string;
   created_at: string;
   updated_at: string;
 }

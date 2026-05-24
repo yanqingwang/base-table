@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Typography, Spin, Modal, Form, Input, Select, message } from 'antd';
+import { Table, Button, Typography, Spin, Modal, Form, Input, Select, Tag, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import api, { Employee, Candidate } from '../../api/client';
 import StatusTag from '../../components/StatusTag';
@@ -52,6 +52,16 @@ const EmployeeList: React.FC = () => {
     { title: 'Status', dataIndex: 'status', key: 'status', render: (s: string) => <StatusTag status={s} /> },
     { title: 'Training', dataIndex: 'training_completed', key: 'training', render: (v: number) => v ? 'Yes' : 'No' },
     { title: 'EHS Certified', dataIndex: 'ehs_certified', key: 'ehs', render: (v: number) => v ? 'Yes' : 'No' },
+    {
+      title: 'SF Sync',
+      dataIndex: 'sf_sync_status',
+      key: 'sf_sync',
+      render: (v?: string) => {
+        if (!v) return <Tag>unknown</Tag>;
+        const colors: Record<string, string> = { synced: 'green', pending: 'orange', failed: 'red' };
+        return <Tag color={colors[v] || 'default'}>{v}</Tag>;
+      },
+    },
   ];
 
   return (

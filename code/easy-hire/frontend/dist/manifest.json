@@ -1,0 +1,10 @@
+{
+  "name": "DL Hire - Blue Collar Onboarding",
+  "short_name": "DL Hire",
+  "description": "Southeast Asia blue-collar employee onboarding platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#001529",
+  "theme_color": "#001529",
+  "icons": []
+}

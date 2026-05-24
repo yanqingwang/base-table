@@ -21,6 +21,9 @@ const InterviewList: React.FC = () => {
   const loadJobs = () => api.jobs.list().then(setJobs).catch(() => {});
   const loadCandidates = () => api.candidates.list({}).then(setCandidates).catch(() => {});
 
+  const candidateMap = Object.fromEntries(candidates.map(c => [c.id, c.name]));
+  const jobMap = Object.fromEntries(jobs.map(j => [j.id, j.title]));
+
   const fetchData = () => {
     setLoading(true);
     api.interviews.list({ status: statusFilter })
@@ -30,6 +33,7 @@ const InterviewList: React.FC = () => {
   };
 
   useEffect(() => { fetchData(); }, [statusFilter]);
+  useEffect(() => { loadJobs(); loadCandidates(); }, []);
 
   const handleCreate = async (values: { candidate_id: string; job_id: string; scheduled_at: string }) => {
     try {
@@ -71,8 +75,8 @@ const InterviewList: React.FC = () => {
   };
 
   const columns = [
-    { title: 'Candidate ID', dataIndex: 'candidate_id', key: 'candidate_id', ellipsis: true },
-    { title: 'Job Title', dataIndex: 'job_title', key: 'job_title' },
+    { title: 'Candidate', dataIndex: 'candidate_id', key: 'candidate', render: (id: string) => candidateMap[id] || id?.substring(0, 8) || '-' },
+    { title: 'Job', dataIndex: 'job_id', key: 'job', render: (id: string) => jobMap[id] || id?.substring(0, 8) || '-' },
     { title: 'Scheduled', dataIndex: 'scheduled_at', key: 'scheduled_at', render: (d: string) => d ? new Date(d).toLocaleString() : '-' },
     { title: 'Status', dataIndex: 'status', key: 'status', render: (s: string) => <StatusTag status={s} /> },
     { title: 'Result', dataIndex: 'result', key: 'result', render: (r: string | null) => r ? <StatusTag status={r} /> : '-' },

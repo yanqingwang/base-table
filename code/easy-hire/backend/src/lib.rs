@@ -264,8 +264,12 @@ async fn health() -> &'static str {
     "OK"
 }
 
-async fn stats(State(s): State<Arc<S>>) -> Result<Json<Value>, E> {
-    s.db.stats().map(Json)
+async fn stats(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+) -> Result<Json<Value>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter", "manager"])?;
+    s.db.enhanced_stats().map(Json)
 }
 
 async fn auth_login(

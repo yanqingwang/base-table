@@ -1921,6 +1921,114 @@ impl D {
         }
         Ok(result)
     }
+
+    pub fn enhanced_stats(&self) -> Result<Value, E> {
+        let c = self.conn()?;
+
+        // Basic candidate stats
+        let total_candidates: i64 = c.query_row("SELECT COUNT(*) FROM candidates", [], |r| r.get(0))?;
+
+        // Candidates by status
+        let mut by_status = HashMap::new();
+        let mut stmt = c.prepare("SELECT status, COUNT(*) FROM candidates GROUP BY status")?;
+        let rows = stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+        })?;
+        for row in rows.flatten() {
+            by_status.insert(row.0, row.1);
+        }
+
+        // Candidates by source
+        let mut by_source = HashMap::new();
+        let mut stmt = c.prepare("SELECT source, COUNT(*) FROM candidates GROUP BY source")?;
+        let rows = stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+        })?;
+        for row in rows.flatten() {
+            by_source.insert(row.0, row.1);
+        }
+
+        // Jobs stats
+        let active_jobs: i64 = c.query_row("SELECT COUNT(*) FROM jobs WHERE status='active'", [], |r| r.get(0))?;
+        let total_jobs: i64 = c.query_row("SELECT COUNT(*) FROM jobs", [], |r| r.get(0))?;
+        let total_views: i64 = c.query_row("SELECT COALESCE(SUM(views), 0) FROM jobs", [], |r| r.get(0))?;
+
+        // Applications stats
+        let total_apps: i64 = c.query_row("SELECT COUNT(*) FROM job_applications", [], |r| r.get(0))?;
+        let mut apps_by_status = HashMap::new();
+        let mut stmt = c.prepare("SELECT status, COUNT(*) FROM job_applications GROUP BY status")?;
+        let rows = stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+        })?;
+        for row in rows.flatten() {
+            apps_by_status.insert(row.0, row.1);
+        }
+
+        // Interview stats
+        let total_interviews: i64 = c.query_row("SELECT COUNT(*) FROM interviews", [], |r| r.get(0))?;
+        let completed_interviews: i64 = c.query_row("SELECT COUNT(*) FROM interviews WHERE status='completed'", [], |r| r.get(0))?;
+
+        // Employee stats
+        let total_employees: i64 = c.query_row("SELECT COUNT(*) FROM employees", [], |r| r.get(0))?;
+        let active_employees: i64 = c.query_row("SELECT COUNT(*) FROM employees WHERE status='active'", [], |r| r.get(0))?;
+
+        // Funnel: hired, rejected
+        let hired: i64 = c.query_row("SELECT COUNT(*) FROM candidates WHERE status='hired'", [], |r| r.get(0))?;
+        let rejected: i64 = c.query_row("SELECT COUNT(*) FROM candidates WHERE status='rejected'", [], |r| r.get(0))?;
+        let conversion_rate = if total_candidates > 0 {
+            format!("{:.1}%", (hired as f64 / total_candidates as f64) * 100.0)
+        } else {
+            "0.0%".to_string()
+        };
+
+        // Average time-to-hire (days between candidate creation and employee hired_at)
+        let avg_days: Option<f64> = c.query_row(
+            "SELECT AVG(julianday(e.hired_at) - julianday(c.created_at)) FROM employees e JOIN candidates c ON e.candidate_id = c.id WHERE e.hired_at IS NOT NULL",
+            [],
+            |r| r.get(0),
+        ).ok().flatten();
+
+        // Interview evaluations stats
+        let total_evaluations: i64 = c.query_row("SELECT COUNT(*) FROM interview_evaluations", [], |r| r.get(0))?;
+        let avg_eval_score: Option<f64> = c.query_row(
+            "SELECT AVG(overall_score) FROM interview_evaluations WHERE overall_score IS NOT NULL",
+            [],
+            |r| r.get(0),
+        ).ok().flatten();
+
+        Ok(serde_json::json!({
+            "total_candidates": total_candidates,
+            "by_status": by_status,
+            "by_source": by_source,
+            "jobs": {
+                "active": active_jobs,
+                "total": total_jobs,
+                "total_views": total_views,
+            },
+            "applications": {
+                "total": total_apps,
+                "by_status": apps_by_status,
+            },
+            "interviews": {
+                "total": total_interviews,
+                "completed": completed_interviews,
+            },
+            "employees": {
+                "total": total_employees,
+                "active": active_employees,
+            },
+            "funnel": {
+                "hired": hired,
+                "rejected": rejected,
+                "conversion_rate": conversion_rate,
+                "avg_time_to_hire_days": avg_days,
+            },
+            "evaluations": {
+                "total": total_evaluations,
+                "average_score": avg_eval_score,
+            },
+        }))
+    }
 }
 
 fn parse_csv_line(line: &str) -> Vec<String> {

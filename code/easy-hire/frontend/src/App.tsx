@@ -17,9 +17,6 @@ import ApprovalList from './pages/approvals/ApprovalList';
 import AgencyCandidates from './pages/agency/AgencyCandidates';
 import EmployeeList from './pages/employees/EmployeeList';
 import Reports from './pages/Reports';
-import CourseList from './pages/training/CourseList';
-import TrainingRecords from './pages/training/TrainingRecords';
-import CertificateView from './pages/training/CertificateView';
 import JobBoard from './pages/jobs/JobBoard';
 import JobDetail from './pages/jobs/JobDetail';
 import ApplyForm from './pages/apply/ApplyForm';
@@ -76,9 +73,6 @@ const App: React.FC = () => {
         <Route path="/agency/candidates" element={<AgencyCandidates />} />
         <Route path="/employees" element={<EmployeeList />} />
         <Route path="/reports" element={<Reports />} />
-        <Route path="/training/courses" element={<CourseList />} />
-        <Route path="/training/records" element={<TrainingRecords />} />
-        <Route path="/training/certificate/:id" element={<CertificateView />} />
         <Route path="/admin/jobs" element={<AdminJobList />} />
         <Route path="/admin/docusign" element={<DocuSignPanel />} />
         <Route path="/admin/export" element={<ExportPanel />} />

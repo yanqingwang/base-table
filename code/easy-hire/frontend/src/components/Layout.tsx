@@ -9,7 +9,6 @@ import {
   UserOutlined,
   LogoutOutlined,
   ImportOutlined,
-  BookOutlined,
   FileTextOutlined,
   FileProtectOutlined,
   DownloadOutlined,
@@ -41,16 +40,6 @@ const Layout: React.FC = () => {
         { key: '/interviews', icon: <ScheduleOutlined />, label: 'Interviews' },
         { key: '/approvals', icon: <CheckCircleOutlined />, label: 'Approvals' },
         { key: '/employees', icon: <UserOutlined />, label: 'Employees' },
-        {
-          key: 'training',
-          icon: <BookOutlined />,
-          label: 'Training',
-          children: [
-            { key: '/training/courses', label: 'Courses' },
-            { key: '/training/records', label: 'Records' },
-            { key: '/training/certificate', label: 'Certificates' },
-          ],
-        },
         { key: '/reports', icon: <FileTextOutlined />, label: 'Reports' },
         { key: '/admin/jobs', icon: <FileTextOutlined />, label: 'Jobs' },
         { key: '/admin/docusign', icon: <FileProtectOutlined />, label: 'DocuSign' },
@@ -62,7 +51,6 @@ const Layout: React.FC = () => {
 
   const selectedKey = (() => {
     const parts = location.pathname.split('/').filter(Boolean);
-    if (parts[0] === 'training' && parts[1]) return `/training/${parts[1]}`;
     return '/' + parts[0];
   })();
 

@@ -178,10 +178,6 @@ export interface Employee {
   hired_at: string | null;
   contract_start: string | null;
   contract_end: string | null;
-  training_completed: number;
-  ehs_certified: number;
-  status: string;
-  sf_sync_status?: string;
   created_at: string;
   updated_at: string;
 }
@@ -228,52 +224,6 @@ export interface HiringFunnelReport {
   hired: number;
   rejected: number;
   conversion_rate: number;
-}
-
-export interface TrainingStatusReport {
-  total_employees: number;
-  training_completed: number;
-  ehs_certified: number;
-}
-
-export interface EhsComplianceReport {
-  total_employees: number;
-  ehs_certified: number;
-  compliance_rate: number;
-  ehs_courses_available: number;
-}
-
-export interface Course {
-  id: string;
-  title: string;
-  type: string;
-  country: string;
-  mandatory: number;
-  duration: number;
-  pass_score: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface TrainingRecord {
-  id: string;
-  employee_id: string;
-  course_id: string;
-  started_at: string;
-  completed_at: string | null;
-  score: number | null;
-  passed: number | null;
-  certificate_url: string | null;
-}
-
-export interface Certificate {
-  id: string;
-  employee_id: string;
-  course_id: string;
-  issued_at: string;
-  certificate_url: string;
-  score: number;
-  status: string;
 }
 
 export interface Job {
@@ -417,33 +367,10 @@ const api = {
     sign: (id: string, signature_method?: string) =>
       client.post(`/documents/${id}/sign`, { signature_method }).then((r) => r.data),
   },
-  courses: {
-    list: () => client.get<Course[]>('/courses').then((r) => r.data),
-    create: (data: Partial<Course>) =>
-      client.post<Course>('/courses', data).then((r) => r.data),
-    get: (id: string) => client.get<Course>(`/courses/${id}`).then((r) => r.data),
-    update: (id: string, data: Partial<Course>) =>
-      client.put<Course>(`/courses/${id}`, data).then((r) => r.data),
-  },
-  training: {
-    start: (data: { employee_id: string; course_id: string }) =>
-      client.post<TrainingRecord>('/training/start', data).then((r) => r.data),
-    complete: (data: { employee_id: string; course_id: string; score: number }) =>
-      client.post<TrainingRecord>('/training/complete', data).then((r) => r.data),
-    records: (params?: { employee_id?: string }) =>
-      client.get<TrainingRecord[]>('/training/records', { params }).then((r) => r.data),
-  },
-  certificates: {
-    get: (id: string) => client.get<Certificate>(`/training/certificate/${id}`).then((r) => r.data),
-  },
   stats: () => client.get<StatsResponse>('/stats').then((r) => r.data),
   reports: {
     hiringFunnel: () =>
       client.get<HiringFunnelReport>('/reports/hiring-funnel').then((r) => r.data),
-    trainingStatus: () =>
-      client.get<TrainingStatusReport>('/reports/training-status').then((r) => r.data),
-    ehsCompliance: () =>
-      client.get<EhsComplianceReport>('/reports/ehs-compliance').then((r) => r.data),
   },
   jobs: {
     publicList: (params?: { q?: string }) =>

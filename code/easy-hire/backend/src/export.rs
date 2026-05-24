@@ -35,18 +35,16 @@ pub async fn export_employees(
 ) -> Result<impl IntoResponse, E> {
     auth::check_role(&auth_user, &["admin", "recruiter"])?;
     let employees = s.db.list_all_employees()?;
-    let mut csv = String::from("id,code,department,position,hired_at,status,training_completed,ehs_certified,sf_sync_status,docusign_status\n");
+    let mut csv = String::from("id,code,department,position,hired_at,status,sf_sync_status,docusign_status\n");
     for e in employees {
         csv.push_str(&format!(
-            "{},{},{},{},{},{},{},{},{},{}\n",
+            "{},{},{},{},{},{},{},{}\n",
             csv_escape(&e.id),
             csv_escape(&e.employee_code.unwrap_or_default()),
             csv_escape(&e.department.unwrap_or_default()),
             csv_escape(&e.position.unwrap_or_default()),
             csv_escape(&e.hired_at.unwrap_or_default()),
             csv_escape(&e.status),
-            csv_escape(&e.training_completed.to_string()),
-            csv_escape(&e.ehs_certified.to_string()),
             csv_escape(&e.sf_sync_status.unwrap_or_default()),
             csv_escape(&e.docusign_status.unwrap_or_default()),
         ));
@@ -63,13 +61,14 @@ pub async fn export_interviews(
 ) -> Result<impl IntoResponse, E> {
     auth::check_role(&auth_user, &["admin", "recruiter"])?;
     let interviews = s.db.list_all_interviews()?;
-    let mut csv = String::from("id,candidate_id,job_title,scheduled_at,status,result,score,created_at\n");
+    let mut csv = String::from("id,candidate_id,job_title,job_id,scheduled_at,status,result,score,created_at\n");
     for i in interviews {
         csv.push_str(&format!(
-            "{},{},{},{},{},{},{},{}\n",
+            "{},{},{},{},{},{},{},{},{}\n",
             csv_escape(&i.id),
             csv_escape(&i.candidate_id),
             csv_escape(&i.job_title.unwrap_or_default()),
+            csv_escape(&i.job_id.unwrap_or_default()),
             csv_escape(&i.scheduled_at.unwrap_or_default()),
             csv_escape(&i.status),
             csv_escape(&i.result.unwrap_or_default()),

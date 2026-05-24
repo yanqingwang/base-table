@@ -22,7 +22,7 @@ pub mod jobs;
 pub mod successfactors;
 
 use auth::AuthUser;
-use db::{D, Candidate, CandidateEducation, CandidateWorkExperience, CandidateSkill, CandidateCertificate, CandidateAddress, CandidateFamilyMember, CandidateBankAccount, CandidateCountryField, Interview, InterviewRound, InterviewAssignment, InterviewEvaluation, InterviewQueue, Approval, Employee, Document, TrainingCourse, TrainingRecord, Country, Currency, Department, Location, JobCategory};
+use db::{D, Candidate, CandidateEducation, CandidateWorkExperience, CandidateSkill, CandidateCertificate, CandidateAddress, CandidateFamilyMember, CandidateBankAccount, CandidateCountryField, Interview, InterviewRound, InterviewAssignment, InterviewEvaluation, InterviewQueue, Approval, Employee, Document, Country, Currency, Department, Location, JobCategory};
 use error::E;
 
 pub struct S {
@@ -118,32 +118,6 @@ pub struct DocInput {
 #[derive(Deserialize)]
 pub struct SignInput {
     pub signature_method: Option<String>,
-}
-
-#[derive(Deserialize)]
-pub struct CourseInput {
-    pub title: String,
-    pub course_type: Option<String>,
-    pub country: Option<String>,
-    pub content_type: Option<String>,
-    pub content_url: Option<String>,
-    pub mandatory: Option<i64>,
-    pub duration_minutes: Option<i64>,
-    pub pass_score: Option<i64>,
-}
-
-#[derive(Deserialize)]
-pub struct TrainingStartInput {
-    pub employee_id: String,
-    pub course_id: String,
-}
-
-#[derive(Deserialize)]
-pub struct TrainingCompleteInput {
-    pub record_id: String,
-    pub score: Option<i64>,
-    pub passed: Option<i64>,
-    pub certificate_url: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -278,13 +252,7 @@ pub fn router(state: Arc<S>) -> Router {
         .route("/api/v1/interviews/:id/aggregate", get(aggregate_evaluations))
         .route("/api/v1/evaluations", post(submit_evaluation))
         .route("/api/v1/reports/hiring-funnel", get(report_hiring_funnel))
-        .route("/api/v1/reports/training-status", get(report_training_status))
-        .route("/api/v1/reports/ehs-compliance", get(report_ehs_compliance))
-        .route("/api/v1/courses", get(list_courses).post(create_course))
-        .route("/api/v1/courses/:id", get(get_course).put(update_course))
-        .route("/api/v1/training/start", post(start_training))
-        .route("/api/v1/training/complete", post(complete_training))
-        .route("/api/v1/training/records", get(training_records))
+
         .route("/api/v1/approvals", post(create_approval))
         .route("/api/v1/approvals/pending", get(pending_approvals))
         .route("/api/v1/approvals/:id/approve", post(approve_approval))
@@ -299,7 +267,6 @@ pub fn router(state: Arc<S>) -> Router {
         .route("/api/v1/documents/:id/generate", post(generate_contract))
         .route("/api/v1/documents/:id/download", get(download_document))
         .route("/api/v1/documents/ocr", post(ocr_document))
-        .route("/api/v1/training/certificate/:id", get(get_certificate))
         .route("/api/v1/webhooks/whatsapp", post(whatsapp_webhook))
         .route("/api/v1/jobs/public", get(jobs::public_list_jobs))
         .route("/api/v1/jobs/public/:id", get(jobs::public_get_job))
@@ -843,8 +810,6 @@ async fn create_employee(
         hired_at: Some(now.clone()),
         contract_start: None,
         contract_end: None,
-        training_completed: 0,
-        ehs_certified: 0,
         status: "active".to_string(),
         created_at: now.clone(),
         updated_at: now.clone(),
@@ -1013,27 +978,6 @@ async fn update_employee_handler(
     s.db.employee_by_id(&id).map(Json)
 }
 
-async fn get_certificate(
-    State(s): State<Arc<S>>,
-    Path(id): Path<String>,
-) -> Result<Json<Value>, E> {
-    let record = s.db.training_record_by_id(&id)?;
-    if let Some(ref url) = record.certificate_url {
-        Ok(Json(serde_json::json!({
-            "record_id": id,
-            "certificate_url": url,
-            "issued": record.completed_at,
-        })))
-    } else {
-        Ok(Json(serde_json::json!({
-            "record_id": id,
-            "certificate_url": null,
-            "status": "pending",
-            "message": "Certificate not yet generated. Complete training with passing score to generate.",
-        })))
-    }
-}
-
 async fn whatsapp_webhook(
     Json(input): Json<WhatsAppInput>,
 ) -> Result<Json<Value>, E> {
@@ -1080,130 +1024,6 @@ async fn report_hiring_funnel(
         "rejected": rejected,
         "conversion_rate": if total > 0 { format!("{:.1}%", hired as f64 / total as f64 * 100.0) } else { "0%".to_string() },
     })))
-}
-
-async fn report_training_status(
-    State(s): State<Arc<S>>,
-) -> Result<Json<Value>, E> {
-    let employees = s.db.list_employees()?;
-    let total = employees.len();
-    let trained = employees.iter().filter(|e| e.training_completed > 0).count();
-    let certified = employees.iter().filter(|e| e.ehs_certified > 0).count();
-    Ok(Json(serde_json::json!({
-        "total_employees": total,
-        "training_completed": trained,
-        "ehs_certified": certified,
-    })))
-}
-
-async fn report_ehs_compliance(
-    State(s): State<Arc<S>>,
-) -> Result<Json<Value>, E> {
-    let employees = s.db.list_employees()?;
-    let total = employees.len();
-    let certified = employees.iter().filter(|e| e.ehs_certified > 0).count();
-    let ehs_courses = s.db.list_courses()?;
-    let courses = ehs_courses.iter().filter(|c| c.course_type == "ehs").count();
-    Ok(Json(serde_json::json!({
-        "total_employees": total,
-        "ehs_certified": certified,
-        "compliance_rate": if total > 0 { format!("{:.1}%", certified as f64 / total as f64 * 100.0) } else { "0%".to_string() },
-        "ehs_courses_available": courses,
-    })))
-}
-
-async fn list_courses(
-    State(s): State<Arc<S>>,
-) -> Result<Json<Vec<TrainingCourse>>, E> {
-    s.db.list_courses().map(Json)
-}
-
-async fn create_course(
-    State(s): State<Arc<S>>,
-    auth_user: AuthUser,
-    Json(input): Json<CourseInput>,
-) -> Result<Json<TrainingCourse>, E> {
-    auth::check_role(&auth_user, &["admin", "trainer"])?;
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
-    let course = TrainingCourse {
-        id: id.clone(),
-        title: input.title,
-        course_type: input.course_type.unwrap_or_else(|| "onboarding".to_string()),
-        country: input.country.unwrap_or_else(|| "all".to_string()),
-        content_type: input.content_type.unwrap_or_else(|| "video".to_string()),
-        content_url: input.content_url,
-        mandatory: input.mandatory.unwrap_or(0),
-        duration_minutes: input.duration_minutes,
-        order_index: None,
-        pass_score: input.pass_score,
-        created_at: now,
-    };
-    s.db.create_course(&course)?;
-    s.db.course_by_id(&id).map(Json)
-}
-
-async fn get_course(
-    State(s): State<Arc<S>>,
-    Path(id): Path<String>,
-) -> Result<Json<TrainingCourse>, E> {
-    s.db.course_by_id(&id).map(Json)
-}
-
-async fn update_course(
-    State(s): State<Arc<S>>,
-    Path(id): Path<String>,
-    Json(input): Json<CourseInput>,
-) -> Result<Json<TrainingCourse>, E> {
-    let mut course = s.db.course_by_id(&id)?;
-    course.title = input.title;
-    if let Some(t) = input.course_type { course.course_type = t; }
-    if let Some(c) = input.country { course.country = c; }
-    if let Some(ct) = input.content_type { course.content_type = ct; }
-    course.content_url = input.content_url;
-    if let Some(m) = input.mandatory { course.mandatory = m; }
-    course.duration_minutes = input.duration_minutes;
-    course.pass_score = input.pass_score;
-    s.db.update_course(&id, &course)?;
-    s.db.course_by_id(&id).map(Json)
-}
-
-async fn start_training(
-    State(s): State<Arc<S>>,
-    Json(input): Json<TrainingStartInput>,
-) -> Result<Json<TrainingRecord>, E> {
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
-    let record = TrainingRecord {
-        id: id.clone(),
-        employee_id: input.employee_id,
-        course_id: input.course_id,
-        started_at: Some(now),
-        completed_at: None,
-        score: None,
-        passed: 0,
-        certificate_url: None,
-        created_at: chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string(),
-    };
-    s.db.create_training_record(&record)?;
-    s.db.training_record_by_id(&id).map(Json)
-}
-
-async fn complete_training(
-    State(s): State<Arc<S>>,
-    Json(input): Json<TrainingCompleteInput>,
-) -> Result<Json<TrainingRecord>, E> {
-    let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
-    s.db.complete_training(&input.record_id, &now, input.score, input.passed.unwrap_or(0), input.certificate_url.as_deref())?;
-    s.db.training_record_by_id(&input.record_id).map(Json)
-}
-
-async fn training_records(
-    State(s): State<Arc<S>>,
-    Query(q): Query<std::collections::HashMap<String, String>>,
-) -> Result<Json<Vec<TrainingRecord>>, E> {
-    let employee_id = q.get("employee_id").map(|s| s.as_str());
-    s.db.list_training_records(employee_id).map(Json)
 }
 
 async fn create_round(

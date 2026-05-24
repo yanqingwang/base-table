@@ -55,8 +55,6 @@ const EmployeeList: React.FC = () => {
     { title: 'Position', dataIndex: 'position', key: 'position' },
     { title: 'Hired At', dataIndex: 'hired_at', key: 'hired_at', render: (d: string) => d ? new Date(d).toLocaleDateString() : '-' },
     { title: 'Status', dataIndex: 'status', key: 'status', render: (s: string) => <StatusTag status={s} /> },
-    { title: 'Training', dataIndex: 'training_completed', key: 'training', render: (v: number) => v ? 'Yes' : 'No' },
-    { title: 'EHS Certified', dataIndex: 'ehs_certified', key: 'ehs', render: (v: number) => v ? 'Yes' : 'No' },
     {
       title: 'SF Sync',
       dataIndex: 'sf_sync_status',

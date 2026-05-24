@@ -149,8 +149,6 @@ pub struct Employee {
     pub hired_at: Option<String>,
     pub contract_start: Option<String>,
     pub contract_end: Option<String>,
-    pub training_completed: i64,
-    pub ehs_certified: i64,
     pub status: String,
     pub created_at: String,
     pub updated_at: String,
@@ -227,34 +225,6 @@ pub struct AuditEntry {
     pub entity_type: Option<String>,
     pub entity_id: Option<String>,
     pub details: String,
-    pub created_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct TrainingCourse {
-    pub id: String,
-    pub title: String,
-    pub course_type: String,
-    pub country: String,
-    pub content_type: String,
-    pub content_url: Option<String>,
-    pub mandatory: i64,
-    pub duration_minutes: Option<i64>,
-    pub order_index: Option<i64>,
-    pub pass_score: Option<i64>,
-    pub created_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct TrainingRecord {
-    pub id: String,
-    pub employee_id: String,
-    pub course_id: String,
-    pub started_at: Option<String>,
-    pub completed_at: Option<String>,
-    pub score: Option<i64>,
-    pub passed: i64,
-    pub certificate_url: Option<String>,
     pub created_at: String,
 }
 
@@ -537,8 +507,6 @@ impl D {
                 hired_at TEXT,
                 contract_start TEXT,
                 contract_end TEXT,
-                training_completed INTEGER DEFAULT 0,
-                ehs_certified INTEGER DEFAULT 0,
                 status TEXT DEFAULT 'active' CHECK(status IN ('active','inactive','terminated')),
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now')),
@@ -571,34 +539,6 @@ impl D {
                 details TEXT DEFAULT '{}',
                 created_at TEXT DEFAULT (datetime('now')),
                 FOREIGN KEY (user_id) REFERENCES users(id)
-            );
-
-            CREATE TABLE IF NOT EXISTS training_courses (
-                id TEXT PRIMARY KEY,
-                title TEXT NOT NULL,
-                course_type TEXT NOT NULL DEFAULT 'onboarding' CHECK(course_type IN ('onboarding','ehs','skills','compliance')),
-                country TEXT DEFAULT 'all',
-                content_type TEXT DEFAULT 'video' CHECK(content_type IN ('video','animation','document','quiz')),
-                content_url TEXT,
-                mandatory INTEGER DEFAULT 0,
-                duration_minutes INTEGER,
-                order_index INTEGER,
-                pass_score INTEGER DEFAULT 80,
-                created_at TEXT DEFAULT (datetime('now'))
-            );
-
-            CREATE TABLE IF NOT EXISTS training_records (
-                id TEXT PRIMARY KEY,
-                employee_id TEXT NOT NULL,
-                course_id TEXT NOT NULL,
-                started_at TEXT,
-                completed_at TEXT,
-                score INTEGER,
-                passed INTEGER DEFAULT 0,
-                certificate_url TEXT,
-                created_at TEXT DEFAULT (datetime('now')),
-                FOREIGN KEY (employee_id) REFERENCES employees(id),
-                FOREIGN KEY (course_id) REFERENCES training_courses(id)
             );
 
             CREATE TABLE IF NOT EXISTS jobs (
@@ -1468,7 +1408,7 @@ impl D {
     pub fn list_employees(&self) -> Result<Vec<Employee>, E> {
         let c = self.conn()?;
         let mut stmt = c.prepare(
-            "SELECT id, candidate_id, employee_code, company_id, department, position, hired_at, contract_start, contract_end, training_completed, ehs_certified, status, created_at, updated_at, sf_sync_status, sf_synced_at, docusign_envelope_id, docusign_status FROM employees ORDER BY created_at DESC"
+            "SELECT id, candidate_id, employee_code, company_id, department, position, hired_at, contract_start, contract_end, status, created_at, updated_at, sf_sync_status, sf_synced_at, docusign_envelope_id, docusign_status FROM employees ORDER BY created_at DESC"
         )?;
         let rows = stmt.query_map([], |row| {
             Ok(Employee {
@@ -1481,15 +1421,13 @@ impl D {
                 hired_at: row.get(6)?,
                 contract_start: row.get(7)?,
                 contract_end: row.get(8)?,
-                training_completed: row.get(9)?,
-                ehs_certified: row.get(10)?,
-                status: row.get(11)?,
-                created_at: row.get(12)?,
-                updated_at: row.get(13)?,
-                sf_sync_status: row.get(14)?,
-                sf_synced_at: row.get(15)?,
-                docusign_envelope_id: row.get(16)?,
-                docusign_status: row.get(17)?,
+                status: row.get(9)?,
+                created_at: row.get(10)?,
+                updated_at: row.get(11)?,
+                sf_sync_status: row.get(12)?,
+                sf_synced_at: row.get(13)?,
+                docusign_envelope_id: row.get(14)?,
+                docusign_status: row.get(15)?,
             })
         })?;
         Ok(rows.filter_map(|r| r.ok()).collect())
@@ -1497,7 +1435,7 @@ impl D {
 
     pub fn employee_by_id(&self, id: &str) -> Result<Employee, E> {
         self.conn()?.query_row(
-            "SELECT id, candidate_id, employee_code, company_id, department, position, hired_at, contract_start, contract_end, training_completed, ehs_certified, status, created_at, updated_at, sf_sync_status, sf_synced_at, docusign_envelope_id, docusign_status FROM employees WHERE id=?",
+            "SELECT id, candidate_id, employee_code, company_id, department, position, hired_at, contract_start, contract_end, status, created_at, updated_at, sf_sync_status, sf_synced_at, docusign_envelope_id, docusign_status FROM employees WHERE id=?",
             params![id],
             |row| {
                 Ok(Employee {
@@ -1510,15 +1448,13 @@ impl D {
                     hired_at: row.get(6)?,
                     contract_start: row.get(7)?,
                     contract_end: row.get(8)?,
-                    training_completed: row.get(9)?,
-                    ehs_certified: row.get(10)?,
-                    status: row.get(11)?,
-                    created_at: row.get(12)?,
-                    updated_at: row.get(13)?,
-                    sf_sync_status: row.get(14)?,
-                    sf_synced_at: row.get(15)?,
-                    docusign_envelope_id: row.get(16)?,
-                    docusign_status: row.get(17)?,
+                    status: row.get(9)?,
+                    created_at: row.get(10)?,
+                    updated_at: row.get(11)?,
+                    sf_sync_status: row.get(12)?,
+                    sf_synced_at: row.get(13)?,
+                    docusign_envelope_id: row.get(14)?,
+                    docusign_status: row.get(15)?,
                 })
             },
         ).map_err(|_| E("employee not found".into()))
@@ -1526,9 +1462,20 @@ impl D {
 
     pub fn create_employee(&self, emp: &Employee) -> Result<(), E> {
         self.conn()?.execute(
-            "INSERT INTO employees (id, candidate_id, employee_code, company_id, department, position, hired_at, contract_start, contract_end, training_completed, ehs_certified, status, created_at, updated_at, sf_sync_status, sf_synced_at, docusign_envelope_id, docusign_status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-            params![emp.id, emp.candidate_id, emp.employee_code, emp.company_id, emp.department, emp.position, emp.hired_at, emp.contract_start, emp.contract_end, emp.training_completed, emp.ehs_certified, emp.status, emp.created_at, emp.updated_at, emp.sf_sync_status, emp.sf_synced_at, emp.docusign_envelope_id, emp.docusign_status],
+            "INSERT INTO employees (id, candidate_id, employee_code, company_id, department, position, hired_at, contract_start, contract_end, status, created_at, updated_at, sf_sync_status, sf_synced_at, docusign_envelope_id, docusign_status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            params![emp.id, emp.candidate_id, emp.employee_code, emp.company_id, emp.department, emp.position, emp.hired_at, emp.contract_start, emp.contract_end, emp.status, emp.created_at, emp.updated_at, emp.sf_sync_status, emp.sf_synced_at, emp.docusign_envelope_id, emp.docusign_status],
         )?;
+        Ok(())
+    }
+
+    pub fn update_employee(&self, id: &str, emp: &Employee) -> Result<(), E> {
+        let affected = self.conn()?.execute(
+            "UPDATE employees SET department=?, position=?, contract_start=?, contract_end=?, status=?, updated_at=? WHERE id=?",
+            params![emp.department, emp.position, emp.contract_start, emp.contract_end, emp.status, emp.updated_at, id],
+        )?;
+        if affected == 0 {
+            return Err(E("employee not found".into()));
+        }
         Ok(())
     }
 
@@ -1638,118 +1585,6 @@ impl D {
         Ok(rows.filter_map(|r| r.ok()).collect())
     }
 
-    pub fn list_courses(&self) -> Result<Vec<TrainingCourse>, E> {
-        let c = self.conn()?;
-        let mut stmt = c.prepare(
-            "SELECT id, title, course_type, country, content_type, content_url, mandatory, duration_minutes, order_index, pass_score, created_at FROM training_courses ORDER BY order_index ASC, created_at DESC"
-        )?;
-        let rows = stmt.query_map([], |row| {
-            Ok(TrainingCourse {
-                id: row.get(0)?,
-                title: row.get(1)?,
-                course_type: row.get(2)?,
-                country: row.get(3)?,
-                content_type: row.get(4)?,
-                content_url: row.get(5)?,
-                mandatory: row.get(6)?,
-                duration_minutes: row.get(7)?,
-                order_index: row.get(8)?,
-                pass_score: row.get(9)?,
-                created_at: row.get(10)?,
-            })
-        })?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
-    }
-
-    pub fn course_by_id(&self, id: &str) -> Result<TrainingCourse, E> {
-        self.conn()?.query_row(
-            "SELECT id, title, course_type, country, content_type, content_url, mandatory, duration_minutes, order_index, pass_score, created_at FROM training_courses WHERE id=?",
-            params![id],
-            |row| {
-                Ok(TrainingCourse {
-                    id: row.get(0)?,
-                    title: row.get(1)?,
-                    course_type: row.get(2)?,
-                    country: row.get(3)?,
-                    content_type: row.get(4)?,
-                    content_url: row.get(5)?,
-                    mandatory: row.get(6)?,
-                    duration_minutes: row.get(7)?,
-                    order_index: row.get(8)?,
-                    pass_score: row.get(9)?,
-                    created_at: row.get(10)?,
-                })
-            },
-        ).map_err(|_| E("course not found".into()))
-    }
-
-    pub fn create_course(&self, c: &TrainingCourse) -> Result<(), E> {
-        self.conn()?.execute(
-            "INSERT INTO training_courses (id, title, course_type, country, content_type, content_url, mandatory, duration_minutes, order_index, pass_score, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-            params![c.id, c.title, c.course_type, c.country, c.content_type, c.content_url, c.mandatory, c.duration_minutes, c.order_index, c.pass_score, c.created_at],
-        )?;
-        Ok(())
-    }
-
-    pub fn update_course(&self, id: &str, c: &TrainingCourse) -> Result<(), E> {
-        self.conn()?.execute(
-            "UPDATE training_courses SET title=?, course_type=?, country=?, content_type=?, content_url=?, mandatory=?, duration_minutes=?, pass_score=? WHERE id=?",
-            params![c.title, c.course_type, c.country, c.content_type, c.content_url, c.mandatory, c.duration_minutes, c.pass_score, id],
-        )?;
-        Ok(())
-    }
-
-    pub fn create_training_record(&self, r: &TrainingRecord) -> Result<(), E> {
-        self.conn()?.execute(
-            "INSERT INTO training_records (id, employee_id, course_id, started_at, completed_at, score, passed, certificate_url, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
-            params![r.id, r.employee_id, r.course_id, r.started_at, r.completed_at, r.score, r.passed, r.certificate_url, r.created_at],
-        )?;
-        Ok(())
-    }
-
-    pub fn training_record_by_id(&self, id: &str) -> Result<TrainingRecord, E> {
-        self.conn()?.query_row(
-            "SELECT id, employee_id, course_id, started_at, completed_at, score, passed, certificate_url, created_at FROM training_records WHERE id=?",
-            params![id],
-            |row| {
-                Ok(TrainingRecord {
-                    id: row.get(0)?,
-                    employee_id: row.get(1)?,
-                    course_id: row.get(2)?,
-                    started_at: row.get(3)?,
-                    completed_at: row.get(4)?,
-                    score: row.get(5)?,
-                    passed: row.get(6)?,
-                    certificate_url: row.get(7)?,
-                    created_at: row.get(8)?,
-                })
-            },
-        ).map_err(|_| E("training record not found".into()))
-    }
-
-    pub fn complete_training(&self, id: &str, completed_at: &str, score: Option<i64>, passed: i64, certificate_url: Option<&str>) -> Result<(), E> {
-        self.conn()?.execute(
-            "UPDATE training_records SET completed_at=?, score=?, passed=?, certificate_url=? WHERE id=?",
-            params![completed_at, score, passed, certificate_url, id],
-        )?;
-        let record = self.training_record_by_id(id)?;
-        let course = self.course_by_id(&record.course_id)?;
-        let c = self.conn()?;
-        if passed > 0 {
-            c.execute(
-                "UPDATE employees SET training_completed=1 WHERE id=?",
-                params![record.employee_id],
-            )?;
-            if course.course_type == "ehs" {
-                c.execute(
-                    "UPDATE employees SET ehs_certified=1 WHERE id=?",
-                    params![record.employee_id],
-                )?;
-            }
-        }
-        Ok(())
-    }
-
     pub fn update_employee(&self, id: &str, emp: &Employee) -> Result<(), E> {
         let affected = self.conn()?.execute(
             "UPDATE employees SET department=?, position=?, contract_start=?, contract_end=?, status=?, updated_at=? WHERE id=?",
@@ -1759,33 +1594,6 @@ impl D {
             return Err(E("employee not found".into()));
         }
         Ok(())
-    }
-
-    pub fn list_training_records(&self, employee_id: Option<&str>) -> Result<Vec<TrainingRecord>, E> {
-        let c = self.conn()?;
-        let mut sql = "SELECT id, employee_id, course_id, started_at, completed_at, score, passed, certificate_url, created_at FROM training_records WHERE 1=1".to_string();
-        let mut p: Vec<Box<dyn rusqlite::ToSql>> = vec![];
-        if let Some(eid) = employee_id {
-            sql.push_str(" AND employee_id=?");
-            p.push(Box::new(eid.to_string()));
-        }
-        sql.push_str(" ORDER BY created_at DESC");
-        let mut stmt = c.prepare(&sql)?;
-        let refs: Vec<&dyn rusqlite::ToSql> = p.iter().map(|b| b.as_ref()).collect();
-        let rows = stmt.query_map(refs.as_slice(), |row| {
-            Ok(TrainingRecord {
-                id: row.get(0)?,
-                employee_id: row.get(1)?,
-                course_id: row.get(2)?,
-                started_at: row.get(3)?,
-                completed_at: row.get(4)?,
-                score: row.get(5)?,
-                passed: row.get(6)?,
-                certificate_url: row.get(7)?,
-                created_at: row.get(8)?,
-            })
-        })?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
     }
 
     pub fn list_jobs(&self, status: Option<&str>, q: Option<&str>) -> Result<Vec<Job>, E> {
@@ -2144,7 +1952,7 @@ impl D {
     pub fn pending_sf_sync(&self) -> Result<Vec<Employee>, E> {
         let c = self.conn()?;
         let mut stmt = c.prepare(
-            "SELECT id, candidate_id, employee_code, company_id, department, position, hired_at, contract_start, contract_end, training_completed, ehs_certified, status, created_at, updated_at, sf_sync_status, sf_synced_at, docusign_envelope_id, docusign_status FROM employees WHERE sf_sync_status IS NULL OR sf_sync_status='pending'"
+            "SELECT id, candidate_id, employee_code, company_id, department, position, hired_at, contract_start, contract_end, status, created_at, updated_at, sf_sync_status, sf_synced_at, docusign_envelope_id, docusign_status FROM employees WHERE sf_sync_status IS NULL OR sf_sync_status='pending'"
         )?;
         let rows = stmt.query_map([], |row| {
             Ok(Employee {
@@ -2157,15 +1965,13 @@ impl D {
                 hired_at: row.get(6)?,
                 contract_start: row.get(7)?,
                 contract_end: row.get(8)?,
-                training_completed: row.get(9)?,
-                ehs_certified: row.get(10)?,
-                status: row.get(11)?,
-                created_at: row.get(12)?,
-                updated_at: row.get(13)?,
-                sf_sync_status: row.get(14)?,
-                sf_synced_at: row.get(15)?,
-                docusign_envelope_id: row.get(16)?,
-                docusign_status: row.get(17)?,
+                status: row.get(9)?,
+                created_at: row.get(10)?,
+                updated_at: row.get(11)?,
+                sf_sync_status: row.get(12)?,
+                sf_synced_at: row.get(13)?,
+                docusign_envelope_id: row.get(14)?,
+                docusign_status: row.get(15)?,
             })
         })?;
         Ok(rows.filter_map(|r| r.ok()).collect())
@@ -2174,7 +1980,7 @@ impl D {
     pub fn list_all_employees(&self) -> Result<Vec<Employee>, E> {
         let c = self.conn()?;
         let mut stmt = c.prepare(
-            "SELECT id, candidate_id, employee_code, company_id, department, position, hired_at, contract_start, contract_end, training_completed, ehs_certified, status, created_at, updated_at, sf_sync_status, sf_synced_at, docusign_envelope_id, docusign_status FROM employees ORDER BY hired_at DESC"
+            "SELECT id, candidate_id, employee_code, company_id, department, position, hired_at, contract_start, contract_end, status, created_at, updated_at, sf_sync_status, sf_synced_at, docusign_envelope_id, docusign_status FROM employees ORDER BY hired_at DESC"
         )?;
         let rows = stmt.query_map([], |row| {
             Ok(Employee {
@@ -2187,15 +1993,13 @@ impl D {
                 hired_at: row.get(6)?,
                 contract_start: row.get(7)?,
                 contract_end: row.get(8)?,
-                training_completed: row.get(9)?,
-                ehs_certified: row.get(10)?,
-                status: row.get(11)?,
-                created_at: row.get(12)?,
-                updated_at: row.get(13)?,
-                sf_sync_status: row.get(14)?,
-                sf_synced_at: row.get(15)?,
-                docusign_envelope_id: row.get(16)?,
-                docusign_status: row.get(17)?,
+                status: row.get(9)?,
+                created_at: row.get(10)?,
+                updated_at: row.get(11)?,
+                sf_sync_status: row.get(12)?,
+                sf_synced_at: row.get(13)?,
+                docusign_envelope_id: row.get(14)?,
+                docusign_status: row.get(15)?,
             })
         })?;
         let mut result = Vec::new();

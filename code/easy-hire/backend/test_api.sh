@@ -1,6 +1,7 @@
 #!/bin/bash
 # Easy Hire Comprehensive API Integration Test Script
 BASE="http://localhost:3201"
+TS=$(date +%s)
 PASS=0
 FAIL=0
 ERRORS=""
@@ -40,20 +41,20 @@ echo "--- 2. Authentication ---"
 # Register admin
 R=$(curl -s -X POST $BASE/api/v1/auth/register \
   -H 'Content-Type: application/json' \
-  -d '{"name":"Admin","email":"admin@final.com","password":"password123","role":"admin"}')
+  -d '{"name":"Admin","email":"admin${TS}@test.com","password":"password123","role":"admin"}')
 TOKEN=$(echo "$R" | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])" 2>/dev/null)
 assert "Register admin returns token" "eyJ" "$TOKEN"
 
 # Login
 R=$(curl -s -X POST $BASE/api/v1/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"email":"admin@final.com","password":"password123"}')
+  -d '{"email":"admin${TS}@test.com","password":"password123"}')
 assert "Login works" "token" "$R"
 
 # Register interviewer
 R=$(curl -s -X POST $BASE/api/v1/auth/register \
   -H 'Content-Type: application/json' \
-  -d '{"name":"Interviewer","email":"ivr@final.com","password":"password123","role":"manager"}')
+  -d '{"name":"Interviewer","email":"ivr${TS}@test.com","password":"password123","role":"manager"}')
 IV_ID=$(echo "$R" | python3 -c "import sys,json; print(json.load(sys.stdin)['user']['id'])" 2>/dev/null)
 assert "Register interviewer" "$IV_ID" "$R"
 
@@ -83,7 +84,7 @@ assert "Public job detail" "Build web apps" "$R"
 # Apply to job
 R=$(curl -s -X POST $BASE/api/v1/jobs/apply \
   -H 'Content-Type: application/json' \
-  -d "{\"job_id\":\"$JOB_ID\",\"name\":\"Jane Smith\",\"email\":\"jane@apply.com\",\"phone\":\"+6511111111\",\"resume_text\":\"Experienced dev\",\"cover_letter\":\"Please hire me\"}")
+  -d "{\"job_id\":\"$JOB_ID\",\"name\":\"Jane Smith\",\"email\":\"jane${TS}@test.com\",\"phone\":\"+6511111111\",\"resume_text\":\"Experienced dev\",\"cover_letter\":\"Please hire me\"}")
 APP_ID=$(echo "$R" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])" 2>/dev/null)
 assert "Application created" "$APP_ID" "$R"
 assert "Application status is applied" "applied" "$R"
@@ -120,7 +121,7 @@ echo "--- 4. Candidates ---"
 R=$(curl -s -X POST $BASE/api/v1/candidates \
   -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
-  -d '{"name":"Bob Builder","email":"bob@test.com","phone":"+6522222222","skills":"[\"Rust\",\"React\"]"}')
+  -d '{"name":"Bob Builder","email":"bob${TS}@test.com","phone":"+6522222222","skills":"[\"Rust\",\"React\"]"}')
 CAND_ID=$(echo "$R" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])" 2>/dev/null)
 assert "Candidate created" "$CAND_ID" "$R"
 

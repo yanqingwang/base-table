@@ -132,6 +132,9 @@ pub struct Document {
     pub ocr_data: String,
     pub status: String,
     pub created_at: String,
+    pub docusign_envelope_id: Option<String>,
+    pub docusign_status: Option<String>,
+    pub docusign_webhook_data: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -150,6 +153,10 @@ pub struct Employee {
     pub status: String,
     pub created_at: String,
     pub updated_at: String,
+    pub sf_sync_status: Option<String>,
+    pub sf_synced_at: Option<String>,
+    pub docusign_envelope_id: Option<String>,
+    pub docusign_status: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -504,6 +511,19 @@ impl D {
             );
             "
         )?;
+        // Add DocuSign and SF columns (safe to run if columns already exist)
+        for (table, column, def) in &[
+            ("employees", "sf_sync_status", "TEXT DEFAULT 'pending'"),
+            ("employees", "sf_synced_at", "TEXT"),
+            ("employees", "docusign_envelope_id", "TEXT"),
+            ("employees", "docusign_status", "TEXT DEFAULT 'pending'"),
+            ("documents", "docusign_envelope_id", "TEXT"),
+            ("documents", "docusign_status", "TEXT DEFAULT 'pending'"),
+            ("documents", "docusign_webhook_data", "TEXT DEFAULT '{}'"),
+        ] {
+            let sql = format!("ALTER TABLE {} ADD COLUMN {} {}", table, column, def);
+            let _ = c.execute(&sql, []);
+        }
         Ok(())
     }
 
@@ -1115,7 +1135,7 @@ impl D {
     pub fn list_employees(&self) -> Result<Vec<Employee>, E> {
         let c = self.conn()?;
         let mut stmt = c.prepare(
-            "SELECT id, candidate_id, employee_code, company_id, department, position, hired_at, contract_start, contract_end, training_completed, ehs_certified, status, created_at, updated_at FROM employees ORDER BY created_at DESC"
+            "SELECT id, candidate_id, employee_code, company_id, department, position, hired_at, contract_start, contract_end, training_completed, ehs_certified, status, created_at, updated_at, sf_sync_status, sf_synced_at, docusign_envelope_id, docusign_status FROM employees ORDER BY created_at DESC"
         )?;
         let rows = stmt.query_map([], |row| {
             Ok(Employee {
@@ -1133,6 +1153,10 @@ impl D {
                 status: row.get(11)?,
                 created_at: row.get(12)?,
                 updated_at: row.get(13)?,
+                sf_sync_status: row.get(14)?,
+                sf_synced_at: row.get(15)?,
+                docusign_envelope_id: row.get(16)?,
+                docusign_status: row.get(17)?,
             })
         })?;
         Ok(rows.filter_map(|r| r.ok()).collect())
@@ -1140,7 +1164,7 @@ impl D {
 
     pub fn employee_by_id(&self, id: &str) -> Result<Employee, E> {
         self.conn()?.query_row(
-            "SELECT id, candidate_id, employee_code, company_id, department, position, hired_at, contract_start, contract_end, training_completed, ehs_certified, status, created_at, updated_at FROM employees WHERE id=?",
+            "SELECT id, candidate_id, employee_code, company_id, department, position, hired_at, contract_start, contract_end, training_completed, ehs_certified, status, created_at, updated_at, sf_sync_status, sf_synced_at, docusign_envelope_id, docusign_status FROM employees WHERE id=?",
             params![id],
             |row| {
                 Ok(Employee {
@@ -1158,6 +1182,10 @@ impl D {
                     status: row.get(11)?,
                     created_at: row.get(12)?,
                     updated_at: row.get(13)?,
+                    sf_sync_status: row.get(14)?,
+                    sf_synced_at: row.get(15)?,
+                    docusign_envelope_id: row.get(16)?,
+                    docusign_status: row.get(17)?,
                 })
             },
         ).map_err(|_| E("employee not found".into()))
@@ -1165,15 +1193,15 @@ impl D {
 
     pub fn create_employee(&self, emp: &Employee) -> Result<(), E> {
         self.conn()?.execute(
-            "INSERT INTO employees (id, candidate_id, employee_code, company_id, department, position, hired_at, contract_start, contract_end, training_completed, ehs_certified, status, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-            params![emp.id, emp.candidate_id, emp.employee_code, emp.company_id, emp.department, emp.position, emp.hired_at, emp.contract_start, emp.contract_end, emp.training_completed, emp.ehs_certified, emp.status, emp.created_at, emp.updated_at],
+            "INSERT INTO employees (id, candidate_id, employee_code, company_id, department, position, hired_at, contract_start, contract_end, training_completed, ehs_certified, status, created_at, updated_at, sf_sync_status, sf_synced_at, docusign_envelope_id, docusign_status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            params![emp.id, emp.candidate_id, emp.employee_code, emp.company_id, emp.department, emp.position, emp.hired_at, emp.contract_start, emp.contract_end, emp.training_completed, emp.ehs_certified, emp.status, emp.created_at, emp.updated_at, emp.sf_sync_status, emp.sf_synced_at, emp.docusign_envelope_id, emp.docusign_status],
         )?;
         Ok(())
     }
 
     pub fn document_by_id(&self, id: &str) -> Result<Document, E> {
         self.conn()?.query_row(
-            "SELECT id, entity_type, entity_id, doc_type, file_url, signed_at, signature_method, ocr_data, status, created_at FROM documents WHERE id=?",
+            "SELECT id, entity_type, entity_id, doc_type, file_url, signed_at, signature_method, ocr_data, status, created_at, docusign_envelope_id, docusign_status, docusign_webhook_data FROM documents WHERE id=?",
             params![id],
             |row| {
                 Ok(Document {
@@ -1187,6 +1215,9 @@ impl D {
                     ocr_data: row.get(7)?,
                     status: row.get(8)?,
                     created_at: row.get(9)?,
+                    docusign_envelope_id: row.get(10)?,
+                    docusign_status: row.get(11)?,
+                    docusign_webhook_data: row.get(12)?,
                 })
             },
         ).map_err(|_| E("document not found".into()))
@@ -1194,8 +1225,8 @@ impl D {
 
     pub fn create_document(&self, doc: &Document) -> Result<(), E> {
         self.conn()?.execute(
-            "INSERT INTO documents (id, entity_type, entity_id, doc_type, file_url, signed_at, signature_method, ocr_data, status, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
-            params![doc.id, doc.entity_type, doc.entity_id, doc.doc_type, doc.file_url, doc.signed_at, doc.signature_method, doc.ocr_data, doc.status, doc.created_at],
+            "INSERT INTO documents (id, entity_type, entity_id, doc_type, file_url, signed_at, signature_method, ocr_data, status, created_at, docusign_envelope_id, docusign_status, docusign_webhook_data) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            params![doc.id, doc.entity_type, doc.entity_id, doc.doc_type, doc.file_url, doc.signed_at, doc.signature_method, doc.ocr_data, doc.status, doc.created_at, doc.docusign_envelope_id, doc.docusign_status, doc.docusign_webhook_data],
         )?;
         Ok(())
     }
@@ -1720,6 +1751,175 @@ impl D {
             "recommendations": recs,
             "evaluations": evals,
         }))
+    }
+
+    pub fn update_docusign_status(&self, envelope_id: &str, status: &str, webhook_data: Option<&str>) -> Result<(), E> {
+        let c = self.conn()?;
+        c.execute(
+            "UPDATE documents SET docusign_status=?1, docusign_webhook_data=?2 WHERE docusign_envelope_id=?3",
+            params![status, webhook_data, envelope_id],
+        )?;
+        // Also update employee docusign_status if an employee has this envelope_id
+        let _ = c.execute(
+            "UPDATE employees SET docusign_status=?1 WHERE docusign_envelope_id=?2",
+            params![status, envelope_id],
+        );
+        Ok(())
+    }
+
+    pub fn update_sf_sync_status(&self, employee_id: &str, status: &str) -> Result<(), E> {
+        self.conn()?.execute(
+            "UPDATE employees SET sf_sync_status=?1, sf_synced_at=datetime('now') WHERE id=?2",
+            params![status, employee_id],
+        )?;
+        Ok(())
+    }
+
+    pub fn pending_sf_sync(&self) -> Result<Vec<Employee>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare(
+            "SELECT id, candidate_id, employee_code, company_id, department, position, hired_at, contract_start, contract_end, training_completed, ehs_certified, status, created_at, updated_at, sf_sync_status, sf_synced_at, docusign_envelope_id, docusign_status FROM employees WHERE sf_sync_status IS NULL OR sf_sync_status='pending'"
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(Employee {
+                id: row.get(0)?,
+                candidate_id: row.get(1)?,
+                employee_code: row.get(2)?,
+                company_id: row.get(3)?,
+                department: row.get(4)?,
+                position: row.get(5)?,
+                hired_at: row.get(6)?,
+                contract_start: row.get(7)?,
+                contract_end: row.get(8)?,
+                training_completed: row.get(9)?,
+                ehs_certified: row.get(10)?,
+                status: row.get(11)?,
+                created_at: row.get(12)?,
+                updated_at: row.get(13)?,
+                sf_sync_status: row.get(14)?,
+                sf_synced_at: row.get(15)?,
+                docusign_envelope_id: row.get(16)?,
+                docusign_status: row.get(17)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn list_all_employees(&self) -> Result<Vec<Employee>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare(
+            "SELECT id, candidate_id, employee_code, company_id, department, position, hired_at, contract_start, contract_end, training_completed, ehs_certified, status, created_at, updated_at, sf_sync_status, sf_synced_at, docusign_envelope_id, docusign_status FROM employees ORDER BY hired_at DESC"
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(Employee {
+                id: row.get(0)?,
+                candidate_id: row.get(1)?,
+                employee_code: row.get(2)?,
+                company_id: row.get(3)?,
+                department: row.get(4)?,
+                position: row.get(5)?,
+                hired_at: row.get(6)?,
+                contract_start: row.get(7)?,
+                contract_end: row.get(8)?,
+                training_completed: row.get(9)?,
+                ehs_certified: row.get(10)?,
+                status: row.get(11)?,
+                created_at: row.get(12)?,
+                updated_at: row.get(13)?,
+                sf_sync_status: row.get(14)?,
+                sf_synced_at: row.get(15)?,
+                docusign_envelope_id: row.get(16)?,
+                docusign_status: row.get(17)?,
+            })
+        })?;
+        let mut result = Vec::new();
+        for row in rows {
+            result.push(row.map_err(|e| E(e.to_string()))?);
+        }
+        Ok(result)
+    }
+
+    pub fn list_all_candidates(&self) -> Result<Vec<Candidate>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare(
+            "SELECT id, user_id, agency_id, name, phone, email, id_number, country_code, date_of_birth, gender, nationality, address, city, province, postal_code, education_level, education_school, education_major, education_year, work_experience_years, previous_employer, previous_position, previous_duration, previous_duties, languages, certifications, emergency_contact_name, emergency_contact_phone, emergency_contact_relation, skills, resume_text, resume_file_url, profile_photo_url, status, source, notes, created_at, updated_at FROM candidates ORDER BY created_at DESC"
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(Candidate {
+                id: row.get(0)?,
+                user_id: row.get(1)?,
+                agency_id: row.get(2)?,
+                name: row.get(3)?,
+                phone: row.get(4)?,
+                email: row.get(5)?,
+                id_number: row.get(6)?,
+                country_code: row.get(7)?,
+                date_of_birth: row.get(8)?,
+                gender: row.get(9)?,
+                nationality: row.get(10)?,
+                address: row.get(11)?,
+                city: row.get(12)?,
+                province: row.get(13)?,
+                postal_code: row.get(14)?,
+                education_level: row.get(15)?,
+                education_school: row.get(16)?,
+                education_major: row.get(17)?,
+                education_year: row.get(18)?,
+                work_experience_years: row.get(19)?,
+                previous_employer: row.get(20)?,
+                previous_position: row.get(21)?,
+                previous_duration: row.get(22)?,
+                previous_duties: row.get(23)?,
+                languages: row.get(24)?,
+                certifications: row.get(25)?,
+                emergency_contact_name: row.get(26)?,
+                emergency_contact_phone: row.get(27)?,
+                emergency_contact_relation: row.get(28)?,
+                skills: row.get(29)?,
+                resume_text: row.get(30)?,
+                resume_file_url: row.get(31)?,
+                profile_photo_url: row.get(32)?,
+                status: row.get(33)?,
+                source: row.get(34)?,
+                notes: row.get(35)?,
+                created_at: row.get(36)?,
+                updated_at: row.get(37)?,
+            })
+        })?;
+        let mut result = Vec::new();
+        for row in rows {
+            result.push(row.map_err(|e| E(e.to_string()))?);
+        }
+        Ok(result)
+    }
+
+    pub fn list_all_interviews(&self) -> Result<Vec<Interview>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare(
+            "SELECT id, candidate_id, job_title, scheduled_at, check_in_at, interviewer_id, skill_scores, overall_score, comments, status, result, created_at, updated_at FROM interviews ORDER BY created_at DESC"
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(Interview {
+                id: row.get(0)?,
+                candidate_id: row.get(1)?,
+                job_title: row.get(2)?,
+                scheduled_at: row.get(3)?,
+                check_in_at: row.get(4)?,
+                interviewer_id: row.get(5)?,
+                skill_scores: row.get(6)?,
+                overall_score: row.get(7)?,
+                comments: row.get(8)?,
+                status: row.get(9)?,
+                result: row.get(10)?,
+                created_at: row.get(11)?,
+                updated_at: row.get(12)?,
+            })
+        })?;
+        let mut result = Vec::new();
+        for row in rows {
+            result.push(row.map_err(|e| E(e.to_string()))?);
+        }
+        Ok(result)
     }
 }
 

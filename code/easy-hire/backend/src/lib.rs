@@ -15,8 +15,11 @@ use tower_http::cors::{CorsLayer, Any};
 
 pub mod auth;
 pub mod db;
+pub mod docusign;
 pub mod error;
+pub mod export;
 pub mod jobs;
+pub mod successfactors;
 
 use auth::AuthUser;
 use db::{D, Candidate, Interview, InterviewRound, InterviewAssignment, InterviewEvaluation, Approval, Employee, Document, TrainingCourse, TrainingRecord};
@@ -244,6 +247,15 @@ pub fn router(state: Arc<S>) -> Router {
         .route("/api/v1/jobs/:id", get(jobs::get_job).put(jobs::update_job).delete(jobs::delete_job))
         .route("/api/v1/jobs/:id/applications", get(jobs::list_applications))
         .route("/api/v1/jobs/applications/:id/status", put(jobs::update_application_status))
+        .route("/api/v1/docusign/envelope", post(docusign::create_envelope))
+        .route("/api/v1/docusign/batch", post(docusign::batch_send_envelopes))
+        .route("/api/v1/docusign/status/:id", get(docusign::envelope_status))
+        .route("/api/v1/webhooks/docusign", post(docusign::docusign_webhook))
+        .route("/api/v1/sf/sync/:id", post(successfactors::sync_employee))
+        .route("/api/v1/sf/sync-all", post(successfactors::sync_all_pending))
+        .route("/api/v1/export/candidates", get(export::export_candidates))
+        .route("/api/v1/export/employees", get(export::export_employees))
+        .route("/api/v1/export/interviews", get(export::export_interviews))
         .layer(cors)
         .with_state(state)
 }
@@ -637,7 +649,11 @@ async fn create_employee(
         ehs_certified: 0,
         status: "active".to_string(),
         created_at: now.clone(),
-        updated_at: now,
+        updated_at: now.clone(),
+        sf_sync_status: Some("pending".to_string()),
+        sf_synced_at: None,
+        docusign_envelope_id: None,
+        docusign_status: None,
     };
 
     s.db.create_employee(&employee)?;
@@ -673,6 +689,9 @@ async fn upload_document(
         ocr_data: "{}".to_string(),
         status: "pending".to_string(),
         created_at: now,
+        docusign_envelope_id: None,
+        docusign_status: None,
+        docusign_webhook_data: "{}".to_string(),
     };
 
     s.db.create_document(&doc)?;

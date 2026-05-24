@@ -86,6 +86,41 @@ pub struct Interview {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct InterviewRound {
+    pub id: String,
+    pub interview_id: String,
+    pub round_number: i64,
+    pub round_type: String,
+    pub scheduled_at: Option<String>,
+    pub status: String,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct InterviewAssignment {
+    pub id: String,
+    pub interview_id: String,
+    pub round_id: Option<String>,
+    pub interviewer_id: String,
+    pub status: String,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct InterviewEvaluation {
+    pub id: String,
+    pub interview_id: String,
+    pub round_id: Option<String>,
+    pub interviewer_id: String,
+    pub skill_scores: String,
+    pub overall_score: Option<f64>,
+    pub comments: Option<String>,
+    pub recommendation: String,
+    pub submitted_at: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Document {
     pub id: String,
     pub entity_type: String,
@@ -427,6 +462,45 @@ impl D {
                 updated_at TEXT DEFAULT (datetime('now')),
                 FOREIGN KEY (job_id) REFERENCES jobs(id),
                 FOREIGN KEY (candidate_id) REFERENCES candidates(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS interview_rounds (
+                id TEXT PRIMARY KEY,
+                interview_id TEXT NOT NULL,
+                round_number INTEGER NOT NULL,
+                round_type TEXT DEFAULT 'technical' CHECK(round_type IN ('technical','hr','behavioral','manager','final')),
+                scheduled_at TEXT,
+                status TEXT DEFAULT 'pending' CHECK(status IN ('pending','scheduled','completed','cancelled')),
+                created_at TEXT DEFAULT (datetime('now')),
+                FOREIGN KEY (interview_id) REFERENCES interviews(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS interview_assignments (
+                id TEXT PRIMARY KEY,
+                interview_id TEXT NOT NULL,
+                round_id TEXT,
+                interviewer_id TEXT NOT NULL,
+                status TEXT DEFAULT 'assigned' CHECK(status IN ('assigned','confirmed','completed','cancelled')),
+                created_at TEXT DEFAULT (datetime('now')),
+                FOREIGN KEY (interview_id) REFERENCES interviews(id),
+                FOREIGN KEY (round_id) REFERENCES interview_rounds(id),
+                FOREIGN KEY (interviewer_id) REFERENCES users(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS interview_evaluations (
+                id TEXT PRIMARY KEY,
+                interview_id TEXT NOT NULL,
+                round_id TEXT,
+                interviewer_id TEXT NOT NULL,
+                skill_scores TEXT DEFAULT '{}',
+                overall_score REAL,
+                comments TEXT,
+                recommendation TEXT DEFAULT 'pending' CHECK(recommendation IN ('strong_hire','hire','maybe','no','pending')),
+                submitted_at TEXT,
+                created_at TEXT DEFAULT (datetime('now')),
+                FOREIGN KEY (interview_id) REFERENCES interviews(id),
+                FOREIGN KEY (round_id) REFERENCES interview_rounds(id),
+                FOREIGN KEY (interviewer_id) REFERENCES users(id)
             );
             "
         )?;
@@ -1537,6 +1611,115 @@ impl D {
             })
         })?;
         Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn create_round(&self, r: &InterviewRound) -> Result<(), E> {
+        self.conn()?.execute(
+            "INSERT INTO interview_rounds (id, interview_id, round_number, round_type, scheduled_at, status, created_at) VALUES (?,?,?,?,?,?,?)",
+            params![r.id, r.interview_id, r.round_number, r.round_type, r.scheduled_at, r.status, r.created_at],
+        )?;
+        Ok(())
+    }
+
+    pub fn list_rounds(&self, interview_id: &str) -> Result<Vec<InterviewRound>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare(
+            "SELECT id, interview_id, round_number, round_type, scheduled_at, status, created_at FROM interview_rounds WHERE interview_id=?1 ORDER BY round_number"
+        )?;
+        let rows = stmt.query_map(params![interview_id], |row| {
+            Ok(InterviewRound {
+                id: row.get(0)?,
+                interview_id: row.get(1)?,
+                round_number: row.get(2)?,
+                round_type: row.get(3)?,
+                scheduled_at: row.get(4)?,
+                status: row.get(5)?,
+                created_at: row.get(6)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn create_assignment(&self, a: &InterviewAssignment) -> Result<(), E> {
+        self.conn()?.execute(
+            "INSERT INTO interview_assignments (id, interview_id, round_id, interviewer_id, status, created_at) VALUES (?,?,?,?,?,?)",
+            params![a.id, a.interview_id, a.round_id, a.interviewer_id, a.status, a.created_at],
+        )?;
+        Ok(())
+    }
+
+    pub fn list_assignments(&self, interview_id: &str) -> Result<Vec<InterviewAssignment>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare(
+            "SELECT id, interview_id, round_id, interviewer_id, status, created_at FROM interview_assignments WHERE interview_id=?1"
+        )?;
+        let rows = stmt.query_map(params![interview_id], |row| {
+            Ok(InterviewAssignment {
+                id: row.get(0)?,
+                interview_id: row.get(1)?,
+                round_id: row.get(2)?,
+                interviewer_id: row.get(3)?,
+                status: row.get(4)?,
+                created_at: row.get(5)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn create_evaluation(&self, e: &InterviewEvaluation) -> Result<(), E> {
+        self.conn()?.execute(
+            "INSERT INTO interview_evaluations (id, interview_id, round_id, interviewer_id, skill_scores, overall_score, comments, recommendation, submitted_at, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+            params![e.id, e.interview_id, e.round_id, e.interviewer_id, e.skill_scores, e.overall_score, e.comments, e.recommendation, e.submitted_at, e.created_at],
+        )?;
+        Ok(())
+    }
+
+    pub fn list_evaluations(&self, interview_id: &str) -> Result<Vec<InterviewEvaluation>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare(
+            "SELECT id, interview_id, round_id, interviewer_id, skill_scores, overall_score, comments, recommendation, submitted_at, created_at FROM interview_evaluations WHERE interview_id=?1"
+        )?;
+        let rows = stmt.query_map(params![interview_id], |row| {
+            Ok(InterviewEvaluation {
+                id: row.get(0)?,
+                interview_id: row.get(1)?,
+                round_id: row.get(2)?,
+                interviewer_id: row.get(3)?,
+                skill_scores: row.get(4)?,
+                overall_score: row.get(5)?,
+                comments: row.get(6)?,
+                recommendation: row.get(7)?,
+                submitted_at: row.get(8)?,
+                created_at: row.get(9)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn evaluation_aggregate(&self, interview_id: &str) -> Result<Value, E> {
+        let evals = self.list_evaluations(interview_id)?;
+        if evals.is_empty() {
+            return Ok(serde_json::json!({
+                "interview_id": interview_id,
+                "total_evaluations": 0,
+                "average_score": serde_json::Value::Null,
+                "recommendations": {},
+                "evaluations": [],
+            }));
+        }
+        let scores: Vec<f64> = evals.iter().filter_map(|e| e.overall_score).collect();
+        let avg = if scores.is_empty() { None } else { Some(scores.iter().sum::<f64>() / scores.len() as f64) };
+        let mut recs = std::collections::HashMap::new();
+        for e in &evals {
+            *recs.entry(e.recommendation.clone()).or_insert(0i64) += 1;
+        }
+        Ok(serde_json::json!({
+            "interview_id": interview_id,
+            "total_evaluations": evals.len(),
+            "average_score": avg,
+            "recommendations": recs,
+            "evaluations": evals,
+        }))
     }
 }
 

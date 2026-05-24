@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use axum::{
     Router,
     extract::{Path, Query, State},
-    http::Method,
+    http::{Method, StatusCode},
     routing::{get, post, put},
     Json,
 };
@@ -19,7 +19,7 @@ pub mod error;
 pub mod jobs;
 
 use auth::AuthUser;
-use db::{D, Candidate, Interview, Approval, Employee, Document, TrainingCourse, TrainingRecord};
+use db::{D, Candidate, Interview, InterviewRound, InterviewAssignment, InterviewEvaluation, Approval, Employee, Document, TrainingCourse, TrainingRecord};
 use error::E;
 
 pub struct S {
@@ -141,6 +141,31 @@ pub struct WhatsAppInput {
     pub message_type: Option<String>,
 }
 
+#[derive(Deserialize)]
+struct RoundInput {
+    interview_id: String,
+    round_number: i64,
+    round_type: Option<String>,
+    scheduled_at: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct AssignInput {
+    interview_id: String,
+    round_id: Option<String>,
+    interviewer_id: String,
+}
+
+#[derive(Deserialize)]
+struct EvalInput {
+    interview_id: String,
+    round_id: Option<String>,
+    skill_scores: Option<String>,
+    overall_score: Option<f64>,
+    comments: Option<String>,
+    recommendation: Option<String>,
+}
+
 pub fn path() -> PathBuf {
     std::env::var("EASY_HIRE_DB")
         .map(PathBuf::from)
@@ -179,9 +204,15 @@ pub fn router(state: Arc<S>) -> Router {
         .route("/api/v1/candidates/:id", get(get_candidate).put(update_candidate).delete(delete_candidate))
         .route("/api/v1/candidates/:id/timeline", get(candidate_timeline))
         .route("/api/v1/interviews", get(list_interviews).post(create_interview))
+        .route("/api/v1/interviews/assign", post(assign_interviewer))
+        .route("/api/v1/interviews/calendar", get(interview_calendar))
         .route("/api/v1/interviews/:id/checkin", put(checkin_interview))
         .route("/api/v1/interviews/:id/evaluate", put(evaluate_interview))
-        .route("/api/v1/interviews/calendar", get(interview_calendar))
+        .route("/api/v1/interviews/:id/rounds", get(list_rounds).post(create_round))
+        .route("/api/v1/interviews/:id/assignments", get(list_assignments))
+        .route("/api/v1/interviews/:id/evaluations", get(list_evaluations))
+        .route("/api/v1/interviews/:id/aggregate", get(aggregate_evaluations))
+        .route("/api/v1/evaluations", post(submit_evaluation))
         .route("/api/v1/reports/hiring-funnel", get(report_hiring_funnel))
         .route("/api/v1/reports/training-status", get(report_training_status))
         .route("/api/v1/reports/ehs-compliance", get(report_ehs_compliance))
@@ -956,4 +987,171 @@ async fn training_records(
 ) -> Result<Json<Vec<TrainingRecord>>, E> {
     let employee_id = q.get("employee_id").map(|s| s.as_str());
     s.db.list_training_records(employee_id).map(Json)
+}
+
+async fn create_round(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Json(input): Json<RoundInput>,
+) -> Result<(StatusCode, Json<InterviewRound>), E> {
+    auth::check_role(&auth_user, &["admin", "recruiter", "manager"])?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
+    let round = InterviewRound {
+        id: id.clone(),
+        interview_id: input.interview_id,
+        round_number: input.round_number,
+        round_type: input.round_type.unwrap_or_else(|| "technical".to_string()),
+        scheduled_at: input.scheduled_at,
+        status: "pending".to_string(),
+        created_at: now,
+    };
+    s.db.create_round(&round)?;
+    let round = get_one_round(&s.db, &id)?;
+    Ok((StatusCode::CREATED, Json(round)))
+}
+
+async fn list_rounds(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Path(id): Path<String>,
+) -> Result<Json<Vec<InterviewRound>>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter", "manager"])?;
+    let rounds = s.db.list_rounds(&id)?;
+    Ok(Json(rounds))
+}
+
+async fn assign_interviewer(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Json(input): Json<AssignInput>,
+) -> Result<(StatusCode, Json<InterviewAssignment>), E> {
+    auth::check_role(&auth_user, &["admin", "recruiter", "manager"])?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
+    let assign = InterviewAssignment {
+        id: id.clone(),
+        interview_id: input.interview_id,
+        round_id: input.round_id,
+        interviewer_id: input.interviewer_id,
+        status: "assigned".to_string(),
+        created_at: now,
+    };
+    s.db.create_assignment(&assign)?;
+    let assign = get_one_assignment(&s.db, &id)?;
+    Ok((StatusCode::CREATED, Json(assign)))
+}
+
+async fn list_assignments(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Path(id): Path<String>,
+) -> Result<Json<Vec<InterviewAssignment>>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter", "manager"])?;
+    let assignments = s.db.list_assignments(&id)?;
+    Ok(Json(assignments))
+}
+
+async fn submit_evaluation(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Json(input): Json<EvalInput>,
+) -> Result<(StatusCode, Json<InterviewEvaluation>), E> {
+    auth::check_role(&auth_user, &["admin", "recruiter", "manager"])?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
+    let eval = InterviewEvaluation {
+        id: id.clone(),
+        interview_id: input.interview_id,
+        round_id: input.round_id,
+        interviewer_id: auth_user.id,
+        skill_scores: input.skill_scores.unwrap_or_else(|| "{}".to_string()),
+        overall_score: input.overall_score,
+        comments: input.comments,
+        recommendation: input.recommendation.unwrap_or_else(|| "pending".to_string()),
+        submitted_at: Some(now.clone()),
+        created_at: now,
+    };
+    s.db.create_evaluation(&eval)?;
+    let eval = get_one_evaluation(&s.db, &id)?;
+    Ok((StatusCode::CREATED, Json(eval)))
+}
+
+async fn list_evaluations(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Path(id): Path<String>,
+) -> Result<Json<Vec<InterviewEvaluation>>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter", "manager"])?;
+    let evals = s.db.list_evaluations(&id)?;
+    Ok(Json(evals))
+}
+
+async fn aggregate_evaluations(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Path(id): Path<String>,
+) -> Result<Json<Value>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter", "manager"])?;
+    let agg = s.db.evaluation_aggregate(&id)?;
+    Ok(Json(agg))
+}
+
+fn get_one_round(d: &D, id: &str) -> Result<InterviewRound, E> {
+    let c = d.conn().map_err(|e| E(e.to_string()))?;
+    c.query_row(
+        "SELECT id, interview_id, round_number, round_type, scheduled_at, status, created_at FROM interview_rounds WHERE id=?1",
+        rusqlite::params![id],
+        |row| {
+            Ok(InterviewRound {
+                id: row.get(0)?,
+                interview_id: row.get(1)?,
+                round_number: row.get(2)?,
+                round_type: row.get(3)?,
+                scheduled_at: row.get(4)?,
+                status: row.get(5)?,
+                created_at: row.get(6)?,
+            })
+        },
+    ).map_err(|e| E(e.to_string()))
+}
+
+fn get_one_assignment(d: &D, id: &str) -> Result<InterviewAssignment, E> {
+    let c = d.conn().map_err(|e| E(e.to_string()))?;
+    c.query_row(
+        "SELECT id, interview_id, round_id, interviewer_id, status, created_at FROM interview_assignments WHERE id=?1",
+        rusqlite::params![id],
+        |row| {
+            Ok(InterviewAssignment {
+                id: row.get(0)?,
+                interview_id: row.get(1)?,
+                round_id: row.get(2)?,
+                interviewer_id: row.get(3)?,
+                status: row.get(4)?,
+                created_at: row.get(5)?,
+            })
+        },
+    ).map_err(|e| E(e.to_string()))
+}
+
+fn get_one_evaluation(d: &D, id: &str) -> Result<InterviewEvaluation, E> {
+    let c = d.conn().map_err(|e| E(e.to_string()))?;
+    c.query_row(
+        "SELECT id, interview_id, round_id, interviewer_id, skill_scores, overall_score, comments, recommendation, submitted_at, created_at FROM interview_evaluations WHERE id=?1",
+        rusqlite::params![id],
+        |row| {
+            Ok(InterviewEvaluation {
+                id: row.get(0)?,
+                interview_id: row.get(1)?,
+                round_id: row.get(2)?,
+                interviewer_id: row.get(3)?,
+                skill_scores: row.get(4)?,
+                overall_score: row.get(5)?,
+                comments: row.get(6)?,
+                recommendation: row.get(7)?,
+                submitted_at: row.get(8)?,
+                created_at: row.get(9)?,
+            })
+        },
+    ).map_err(|e| E(e.to_string()))
 }

@@ -167,6 +167,12 @@ export interface StatsResponse {
   total_candidates: number;
   by_status: Record<string, number>;
   by_source: Record<string, number>;
+  jobs: { active: number; total: number; total_views: number };
+  applications: { total: number; by_status: Record<string, number> };
+  interviews: { total: number; completed: number };
+  employees: { total: number; active: number };
+  funnel: { hired: number; rejected: number; conversion_rate: string; avg_time_to_hire_days: number | null };
+  evaluations: { total: number; average_score: number | null };
 }
 
 export interface HiringFunnelReport {

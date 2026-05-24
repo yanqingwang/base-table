@@ -70,7 +70,7 @@ const AdminJobList: React.FC = () => {
   const columns = [
     { title: 'Title', dataIndex: 'title', key: 'title' },
     { title: 'Department', dataIndex: 'department', key: 'department', render: (v: string) => v || '-' },
-    { title: 'Location', dataIndex: 'location', key: 'location', render: (v: string) => v || '-' },
+    { title: 'Location', key: 'location', render: (_: any, r: Job) => [r.city, r.country_code].filter(Boolean).join(', ') || r.location || '-' },
     { title: 'Type', dataIndex: 'employment_type', key: 'type', render: (v: string) => <Tag>{v}</Tag> },
     { title: 'Status', dataIndex: 'status', key: 'status', render: (v: string) => <Tag color={statusColors[v]}>{v}</Tag> },
     { title: 'Views', dataIndex: 'views', key: 'views' },
@@ -109,11 +109,33 @@ const AdminJobList: React.FC = () => {
         <Form form={form} layout="vertical">
           <Form.Item name="title" label="Title" rules={[{ required: true }]}><Input /></Form.Item>
           <Form.Item name="description" label="Description"><Input.TextArea rows={3} /></Form.Item>
-          <Form.Item name="location" label="Location"><Input /></Form.Item>
+          <Space style={{ width: '100%' }}>
+            <Form.Item name="country_code" label="Country" initialValue="PH" rules={[{ required: true }]}>
+              <Select style={{ width: 180 }} options={[
+                { value: 'PH', label: 'Philippines' }, { value: 'MY', label: 'Malaysia' },
+                { value: 'TH', label: 'Thailand' }, { value: 'SG', label: 'Singapore' },
+                { value: 'ID', label: 'Indonesia' }, { value: 'VN', label: 'Vietnam' },
+                { value: 'MM', label: 'Myanmar' }, { value: 'KH', label: 'Cambodia' },
+                { value: 'LA', label: 'Laos' }, { value: 'BN', label: 'Brunei' },
+              ]} />
+            </Form.Item>
+            <Form.Item name="city" label="City"><Input style={{ width: 200 }} placeholder="City name" /></Form.Item>
+          </Space>
           <Space style={{ width: '100%' }}>
             <Form.Item name="salary_min" label="Salary Min"><InputNumber style={{ width: 120 }} /></Form.Item>
             <Form.Item name="salary_max" label="Salary Max"><InputNumber style={{ width: 120 }} /></Form.Item>
-            <Form.Item name="salary_currency" label="Currency" initialValue="USD"><Input style={{ width: 80 }} /></Form.Item>
+            <Form.Item name="salary_currency" label="Currency" initialValue="USD" style={{ width: 120 }}>
+              <Select options={[
+                { value: 'USD', label: 'USD' }, { value: 'PHP', label: 'PHP' },
+                { value: 'MYR', label: 'MYR' }, { value: 'THB', label: 'THB' },
+                { value: 'SGD', label: 'SGD' }, { value: 'IDR', label: 'IDR' },
+                { value: 'VND', label: 'VND' }, { value: 'MMK', label: 'MMK' },
+                { value: 'KHR', label: 'KHR' }, { value: 'LAK', label: 'LAK' },
+                { value: 'BND', label: 'BND' }, { value: 'EUR', label: 'EUR' },
+                { value: 'GBP', label: 'GBP' }, { value: 'JPY', label: 'JPY' },
+                { value: 'CNY', label: 'CNY' }, { value: 'AUD', label: 'AUD' },
+              ]} />
+            </Form.Item>
           </Space>
           <Form.Item name="department" label="Department"><Input /></Form.Item>
           <Form.Item name="requirements" label="Requirements"><Input.TextArea rows={3} /></Form.Item>

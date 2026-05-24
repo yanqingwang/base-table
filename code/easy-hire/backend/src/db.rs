@@ -73,6 +73,7 @@ pub struct Interview {
     pub id: String,
     pub candidate_id: String,
     pub job_title: Option<String>,
+    pub job_id: Option<String>,
     pub scheduled_at: Option<String>,
     pub check_in_at: Option<String>,
     pub interviewer_id: Option<String>,
@@ -165,6 +166,8 @@ pub struct Job {
     pub title: String,
     pub description: Option<String>,
     pub location: Option<String>,
+    pub country_code: String,
+    pub city: Option<String>,
     pub salary_min: Option<f64>,
     pub salary_max: Option<f64>,
     pub salary_currency: String,
@@ -246,6 +249,31 @@ pub struct TrainingRecord {
     pub score: Option<i64>,
     pub passed: i64,
     pub certificate_url: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CandidateEducation {
+    pub id: String,
+    pub candidate_id: String,
+    pub level: String,
+    pub school: Option<String>,
+    pub major: Option<String>,
+    pub graduation_year: Option<i64>,
+    pub notes: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CandidateWorkExperience {
+    pub id: String,
+    pub candidate_id: String,
+    pub employer: String,
+    pub position: Option<String>,
+    pub start_date: Option<String>,
+    pub end_date: Option<String>,
+    pub duration: Option<String>,
+    pub duties: Option<String>,
     pub created_at: String,
 }
 
@@ -334,6 +362,7 @@ impl D {
                 id TEXT PRIMARY KEY,
                 candidate_id TEXT NOT NULL,
                 job_title TEXT,
+                job_id TEXT REFERENCES jobs(id) ON DELETE SET NULL,
                 scheduled_at TEXT,
                 check_in_at TEXT,
                 interviewer_id TEXT,
@@ -440,6 +469,8 @@ impl D {
                 title TEXT NOT NULL,
                 description TEXT,
                 location TEXT,
+                country_code TEXT DEFAULT 'PH',
+                city TEXT,
                 salary_min REAL,
                 salary_max REAL,
                 salary_currency TEXT DEFAULT 'USD',
@@ -508,6 +539,29 @@ impl D {
                 FOREIGN KEY (interview_id) REFERENCES interviews(id),
                 FOREIGN KEY (round_id) REFERENCES interview_rounds(id),
                 FOREIGN KEY (interviewer_id) REFERENCES users(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS candidate_educations (
+                id TEXT PRIMARY KEY,
+                candidate_id TEXT NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+                level TEXT NOT NULL DEFAULT 'high_school',
+                school TEXT,
+                major TEXT,
+                graduation_year INTEGER,
+                notes TEXT,
+                created_at TEXT DEFAULT (datetime('now'))
+            );
+
+            CREATE TABLE IF NOT EXISTS candidate_work_experiences (
+                id TEXT PRIMARY KEY,
+                candidate_id TEXT NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+                employer TEXT NOT NULL,
+                position TEXT,
+                start_date TEXT,
+                end_date TEXT,
+                duration TEXT,
+                duties TEXT,
+                created_at TEXT DEFAULT (datetime('now'))
             );
             "
         )?;
@@ -936,13 +990,17 @@ impl D {
         Ok(rows.filter_map(|r| r.ok()).collect())
     }
 
-    pub fn list_interviews(&self, status: Option<&str>) -> Result<Vec<Interview>, E> {
+    pub fn list_interviews(&self, status: Option<&str>, job_id: Option<&str>) -> Result<Vec<Interview>, E> {
         let c = self.conn()?;
-        let mut sql = "SELECT id, candidate_id, job_title, scheduled_at, check_in_at, interviewer_id, skill_scores, overall_score, comments, status, result, created_at, updated_at FROM interviews WHERE 1=1".to_string();
+        let mut sql = "SELECT id, candidate_id, job_title, job_id, scheduled_at, check_in_at, interviewer_id, skill_scores, overall_score, comments, status, result, created_at, updated_at FROM interviews WHERE 1=1".to_string();
         let mut p: Vec<Box<dyn rusqlite::ToSql>> = vec![];
         if let Some(s) = status {
             sql.push_str(" AND status=?");
             p.push(Box::new(s.to_string()));
+        }
+        if let Some(j) = job_id {
+            sql.push_str(" AND job_id=?");
+            p.push(Box::new(j.to_string()));
         }
         sql.push_str(" ORDER BY created_at DESC");
         let mut stmt = c.prepare(&sql)?;
@@ -952,16 +1010,17 @@ impl D {
                 id: row.get(0)?,
                 candidate_id: row.get(1)?,
                 job_title: row.get(2)?,
-                scheduled_at: row.get(3)?,
-                check_in_at: row.get(4)?,
-                interviewer_id: row.get(5)?,
-                skill_scores: row.get(6)?,
-                overall_score: row.get(7)?,
-                comments: row.get(8)?,
-                status: row.get(9)?,
-                result: row.get(10)?,
-                created_at: row.get(11)?,
-                updated_at: row.get(12)?,
+                job_id: row.get(3)?,
+                scheduled_at: row.get(4)?,
+                check_in_at: row.get(5)?,
+                interviewer_id: row.get(6)?,
+                skill_scores: row.get(7)?,
+                overall_score: row.get(8)?,
+                comments: row.get(9)?,
+                status: row.get(10)?,
+                result: row.get(11)?,
+                created_at: row.get(12)?,
+                updated_at: row.get(13)?,
             })
         })?;
         Ok(rows.filter_map(|r| r.ok()).collect())
@@ -969,23 +1028,24 @@ impl D {
 
     pub fn interview_by_id(&self, id: &str) -> Result<Interview, E> {
         self.conn()?.query_row(
-            "SELECT id, candidate_id, job_title, scheduled_at, check_in_at, interviewer_id, skill_scores, overall_score, comments, status, result, created_at, updated_at FROM interviews WHERE id=?",
+            "SELECT id, candidate_id, job_title, job_id, scheduled_at, check_in_at, interviewer_id, skill_scores, overall_score, comments, status, result, created_at, updated_at FROM interviews WHERE id=?",
             params![id],
             |row| {
                 Ok(Interview {
                     id: row.get(0)?,
                     candidate_id: row.get(1)?,
                     job_title: row.get(2)?,
-                    scheduled_at: row.get(3)?,
-                    check_in_at: row.get(4)?,
-                    interviewer_id: row.get(5)?,
-                    skill_scores: row.get(6)?,
-                    overall_score: row.get(7)?,
-                    comments: row.get(8)?,
-                    status: row.get(9)?,
-                    result: row.get(10)?,
-                    created_at: row.get(11)?,
-                    updated_at: row.get(12)?,
+                    job_id: row.get(3)?,
+                    scheduled_at: row.get(4)?,
+                    check_in_at: row.get(5)?,
+                    interviewer_id: row.get(6)?,
+                    skill_scores: row.get(7)?,
+                    overall_score: row.get(8)?,
+                    comments: row.get(9)?,
+                    status: row.get(10)?,
+                    result: row.get(11)?,
+                    created_at: row.get(12)?,
+                    updated_at: row.get(13)?,
                 })
             },
         ).map_err(|_| E("interview not found".into()))
@@ -993,8 +1053,8 @@ impl D {
 
     pub fn create_interview(&self, iv: &Interview) -> Result<(), E> {
         self.conn()?.execute(
-            "INSERT INTO interviews (id, candidate_id, job_title, scheduled_at, check_in_at, interviewer_id, skill_scores, overall_score, comments, status, result, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-            params![iv.id, iv.candidate_id, iv.job_title, iv.scheduled_at, iv.check_in_at, iv.interviewer_id, iv.skill_scores, iv.overall_score, iv.comments, iv.status, iv.result, iv.created_at, iv.updated_at],
+            "INSERT INTO interviews (id, candidate_id, job_title, job_id, scheduled_at, check_in_at, interviewer_id, skill_scores, overall_score, comments, status, result, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            params![iv.id, iv.candidate_id, iv.job_title, iv.job_id, iv.scheduled_at, iv.check_in_at, iv.interviewer_id, iv.skill_scores, iv.overall_score, iv.comments, iv.status, iv.result, iv.created_at, iv.updated_at],
         )?;
         Ok(())
     }
@@ -1457,7 +1517,7 @@ impl D {
 
     pub fn list_jobs(&self, status: Option<&str>, q: Option<&str>) -> Result<Vec<Job>, E> {
         let c = self.conn()?;
-        let sql = "SELECT id, title, description, location, salary_min, salary_max, salary_currency, department, requirements, responsibilities, employment_type, status, posted_by, views, created_at, updated_at FROM jobs WHERE (?1 IS NULL OR status=?1) AND (?2 IS NULL OR title LIKE '%'||?2||'%') ORDER BY created_at DESC".to_string();
+        let sql = "SELECT id, title, description, location, country_code, city, salary_min, salary_max, salary_currency, department, requirements, responsibilities, employment_type, status, posted_by, views, created_at, updated_at FROM jobs WHERE (?1 IS NULL OR status=?1) AND (?2 IS NULL OR title LIKE '%'||?2||'%') ORDER BY created_at DESC".to_string();
         let mut stmt = c.prepare(&sql)?;
         let rows = stmt.query_map(params![status, q], |row| {
             Ok(Job {
@@ -1465,18 +1525,20 @@ impl D {
                 title: row.get(1)?,
                 description: row.get(2)?,
                 location: row.get(3)?,
-                salary_min: row.get(4)?,
-                salary_max: row.get(5)?,
-                salary_currency: row.get(6)?,
-                department: row.get(7)?,
-                requirements: row.get(8)?,
-                responsibilities: row.get(9)?,
-                employment_type: row.get(10)?,
-                status: row.get(11)?,
-                posted_by: row.get(12)?,
-                views: row.get(13)?,
-                created_at: row.get(14)?,
-                updated_at: row.get(15)?,
+                country_code: row.get(4)?,
+                city: row.get(5)?,
+                salary_min: row.get(6)?,
+                salary_max: row.get(7)?,
+                salary_currency: row.get(8)?,
+                department: row.get(9)?,
+                requirements: row.get(10)?,
+                responsibilities: row.get(11)?,
+                employment_type: row.get(12)?,
+                status: row.get(13)?,
+                posted_by: row.get(14)?,
+                views: row.get(15)?,
+                created_at: row.get(16)?,
+                updated_at: row.get(17)?,
             })
         })?;
         Ok(rows.filter_map(|r| r.ok()).collect())
@@ -1484,7 +1546,7 @@ impl D {
 
     pub fn job_by_id(&self, id: &str) -> Result<Job, E> {
         self.conn()?.query_row(
-            "SELECT id, title, description, location, salary_min, salary_max, salary_currency, department, requirements, responsibilities, employment_type, status, posted_by, views, created_at, updated_at FROM jobs WHERE id=?",
+            "SELECT id, title, description, location, country_code, city, salary_min, salary_max, salary_currency, department, requirements, responsibilities, employment_type, status, posted_by, views, created_at, updated_at FROM jobs WHERE id=?",
             params![id],
             |row| {
                 Ok(Job {
@@ -1492,18 +1554,20 @@ impl D {
                     title: row.get(1)?,
                     description: row.get(2)?,
                     location: row.get(3)?,
-                    salary_min: row.get(4)?,
-                    salary_max: row.get(5)?,
-                    salary_currency: row.get(6)?,
-                    department: row.get(7)?,
-                    requirements: row.get(8)?,
-                    responsibilities: row.get(9)?,
-                    employment_type: row.get(10)?,
-                    status: row.get(11)?,
-                    posted_by: row.get(12)?,
-                    views: row.get(13)?,
-                    created_at: row.get(14)?,
-                    updated_at: row.get(15)?,
+                    country_code: row.get(4)?,
+                    city: row.get(5)?,
+                    salary_min: row.get(6)?,
+                    salary_max: row.get(7)?,
+                    salary_currency: row.get(8)?,
+                    department: row.get(9)?,
+                    requirements: row.get(10)?,
+                    responsibilities: row.get(11)?,
+                    employment_type: row.get(12)?,
+                    status: row.get(13)?,
+                    posted_by: row.get(14)?,
+                    views: row.get(15)?,
+                    created_at: row.get(16)?,
+                    updated_at: row.get(17)?,
                 })
             },
         ).map_err(|_| E("job not found".into()))
@@ -1511,16 +1575,16 @@ impl D {
 
     pub fn create_job(&self, j: &Job) -> Result<(), E> {
         self.conn()?.execute(
-            "INSERT INTO jobs (id, title, description, location, salary_min, salary_max, salary_currency, department, requirements, responsibilities, employment_type, status, posted_by) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)",
-            params![j.id, j.title, j.description, j.location, j.salary_min, j.salary_max, j.salary_currency, j.department, j.requirements, j.responsibilities, j.employment_type, j.status, j.posted_by],
+            "INSERT INTO jobs (id, title, description, location, country_code, city, salary_min, salary_max, salary_currency, department, requirements, responsibilities, employment_type, status, posted_by) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15)",
+            params![j.id, j.title, j.description, j.location, j.country_code, j.city, j.salary_min, j.salary_max, j.salary_currency, j.department, j.requirements, j.responsibilities, j.employment_type, j.status, j.posted_by],
         )?;
         Ok(())
     }
 
     pub fn update_job(&self, id: &str, j: &Job) -> Result<(), E> {
         let affected = self.conn()?.execute(
-            "UPDATE jobs SET title=?1,description=?2,location=?3,salary_min=?4,salary_max=?5,salary_currency=?6,department=?7,requirements=?8,responsibilities=?9,employment_type=?10,status=?11,updated_at=datetime('now') WHERE id=?12",
-            params![j.title, j.description, j.location, j.salary_min, j.salary_max, j.salary_currency, j.department, j.requirements, j.responsibilities, j.employment_type, j.status, id],
+            "UPDATE jobs SET title=?1,description=?2,location=?3,country_code=?4,city=?5,salary_min=?6,salary_max=?7,salary_currency=?8,department=?9,requirements=?10,responsibilities=?11,employment_type=?12,status=?13,updated_at=datetime('now') WHERE id=?14",
+            params![j.title, j.description, j.location, j.country_code, j.city, j.salary_min, j.salary_max, j.salary_currency, j.department, j.requirements, j.responsibilities, j.employment_type, j.status, id],
         )?;
         if affected == 0 {
             return Err(E("job not found".into()));
@@ -1908,23 +1972,24 @@ impl D {
     pub fn list_all_interviews(&self) -> Result<Vec<Interview>, E> {
         let c = self.conn()?;
         let mut stmt = c.prepare(
-            "SELECT id, candidate_id, job_title, scheduled_at, check_in_at, interviewer_id, skill_scores, overall_score, comments, status, result, created_at, updated_at FROM interviews ORDER BY created_at DESC"
+            "SELECT id, candidate_id, job_title, job_id, scheduled_at, check_in_at, interviewer_id, skill_scores, overall_score, comments, status, result, created_at, updated_at FROM interviews ORDER BY created_at DESC"
         )?;
         let rows = stmt.query_map([], |row| {
             Ok(Interview {
                 id: row.get(0)?,
                 candidate_id: row.get(1)?,
                 job_title: row.get(2)?,
-                scheduled_at: row.get(3)?,
-                check_in_at: row.get(4)?,
-                interviewer_id: row.get(5)?,
-                skill_scores: row.get(6)?,
-                overall_score: row.get(7)?,
-                comments: row.get(8)?,
-                status: row.get(9)?,
-                result: row.get(10)?,
-                created_at: row.get(11)?,
-                updated_at: row.get(12)?,
+                job_id: row.get(3)?,
+                scheduled_at: row.get(4)?,
+                check_in_at: row.get(5)?,
+                interviewer_id: row.get(6)?,
+                skill_scores: row.get(7)?,
+                overall_score: row.get(8)?,
+                comments: row.get(9)?,
+                status: row.get(10)?,
+                result: row.get(11)?,
+                created_at: row.get(12)?,
+                updated_at: row.get(13)?,
             })
         })?;
         let mut result = Vec::new();
@@ -2040,6 +2105,79 @@ impl D {
                 "average_score": avg_eval_score,
             },
         }))
+    }
+
+    pub fn create_candidate_education(&self, e: &CandidateEducation) -> Result<(), E> {
+        self.conn()?.execute(
+            "INSERT INTO candidate_educations (id, candidate_id, level, school, major, graduation_year, notes, created_at) VALUES (?,?,?,?,?,?,?,?)",
+            params![e.id, e.candidate_id, e.level, e.school, e.major, e.graduation_year, e.notes, e.created_at],
+        )?;
+        Ok(())
+    }
+
+    pub fn list_candidate_educations(&self, candidate_id: &str) -> Result<Vec<CandidateEducation>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare(
+            "SELECT id, candidate_id, level, school, major, graduation_year, notes, created_at FROM candidate_educations WHERE candidate_id=? ORDER BY graduation_year DESC"
+        )?;
+        let rows = stmt.query_map(params![candidate_id], |row| {
+            Ok(CandidateEducation {
+                id: row.get(0)?,
+                candidate_id: row.get(1)?,
+                level: row.get(2)?,
+                school: row.get(3)?,
+                major: row.get(4)?,
+                graduation_year: row.get(5)?,
+                notes: row.get(6)?,
+                created_at: row.get(7)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn delete_candidate_education(&self, id: &str) -> Result<(), E> {
+        let affected = self.conn()?.execute("DELETE FROM candidate_educations WHERE id=?", params![id])?;
+        if affected == 0 {
+            return Err(E("candidate education not found".into()));
+        }
+        Ok(())
+    }
+
+    pub fn create_candidate_work_experience(&self, w: &CandidateWorkExperience) -> Result<(), E> {
+        self.conn()?.execute(
+            "INSERT INTO candidate_work_experiences (id, candidate_id, employer, position, start_date, end_date, duration, duties, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+            params![w.id, w.candidate_id, w.employer, w.position, w.start_date, w.end_date, w.duration, w.duties, w.created_at],
+        )?;
+        Ok(())
+    }
+
+    pub fn list_candidate_work_experiences(&self, candidate_id: &str) -> Result<Vec<CandidateWorkExperience>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare(
+            "SELECT id, candidate_id, employer, position, start_date, end_date, duration, duties, created_at FROM candidate_work_experiences WHERE candidate_id=? ORDER BY start_date DESC"
+        )?;
+        let rows = stmt.query_map(params![candidate_id], |row| {
+            Ok(CandidateWorkExperience {
+                id: row.get(0)?,
+                candidate_id: row.get(1)?,
+                employer: row.get(2)?,
+                position: row.get(3)?,
+                start_date: row.get(4)?,
+                end_date: row.get(5)?,
+                duration: row.get(6)?,
+                duties: row.get(7)?,
+                created_at: row.get(8)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn delete_candidate_work_experience(&self, id: &str) -> Result<(), E> {
+        let affected = self.conn()?.execute("DELETE FROM candidate_work_experiences WHERE id=?", params![id])?;
+        if affected == 0 {
+            return Err(E("candidate work experience not found".into()));
+        }
+        Ok(())
     }
 }
 

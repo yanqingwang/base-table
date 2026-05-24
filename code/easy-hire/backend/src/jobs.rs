@@ -161,9 +161,14 @@ pub async fn create_job(
         title: input.get("title").and_then(|v| v.as_str()).unwrap_or("").to_string(),
         description: input.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()),
         location: input.get("location").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        country_code: input.get("country_code").and_then(|v| v.as_str()).unwrap_or("PH").to_string(),
+        city: input.get("city").and_then(|v| v.as_str()).map(|s| s.to_string()),
         salary_min: input.get("salary_min").and_then(|v| v.as_f64()),
         salary_max: input.get("salary_max").and_then(|v| v.as_f64()),
-        salary_currency: input.get("salary_currency").and_then(|v| v.as_str()).unwrap_or("USD").to_string(),
+        salary_currency: {
+            let raw = input.get("salary_currency").and_then(|v| v.as_str()).unwrap_or("USD");
+            if crate::CURRENCY_OPTIONS.contains(&raw) { raw.to_string() } else { "USD".to_string() }
+        },
         department: input.get("department").and_then(|v| v.as_str()).map(|s| s.to_string()),
         requirements: input.get("requirements").and_then(|v| v.as_str()).map(|s| s.to_string()),
         responsibilities: input.get("responsibilities").and_then(|v| v.as_str()).map(|s| s.to_string()),
@@ -200,9 +205,14 @@ pub async fn update_job(
         title: input.get("title").and_then(|v| v.as_str()).unwrap_or(&existing.title).to_string(),
         description: input.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()).or(existing.description),
         location: input.get("location").and_then(|v| v.as_str()).map(|s| s.to_string()).or(existing.location),
+        country_code: input.get("country_code").and_then(|v| v.as_str()).unwrap_or(&existing.country_code).to_string(),
+        city: input.get("city").and_then(|v| v.as_str()).map(|s| s.to_string()).or(existing.city),
         salary_min: input.get("salary_min").and_then(|v| v.as_f64()).or(existing.salary_min),
         salary_max: input.get("salary_max").and_then(|v| v.as_f64()).or(existing.salary_max),
-        salary_currency: input.get("salary_currency").and_then(|v| v.as_str()).unwrap_or(&existing.salary_currency).to_string(),
+        salary_currency: {
+            let raw = input.get("salary_currency").and_then(|v| v.as_str()).unwrap_or(&existing.salary_currency);
+            if crate::CURRENCY_OPTIONS.contains(&raw) { raw.to_string() } else { existing.salary_currency.clone() }
+        },
         department: input.get("department").and_then(|v| v.as_str()).map(|s| s.to_string()).or(existing.department),
         requirements: input.get("requirements").and_then(|v| v.as_str()).map(|s| s.to_string()).or(existing.requirements),
         responsibilities: input.get("responsibilities").and_then(|v| v.as_str()).map(|s| s.to_string()).or(existing.responsibilities),

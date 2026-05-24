@@ -2,11 +2,11 @@ import React, { useLayoutEffect, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Card, Descriptions, Tag, Spin, Button, Space, Typography, Table, message, Select,
-  Input, Form, DatePicker, InputNumber, Collapse,
+  Input, Form, DatePicker, InputNumber, Collapse, Popconfirm, Modal,
 } from 'antd';
 import { ArrowLeftOutlined, SaveOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import api, { Candidate, Interview } from '../../api/client';
+import api, { Candidate, Interview, CandidateEducation, CandidateWorkExperience } from '../../api/client';
 import StatusTag from '../../components/StatusTag';
 
 const { TextArea } = Input;
@@ -57,6 +57,12 @@ const CandidateDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [form] = Form.useForm();
+  const [educations, setEducations] = useState<CandidateEducation[]>([]);
+  const [workExperiences, setWorkExperiences] = useState<CandidateWorkExperience[]>([]);
+  const [eduModalOpen, setEduModalOpen] = useState(false);
+  const [workModalOpen, setWorkModalOpen] = useState(false);
+  const [eduForm] = Form.useForm();
+  const [workForm] = Form.useForm();
 
   const fetchData = async () => {
     if (!id) return;
@@ -70,6 +76,8 @@ const CandidateDetail: React.FC = () => {
       setCandidate(c);
       setInterviews(ivs.filter((iv) => iv.candidate_id === id));
       setTimeline(tl || []);
+      loadEducations();
+      loadWorkExperiences();
     } catch {
       message.error('Failed to load candidate');
     } finally {
@@ -122,6 +130,58 @@ const CandidateDetail: React.FC = () => {
       fetchData();
     } catch {
       message.error('Status change failed');
+    }
+  };
+
+  const loadEducations = () => { if (id) api.candidates.educations.list(id).then(setEducations).catch(() => {}); };
+  const loadWorkExperiences = () => { if (id) api.candidates.workExperiences.list(id).then(setWorkExperiences).catch(() => {}); };
+
+  const handleDeleteEdu = async (eduId: string) => {
+    if (!id) return;
+    try {
+      await api.candidates.educations.delete(id, eduId);
+      message.success('Education deleted');
+      loadEducations();
+    } catch {
+      message.error('Failed to delete education');
+    }
+  };
+
+  const handleAddEdu = async () => {
+    if (!id) return;
+    try {
+      const values = await eduForm.validateFields();
+      if (values.graduation_year) values.graduation_year = Number(values.graduation_year);
+      await api.candidates.educations.create(id, values);
+      message.success('Education added');
+      setEduModalOpen(false);
+      loadEducations();
+    } catch {
+      message.error('Failed to add education');
+    }
+  };
+
+  const handleDeleteWork = async (workId: string) => {
+    if (!id) return;
+    try {
+      await api.candidates.workExperiences.delete(id, workId);
+      message.success('Work experience deleted');
+      loadWorkExperiences();
+    } catch {
+      message.error('Failed to delete work experience');
+    }
+  };
+
+  const handleAddWork = async () => {
+    if (!id) return;
+    try {
+      const values = await workForm.validateFields();
+      await api.candidates.workExperiences.create(id, values);
+      message.success('Work experience added');
+      setWorkModalOpen(false);
+      loadWorkExperiences();
+    } catch {
+      message.error('Failed to add work experience');
     }
   };
 
@@ -304,6 +364,70 @@ const CandidateDetail: React.FC = () => {
           ]}
         />
       </Card>
+
+      <Card title="Education History" style={{ marginTop: 16 }}
+        extra={<Button type="primary" size="small" onClick={() => { setEduModalOpen(true); eduForm.resetFields(); }}>Add Education</Button>}>
+        <Table dataSource={educations} rowKey="id" pagination={false} size="small"
+          columns={[
+            { title: 'Level', dataIndex: 'level', key: 'level' },
+            { title: 'School', dataIndex: 'school', key: 'school', render: (v: string) => v || '-' },
+            { title: 'Major', dataIndex: 'major', key: 'major', render: (v: string) => v || '-' },
+            { title: 'Year', dataIndex: 'graduation_year', key: 'year', render: (v: number) => v || '-' },
+            { title: '', key: 'actions', render: (_: any, r: CandidateEducation) => (
+              <Popconfirm title="Delete?" onConfirm={() => handleDeleteEdu(r.id)}>
+                <Button type="link" danger size="small">Delete</Button>
+              </Popconfirm>
+            )},
+          ]}
+        />
+      </Card>
+
+      <Modal title="Add Education" open={eduModalOpen} onOk={handleAddEdu} onCancel={() => setEduModalOpen(false)}>
+        <Form form={eduForm} layout="vertical">
+          <Form.Item name="level" label="Level" rules={[{ required: true, message: 'Level is required' }]}>
+            <Select options={[
+              { value: 'high_school', label: 'High School' }, { value: 'vocational', label: 'Vocational' },
+              { value: 'bachelor', label: 'Bachelor' }, { value: 'master', label: 'Master' },
+              { value: 'doctorate', label: 'Doctorate' }, { value: 'other', label: 'Other' },
+            ]} />
+          </Form.Item>
+          <Form.Item name="school" label="School"><Input /></Form.Item>
+          <Form.Item name="major" label="Major"><Input /></Form.Item>
+          <Form.Item name="graduation_year" label="Graduation Year"><InputNumber min={1950} max={2030} style={{ width: '100%' }} /></Form.Item>
+          <Form.Item name="notes" label="Notes"><Input.TextArea rows={2} /></Form.Item>
+        </Form>
+      </Modal>
+
+      <Card title="Work Experience" style={{ marginTop: 16 }}
+        extra={<Button type="primary" size="small" onClick={() => { setWorkModalOpen(true); workForm.resetFields(); }}>Add Work Experience</Button>}>
+        <Table dataSource={workExperiences} rowKey="id" pagination={false} size="small"
+          columns={[
+            { title: 'Employer', dataIndex: 'employer', key: 'employer' },
+            { title: 'Position', dataIndex: 'position', key: 'position', render: (v: string) => v || '-' },
+            { title: 'Start', dataIndex: 'start_date', key: 'start_date', render: (v: string) => v || '-' },
+            { title: 'End', dataIndex: 'end_date', key: 'end_date', render: (v: string) => v || '-' },
+            { title: 'Duration', dataIndex: 'duration', key: 'duration', render: (v: string) => v || '-' },
+            { title: '', key: 'actions', render: (_: any, r: CandidateWorkExperience) => (
+              <Popconfirm title="Delete?" onConfirm={() => handleDeleteWork(r.id)}>
+                <Button type="link" danger size="small">Delete</Button>
+              </Popconfirm>
+            )},
+          ]}
+        />
+      </Card>
+
+      <Modal title="Add Work Experience" open={workModalOpen} onOk={handleAddWork} onCancel={() => setWorkModalOpen(false)}>
+        <Form form={workForm} layout="vertical">
+          <Form.Item name="employer" label="Employer" rules={[{ required: true, message: 'Employer is required' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="position" label="Position"><Input /></Form.Item>
+          <Form.Item name="start_date" label="Start Date"><DatePicker style={{ width: '100%' }} /></Form.Item>
+          <Form.Item name="end_date" label="End Date"><DatePicker style={{ width: '100%' }} /></Form.Item>
+          <Form.Item name="duration" label="Duration"><Input placeholder="e.g. 2 years" /></Form.Item>
+          <Form.Item name="duties" label="Duties"><Input.TextArea rows={2} /></Form.Item>
+        </Form>
+      </Modal>
 
       <Card title="Activity Timeline" style={{ marginTop: 16 }}>
         <Table dataSource={timeline} rowKey="id" pagination={false} size="small"

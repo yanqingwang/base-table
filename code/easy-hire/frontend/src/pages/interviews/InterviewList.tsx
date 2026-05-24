@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table, Button, Space, Select, Typography, Spin, Modal, Form, Input, InputNumber, message, DatePicker } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import api, { Interview } from '../../api/client';
+import api, { Interview, Job, Candidate } from '../../api/client';
 import StatusTag from '../../components/StatusTag';
 import dayjs from 'dayjs';
 
@@ -13,8 +13,13 @@ const InterviewList: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
   const [modalOpen, setModalOpen] = useState(false);
   const [evaluateModal, setEvaluateModal] = useState<{ open: boolean; id: string }>({ open: false, id: '' });
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [form] = Form.useForm();
   const [evalForm] = Form.useForm();
+
+  const loadJobs = () => api.jobs.list().then(setJobs).catch(() => {});
+  const loadCandidates = () => api.candidates.list({}).then(setCandidates).catch(() => {});
 
   const fetchData = () => {
     setLoading(true);
@@ -26,11 +31,11 @@ const InterviewList: React.FC = () => {
 
   useEffect(() => { fetchData(); }, [statusFilter]);
 
-  const handleCreate = async (values: { candidate_id: string; job_title: string; scheduled_at: string }) => {
+  const handleCreate = async (values: { candidate_id: string; job_id: string; scheduled_at: string }) => {
     try {
       const payload = {
         candidate_id: values.candidate_id,
-        job_title: values.job_title,
+        job_id: values.job_id,
         scheduled_at: values.scheduled_at ? dayjs(values.scheduled_at).format('YYYY-MM-DDTHH:mm:ss') : undefined,
       };
       await api.interviews.create(payload);
@@ -117,11 +122,23 @@ const InterviewList: React.FC = () => {
 
       <Modal title="Schedule Interview" open={modalOpen} onCancel={() => setModalOpen(false)} footer={null}>
         <Form form={form} layout="vertical" onFinish={handleCreate}>
-          <Form.Item name="candidate_id" label="Candidate ID" rules={[{ required: true }]}>
-            <Input placeholder="Candidate UUID" />
+          <Form.Item name="job_id" label="Job" rules={[{ required: true }]}>
+            <Select
+              showSearch
+              placeholder="Select a job"
+              onFocus={loadJobs}
+              filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+              options={jobs.map(j => ({ value: j.id, label: j.title }))}
+            />
           </Form.Item>
-          <Form.Item name="job_title" label="Job Title">
-            <Input placeholder="e.g. Factory Worker" />
+          <Form.Item name="candidate_id" label="Candidate" rules={[{ required: true }]}>
+            <Select
+              showSearch
+              placeholder="Select a candidate"
+              onFocus={loadCandidates}
+              filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+              options={candidates.map(c => ({ value: c.id, label: c.name }))}
+            />
           </Form.Item>
           <Form.Item name="scheduled_at" label="Scheduled Time">
             <DatePicker showTime style={{ width: '100%' }} />

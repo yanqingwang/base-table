@@ -50,7 +50,7 @@ const JobBoard: React.FC = () => {
                 job.department ? <Tag color="geekblue">{job.department}</Tag> : null
               }
             >
-              {job.location && <Text>📍 {job.location}</Text>}
+              {<Text>📍 {[job.city, job.country_code].filter(Boolean).join(', ') || job.location || '-'}</Text>}
               <div style={{ marginTop: 8 }}>
                 <Tag color={typeColor[job.employment_type] || 'default'}>
                   {job.employment_type}

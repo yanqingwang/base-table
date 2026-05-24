@@ -74,9 +74,33 @@ export interface Candidate {
   updated_at: string;
 }
 
+export interface CandidateEducation {
+  id: string;
+  candidate_id: string;
+  level: string;
+  school?: string;
+  major?: string;
+  graduation_year?: number;
+  notes?: string;
+  created_at: string;
+}
+
+export interface CandidateWorkExperience {
+  id: string;
+  candidate_id: string;
+  employer: string;
+  position?: string;
+  start_date?: string;
+  end_date?: string;
+  duration?: string;
+  duties?: string;
+  created_at: string;
+}
+
 export interface Interview {
   id: string;
   candidate_id: string;
+  job_id: string | null;
   job_title: string | null;
   scheduled_at: string | null;
   check_in_at: string | null;
@@ -257,6 +281,8 @@ export interface Job {
   title: string;
   description: string | null;
   location: string | null;
+  country_code: string;
+  city: string | null;
   salary_min: number | null;
   salary_max: number | null;
   salary_currency: string;
@@ -312,11 +338,21 @@ const api = {
         headers: { 'Content-Type': 'text/plain' },
       }).then((r) => r.data),
     timeline: (id: string) => client.get(`/candidates/${id}/timeline`).then((r) => r.data),
+    educations: {
+      list: (candidateId: string) => client.get<CandidateEducation[]>(`/candidates/${candidateId}/educations`).then(r => r.data),
+      create: (candidateId: string, data: Partial<CandidateEducation>) => client.post<CandidateEducation>(`/candidates/${candidateId}/educations`, data).then(r => r.data),
+      delete: (candidateId: string, id: string) => client.delete(`/candidates/${candidateId}/educations/${id}`).then(r => r.data),
+    },
+    workExperiences: {
+      list: (candidateId: string) => client.get<CandidateWorkExperience[]>(`/candidates/${candidateId}/work-experiences`).then(r => r.data),
+      create: (candidateId: string, data: Partial<CandidateWorkExperience>) => client.post<CandidateWorkExperience>(`/candidates/${candidateId}/work-experiences`, data).then(r => r.data),
+      delete: (candidateId: string, id: string) => client.delete(`/candidates/${candidateId}/work-experiences/${id}`).then(r => r.data),
+    },
   },
   interviews: {
     list: (params?: { status?: string }) =>
       client.get<Interview[]>('/interviews', { params }).then((r) => r.data),
-    create: (data: { candidate_id: string; job_title?: string; scheduled_at?: string; interviewer_id?: string }) =>
+    create: (data: { candidate_id: string; job_id?: string; job_title?: string; scheduled_at?: string; interviewer_id?: string }) =>
       client.post<Interview>('/interviews', data).then((r) => r.data),
     checkin: (id: string) =>
       client.put(`/interviews/${id}/checkin`).then((r) => r.data),

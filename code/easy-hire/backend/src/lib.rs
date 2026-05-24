@@ -6,7 +6,7 @@ use axum::{
     Router,
     extract::{Path, Query, State},
     http::{Method, StatusCode},
-    routing::{get, post, put},
+    routing::{delete, get, post, put},
     Json,
 };
 use serde::{Deserialize, Serialize};
@@ -22,12 +22,14 @@ pub mod jobs;
 pub mod successfactors;
 
 use auth::AuthUser;
-use db::{D, Candidate, Interview, InterviewRound, InterviewAssignment, InterviewEvaluation, Approval, Employee, Document, TrainingCourse, TrainingRecord};
+use db::{D, Candidate, CandidateEducation, CandidateWorkExperience, Interview, InterviewRound, InterviewAssignment, InterviewEvaluation, Approval, Employee, Document, TrainingCourse, TrainingRecord};
 use error::E;
 
 pub struct S {
     pub db: D,
 }
+
+pub const CURRENCY_OPTIONS: &[&str] = &["USD","PHP","MYR","THB","SGD","IDR","VND","MMK","KHR","LAK","BND","EUR","GBP","JPY","CNY","AUD"];
 
 #[derive(Deserialize)]
 pub struct CandidateQuery {
@@ -39,6 +41,7 @@ pub struct CandidateQuery {
 #[derive(Deserialize)]
 pub struct InterviewQuery {
     pub status: Option<String>,
+    pub job_id: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -65,6 +68,7 @@ pub struct UserResponse {
 pub struct InterviewInput {
     pub candidate_id: String,
     pub job_title: Option<String>,
+    pub job_id: Option<String>,
     pub scheduled_at: Option<String>,
     pub interviewer_id: Option<String>,
 }
@@ -227,6 +231,10 @@ pub fn router(state: Arc<S>) -> Router {
         .route("/api/v1/candidates/import", post(import_candidates))
         .route("/api/v1/candidates/:id", get(get_candidate).put(update_candidate).delete(delete_candidate))
         .route("/api/v1/candidates/:id/timeline", get(candidate_timeline))
+        .route("/api/v1/candidates/:candidate_id/educations", get(list_candidate_educations).post(create_candidate_education))
+        .route("/api/v1/candidates/:candidate_id/educations/:id", delete(delete_candidate_education))
+        .route("/api/v1/candidates/:candidate_id/work-experiences", get(list_candidate_work_experiences).post(create_candidate_work_experience))
+        .route("/api/v1/candidates/:candidate_id/work-experiences/:id", delete(delete_candidate_work_experience))
         .route("/api/v1/interviews", get(list_interviews).post(create_interview))
         .route("/api/v1/interviews/assign", post(assign_interviewer))
         .route("/api/v1/interviews/calendar", get(interview_calendar))
@@ -486,6 +494,92 @@ async fn delete_candidate(
     Ok(Json(serde_json::json!({"deleted": id})))
 }
 
+async fn create_candidate_education(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Path(candidate_id): Path<String>,
+    Json(input): Json<Value>,
+) -> Result<Json<CandidateEducation>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter", "agency"])?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
+
+    let education = CandidateEducation {
+        id: id.clone(),
+        candidate_id,
+        level: input.get("level").and_then(|v| v.as_str()).unwrap_or("high_school").to_string(),
+        school: input.get("school").and_then(|v| v.as_str().map(String::from)),
+        major: input.get("major").and_then(|v| v.as_str().map(String::from)),
+        graduation_year: input.get("graduation_year").and_then(|v| v.as_i64()),
+        notes: input.get("notes").and_then(|v| v.as_str().map(String::from)),
+        created_at: now,
+    };
+
+    s.db.create_candidate_education(&education)?;
+    Ok(Json(education))
+}
+
+async fn list_candidate_educations(
+    State(s): State<Arc<S>>,
+    Path(candidate_id): Path<String>,
+) -> Result<Json<Vec<CandidateEducation>>, E> {
+    s.db.list_candidate_educations(&candidate_id).map(Json)
+}
+
+async fn delete_candidate_education(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Path(id): Path<String>,
+) -> Result<Json<Value>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter"])?;
+    s.db.delete_candidate_education(&id)?;
+    Ok(Json(serde_json::json!({"deleted": id})))
+}
+
+async fn create_candidate_work_experience(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Path(candidate_id): Path<String>,
+    Json(input): Json<Value>,
+) -> Result<Json<CandidateWorkExperience>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter", "agency"])?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
+    let employer = input.get("employer").and_then(|v| v.as_str()).ok_or(E("employer required".into()))?;
+
+    let work = CandidateWorkExperience {
+        id: id.clone(),
+        candidate_id,
+        employer: employer.to_string(),
+        position: input.get("position").and_then(|v| v.as_str().map(String::from)),
+        start_date: input.get("start_date").and_then(|v| v.as_str().map(String::from)),
+        end_date: input.get("end_date").and_then(|v| v.as_str().map(String::from)),
+        duration: input.get("duration").and_then(|v| v.as_str().map(String::from)),
+        duties: input.get("duties").and_then(|v| v.as_str().map(String::from)),
+        created_at: now,
+    };
+
+    s.db.create_candidate_work_experience(&work)?;
+    Ok(Json(work))
+}
+
+async fn list_candidate_work_experiences(
+    State(s): State<Arc<S>>,
+    Path(candidate_id): Path<String>,
+) -> Result<Json<Vec<CandidateWorkExperience>>, E> {
+    s.db.list_candidate_work_experiences(&candidate_id).map(Json)
+}
+
+async fn delete_candidate_work_experience(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Path(id): Path<String>,
+) -> Result<Json<Value>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter"])?;
+    s.db.delete_candidate_work_experience(&id)?;
+    Ok(Json(serde_json::json!({"deleted": id})))
+}
+
 async fn import_candidates(
     State(s): State<Arc<S>>,
     auth_user: AuthUser,
@@ -508,7 +602,7 @@ async fn list_interviews(
     State(s): State<Arc<S>>,
     Query(q): Query<InterviewQuery>,
 ) -> Json<Vec<Interview>> {
-    Json(s.db.list_interviews(q.status.as_deref()).unwrap_or_default())
+    Json(s.db.list_interviews(q.status.as_deref(), q.job_id.as_deref()).unwrap_or_default())
 }
 
 async fn create_interview(
@@ -524,6 +618,7 @@ async fn create_interview(
         id: id.clone(),
         candidate_id: input.candidate_id,
         job_title: input.job_title,
+        job_id: input.job_id,
         scheduled_at: input.scheduled_at,
         check_in_at: None,
         interviewer_id: input.interviewer_id,
@@ -901,7 +996,7 @@ async fn whatsapp_webhook(
 async fn interview_calendar(
     State(s): State<Arc<S>>,
 ) -> Result<Json<Value>, E> {
-    let interviews = s.db.list_interviews(None)?;
+    let interviews = s.db.list_interviews(None, None)?;
     let calendar: Vec<Value> = interviews.into_iter().map(|iv| {
         serde_json::json!({
             "id": iv.id,

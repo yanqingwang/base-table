@@ -42,7 +42,7 @@ const JobDetail: React.FC = () => {
           <Tag color={job.status === 'active' ? 'green' : 'default'}>{job.status}</Tag>
         </Space>
         <Descriptions column={2} style={{ marginTop: 16 }}>
-          {job.location && <Descriptions.Item label="Location">{job.location}</Descriptions.Item>}
+          <Descriptions.Item label="Location">{([job.city, job.country_code].filter(Boolean).join(', ') || job.location || '-')}</Descriptions.Item>
           {job.salary_min && job.salary_max && (
             <Descriptions.Item label="Salary">
               {job.salary_currency} {job.salary_min} - {job.salary_max}

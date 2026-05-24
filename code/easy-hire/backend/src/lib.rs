@@ -22,7 +22,7 @@ pub mod jobs;
 pub mod successfactors;
 
 use auth::AuthUser;
-use db::{D, Candidate, CandidateEducation, CandidateWorkExperience, CandidateSkill, CandidateCertificate, Interview, InterviewRound, InterviewAssignment, InterviewEvaluation, InterviewQueue, Approval, Employee, Document, TrainingCourse, TrainingRecord, Country, Currency, Department, Location, JobCategory};
+use db::{D, Candidate, CandidateEducation, CandidateWorkExperience, CandidateSkill, CandidateCertificate, CandidateAddress, CandidateFamilyMember, CandidateBankAccount, CandidateCountryField, Interview, InterviewRound, InterviewAssignment, InterviewEvaluation, InterviewQueue, Approval, Employee, Document, TrainingCourse, TrainingRecord, Country, Currency, Department, Location, JobCategory};
 use error::E;
 
 pub struct S {
@@ -325,6 +325,14 @@ pub fn router(state: Arc<S>) -> Router {
         .route("/api/v1/candidates/:candidate_id/skills/:id", delete(delete_candidate_skill))
         .route("/api/v1/candidates/:candidate_id/certificates", get(list_candidate_certificates).post(create_candidate_certificate))
         .route("/api/v1/candidates/:candidate_id/certificates/:id", delete(delete_candidate_certificate))
+        .route("/api/v1/candidates/:candidate_id/addresses", get(list_candidate_addresses).post(create_candidate_address))
+        .route("/api/v1/candidates/:candidate_id/addresses/:id", delete(delete_candidate_address))
+        .route("/api/v1/candidates/:candidate_id/family-members", get(list_candidate_family_members).post(create_candidate_family_member))
+        .route("/api/v1/candidates/:candidate_id/family-members/:id", delete(delete_candidate_family_member))
+        .route("/api/v1/candidates/:candidate_id/bank-accounts", get(list_candidate_bank_accounts).post(create_candidate_bank_account))
+        .route("/api/v1/candidates/:candidate_id/bank-accounts/:id", delete(delete_candidate_bank_account))
+        .route("/api/v1/candidates/:candidate_id/country-fields", get(list_candidate_country_fields).post(create_candidate_country_field))
+        .route("/api/v1/candidates/:candidate_id/country-fields/:id", delete(delete_candidate_country_field))
         .route("/api/v1/countries", get(list_countries))
         .route("/api/v1/currencies", get(list_currencies))
         .route("/api/v1/departments", get(list_departments))
@@ -1419,6 +1427,184 @@ async fn delete_candidate_certificate(
 ) -> Result<Json<Value>, E> {
     auth::check_role(&auth_user, &["admin", "recruiter"])?;
     s.db.delete_candidate_certificate(&id)?;
+    Ok(Json(serde_json::json!({"deleted": id})))
+}
+
+// ── Candidate Addresses ──
+
+async fn list_candidate_addresses(
+    State(s): State<Arc<S>>,
+    Path(candidate_id): Path<String>,
+) -> Result<Json<Vec<CandidateAddress>>, E> {
+    s.db.list_candidate_addresses(&candidate_id).map(Json)
+}
+
+async fn create_candidate_address(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Path(candidate_id): Path<String>,
+    Json(input): Json<Value>,
+) -> Result<Json<CandidateAddress>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter"])?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let address = CandidateAddress {
+        id: id.clone(),
+        candidate_id,
+        address_type: input.get("address_type").and_then(|v| v.as_str()).unwrap_or("home").to_string(),
+        is_primary: input.get("is_primary").and_then(|v| v.as_i64()).unwrap_or(0),
+        country: input.get("country").and_then(|v| v.as_str().map(String::from)),
+        state: input.get("state").and_then(|v| v.as_str().map(String::from)),
+        city: input.get("city").and_then(|v| v.as_str().map(String::from)),
+        district: input.get("district").and_then(|v| v.as_str().map(String::from)),
+        street: input.get("street").and_then(|v| v.as_str().map(String::from)),
+        postal_code: input.get("postal_code").and_then(|v| v.as_str().map(String::from)),
+        sort_order: input.get("sort_order").and_then(|v| v.as_i64()).unwrap_or(0),
+    };
+    s.db.create_candidate_address(&address)?;
+    Ok(Json(address))
+}
+
+async fn delete_candidate_address(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Path((_candidate_id, id)): Path<(String, String)>,
+) -> Result<Json<Value>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter"])?;
+    s.db.delete_candidate_address(&id)?;
+    Ok(Json(serde_json::json!({"deleted": id})))
+}
+
+// ── Candidate Family Members ──
+
+async fn list_candidate_family_members(
+    State(s): State<Arc<S>>,
+    Path(candidate_id): Path<String>,
+) -> Result<Json<Vec<CandidateFamilyMember>>, E> {
+    s.db.list_candidate_family_members(&candidate_id).map(Json)
+}
+
+async fn create_candidate_family_member(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Path(candidate_id): Path<String>,
+    Json(input): Json<Value>,
+) -> Result<Json<CandidateFamilyMember>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter"])?;
+    let name = input.get("name").and_then(|v| v.as_str()).ok_or(E("name required".into()))?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let member = CandidateFamilyMember {
+        id: id.clone(),
+        candidate_id,
+        name: name.to_string(),
+        relationship: input.get("relationship").and_then(|v| v.as_str()).unwrap_or("other").to_string(),
+        phone: input.get("phone").and_then(|v| v.as_str().map(String::from)),
+        email: input.get("email").and_then(|v| v.as_str().map(String::from)),
+        is_emergency_contact: input.get("is_emergency_contact").and_then(|v| v.as_i64()).unwrap_or(0),
+        is_default: input.get("is_default").and_then(|v| v.as_i64()).unwrap_or(0),
+        address: input.get("address").and_then(|v| v.as_str().map(String::from)),
+        sort_order: input.get("sort_order").and_then(|v| v.as_i64()).unwrap_or(0),
+    };
+    s.db.create_candidate_family_member(&member)?;
+    Ok(Json(member))
+}
+
+async fn delete_candidate_family_member(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Path((_candidate_id, id)): Path<(String, String)>,
+) -> Result<Json<Value>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter"])?;
+    s.db.delete_candidate_family_member(&id)?;
+    Ok(Json(serde_json::json!({"deleted": id})))
+}
+
+// ── Candidate Bank Accounts ──
+
+async fn list_candidate_bank_accounts(
+    State(s): State<Arc<S>>,
+    Path(candidate_id): Path<String>,
+) -> Result<Json<Vec<CandidateBankAccount>>, E> {
+    s.db.list_candidate_bank_accounts(&candidate_id).map(Json)
+}
+
+async fn create_candidate_bank_account(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Path(candidate_id): Path<String>,
+    Json(input): Json<Value>,
+) -> Result<Json<CandidateBankAccount>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter"])?;
+    let bank_name = input.get("bank_name").and_then(|v| v.as_str()).ok_or(E("bank_name required".into()))?;
+    let account_number = input.get("account_number").and_then(|v| v.as_str()).ok_or(E("account_number required".into()))?;
+    let account_holder = input.get("account_holder").and_then(|v| v.as_str()).ok_or(E("account_holder required".into()))?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let account = CandidateBankAccount {
+        id: id.clone(),
+        candidate_id,
+        bank_name: bank_name.to_string(),
+        account_number: account_number.to_string(),
+        account_holder: account_holder.to_string(),
+        account_type: input.get("account_type").and_then(|v| v.as_str().map(String::from)),
+        bank_country: input.get("bank_country").and_then(|v| v.as_str().map(String::from)),
+        currency: input.get("currency").and_then(|v| v.as_str().map(String::from)),
+        swift_code: input.get("swift_code").and_then(|v| v.as_str().map(String::from)),
+        iban: input.get("iban").and_then(|v| v.as_str().map(String::from)),
+        is_primary: input.get("is_primary").and_then(|v| v.as_i64()).unwrap_or(0),
+        sort_order: input.get("sort_order").and_then(|v| v.as_i64()).unwrap_or(0),
+    };
+    s.db.create_candidate_bank_account(&account)?;
+    Ok(Json(account))
+}
+
+async fn delete_candidate_bank_account(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Path((_candidate_id, id)): Path<(String, String)>,
+) -> Result<Json<Value>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter"])?;
+    s.db.delete_candidate_bank_account(&id)?;
+    Ok(Json(serde_json::json!({"deleted": id})))
+}
+
+// ── Candidate Country Fields ──
+
+async fn list_candidate_country_fields(
+    State(s): State<Arc<S>>,
+    Path(candidate_id): Path<String>,
+) -> Result<Json<Vec<CandidateCountryField>>, E> {
+    s.db.list_candidate_country_fields(&candidate_id).map(Json)
+}
+
+async fn create_candidate_country_field(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Path(candidate_id): Path<String>,
+    Json(input): Json<Value>,
+) -> Result<Json<CandidateCountryField>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter"])?;
+    let country = input.get("country").and_then(|v| v.as_str()).ok_or(E("country required".into()))?;
+    let field_name = input.get("field_name").and_then(|v| v.as_str()).ok_or(E("field_name required".into()))?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let field = CandidateCountryField {
+        id: id.clone(),
+        candidate_id,
+        country: country.to_string(),
+        field_name: field_name.to_string(),
+        field_value: input.get("field_value").and_then(|v| v.as_str().map(String::from)),
+        field_type: input.get("field_type").and_then(|v| v.as_str()).unwrap_or("text").to_string(),
+        sort_order: input.get("sort_order").and_then(|v| v.as_i64()).unwrap_or(0),
+    };
+    s.db.create_candidate_country_field(&field)?;
+    Ok(Json(field))
+}
+
+async fn delete_candidate_country_field(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Path((_candidate_id, id)): Path<(String, String)>,
+) -> Result<Json<Value>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter"])?;
+    s.db.delete_candidate_country_field(&id)?;
     Ok(Json(serde_json::json!({"deleted": id})))
 }
 

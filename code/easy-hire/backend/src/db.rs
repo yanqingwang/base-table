@@ -358,6 +358,62 @@ pub struct JobCategory {
     pub is_active: i64,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CandidateAddress {
+    pub id: String,
+    pub candidate_id: String,
+    pub address_type: String,
+    pub is_primary: i64,
+    pub country: Option<String>,
+    pub state: Option<String>,
+    pub city: Option<String>,
+    pub district: Option<String>,
+    pub street: Option<String>,
+    pub postal_code: Option<String>,
+    pub sort_order: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CandidateFamilyMember {
+    pub id: String,
+    pub candidate_id: String,
+    pub name: String,
+    pub relationship: String,
+    pub phone: Option<String>,
+    pub email: Option<String>,
+    pub is_emergency_contact: i64,
+    pub is_default: i64,
+    pub address: Option<String>,
+    pub sort_order: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CandidateBankAccount {
+    pub id: String,
+    pub candidate_id: String,
+    pub bank_name: String,
+    pub account_number: String,
+    pub account_holder: String,
+    pub account_type: Option<String>,
+    pub bank_country: Option<String>,
+    pub currency: Option<String>,
+    pub swift_code: Option<String>,
+    pub iban: Option<String>,
+    pub is_primary: i64,
+    pub sort_order: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CandidateCountryField {
+    pub id: String,
+    pub candidate_id: String,
+    pub country: String,
+    pub field_name: String,
+    pub field_value: Option<String>,
+    pub field_type: String,
+    pub sort_order: i64,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ImportResult {
     pub imported: usize,
@@ -619,7 +675,8 @@ impl D {
                 created_at TEXT DEFAULT (datetime('now')),
                 FOREIGN KEY (interview_id) REFERENCES interviews(id),
                 FOREIGN KEY (round_id) REFERENCES interview_rounds(id),
-                FOREIGN KEY (interviewer_id) REFERENCES users(id)
+                FOREIGN KEY (interviewer_id) REFERENCES users(id),
+                UNIQUE(interview_id, interviewer_id)
             );
 
             CREATE TABLE IF NOT EXISTS candidate_educations (
@@ -711,6 +768,30 @@ impl D {
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
                 is_active INTEGER DEFAULT 1
+            );
+
+            CREATE TABLE IF NOT EXISTS candidate_addresses (
+                id TEXT PRIMARY KEY, candidate_id TEXT NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+                address_type TEXT NOT NULL DEFAULT 'home', is_primary INTEGER DEFAULT 0,
+                country TEXT, state TEXT, city TEXT, district TEXT, street TEXT, postal_code TEXT,
+                sort_order INTEGER DEFAULT 0
+            );
+            CREATE TABLE IF NOT EXISTS candidate_family_members (
+                id TEXT PRIMARY KEY, candidate_id TEXT NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+                name TEXT NOT NULL, relationship TEXT NOT NULL DEFAULT 'other', phone TEXT, email TEXT,
+                is_emergency_contact INTEGER DEFAULT 0, is_default INTEGER DEFAULT 0, address TEXT,
+                sort_order INTEGER DEFAULT 0
+            );
+            CREATE TABLE IF NOT EXISTS candidate_bank_accounts (
+                id TEXT PRIMARY KEY, candidate_id TEXT NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+                bank_name TEXT NOT NULL, account_number TEXT NOT NULL, account_holder TEXT NOT NULL,
+                account_type TEXT, bank_country TEXT, currency TEXT, swift_code TEXT, iban TEXT,
+                is_primary INTEGER DEFAULT 0, sort_order INTEGER DEFAULT 0
+            );
+            CREATE TABLE IF NOT EXISTS candidate_country_fields (
+                id TEXT PRIMARY KEY, candidate_id TEXT NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+                country TEXT NOT NULL, field_name TEXT NOT NULL, field_value TEXT,
+                field_type TEXT DEFAULT 'text', sort_order INTEGER DEFAULT 0
             );
             "
         )?;
@@ -1978,7 +2059,12 @@ impl D {
     }
 
     pub fn create_evaluation(&self, e: &InterviewEvaluation) -> Result<(), E> {
-        self.conn()?.execute(
+        let c = self.conn()?;
+        let _ = c.execute(
+            "DELETE FROM interview_evaluations WHERE interview_id = ?1 AND interviewer_id = ?2",
+            params![e.interview_id, e.interviewer_id],
+        );
+        c.execute(
             "INSERT INTO interview_evaluations (id, interview_id, round_id, interviewer_id, skill_scores, overall_score, comments, recommendation, submitted_at, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
             params![e.id, e.interview_id, e.round_id, e.interviewer_id, e.skill_scores, e.overall_score, e.comments, e.recommendation, e.submitted_at, e.created_at],
         )?;
@@ -2554,6 +2640,166 @@ impl D {
         let affected = self.conn()?.execute("DELETE FROM candidate_certificates WHERE id=?", params![id])?;
         if affected == 0 {
             return Err(E("candidate certificate not found".into()));
+        }
+        Ok(())
+    }
+
+    // ── Candidate Addresses ──
+
+    pub fn list_candidate_addresses(&self, candidate_id: &str) -> Result<Vec<CandidateAddress>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare(
+            "SELECT id, candidate_id, address_type, is_primary, country, state, city, district, street, postal_code, sort_order FROM candidate_addresses WHERE candidate_id=? ORDER BY sort_order ASC"
+        )?;
+        let rows = stmt.query_map(params![candidate_id], |row| {
+            Ok(CandidateAddress {
+                id: row.get(0)?,
+                candidate_id: row.get(1)?,
+                address_type: row.get(2)?,
+                is_primary: row.get(3)?,
+                country: row.get(4)?,
+                state: row.get(5)?,
+                city: row.get(6)?,
+                district: row.get(7)?,
+                street: row.get(8)?,
+                postal_code: row.get(9)?,
+                sort_order: row.get(10)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn create_candidate_address(&self, a: &CandidateAddress) -> Result<(), E> {
+        self.conn()?.execute(
+            "INSERT INTO candidate_addresses (id, candidate_id, address_type, is_primary, country, state, city, district, street, postal_code, sort_order) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)",
+            params![a.id, a.candidate_id, a.address_type, a.is_primary, a.country, a.state, a.city, a.district, a.street, a.postal_code, a.sort_order],
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_candidate_address(&self, id: &str) -> Result<(), E> {
+        let affected = self.conn()?.execute("DELETE FROM candidate_addresses WHERE id=?", params![id])?;
+        if affected == 0 {
+            return Err(E("candidate address not found".into()));
+        }
+        Ok(())
+    }
+
+    // ── Candidate Family Members ──
+
+    pub fn list_candidate_family_members(&self, candidate_id: &str) -> Result<Vec<CandidateFamilyMember>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare(
+            "SELECT id, candidate_id, name, relationship, phone, email, is_emergency_contact, is_default, address, sort_order FROM candidate_family_members WHERE candidate_id=? ORDER BY sort_order ASC"
+        )?;
+        let rows = stmt.query_map(params![candidate_id], |row| {
+            Ok(CandidateFamilyMember {
+                id: row.get(0)?,
+                candidate_id: row.get(1)?,
+                name: row.get(2)?,
+                relationship: row.get(3)?,
+                phone: row.get(4)?,
+                email: row.get(5)?,
+                is_emergency_contact: row.get(6)?,
+                is_default: row.get(7)?,
+                address: row.get(8)?,
+                sort_order: row.get(9)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn create_candidate_family_member(&self, m: &CandidateFamilyMember) -> Result<(), E> {
+        self.conn()?.execute(
+            "INSERT INTO candidate_family_members (id, candidate_id, name, relationship, phone, email, is_emergency_contact, is_default, address, sort_order) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)",
+            params![m.id, m.candidate_id, m.name, m.relationship, m.phone, m.email, m.is_emergency_contact, m.is_default, m.address, m.sort_order],
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_candidate_family_member(&self, id: &str) -> Result<(), E> {
+        let affected = self.conn()?.execute("DELETE FROM candidate_family_members WHERE id=?", params![id])?;
+        if affected == 0 {
+            return Err(E("candidate family member not found".into()));
+        }
+        Ok(())
+    }
+
+    // ── Candidate Bank Accounts ──
+
+    pub fn list_candidate_bank_accounts(&self, candidate_id: &str) -> Result<Vec<CandidateBankAccount>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare(
+            "SELECT id, candidate_id, bank_name, account_number, account_holder, account_type, bank_country, currency, swift_code, iban, is_primary, sort_order FROM candidate_bank_accounts WHERE candidate_id=? ORDER BY sort_order ASC"
+        )?;
+        let rows = stmt.query_map(params![candidate_id], |row| {
+            Ok(CandidateBankAccount {
+                id: row.get(0)?,
+                candidate_id: row.get(1)?,
+                bank_name: row.get(2)?,
+                account_number: row.get(3)?,
+                account_holder: row.get(4)?,
+                account_type: row.get(5)?,
+                bank_country: row.get(6)?,
+                currency: row.get(7)?,
+                swift_code: row.get(8)?,
+                iban: row.get(9)?,
+                is_primary: row.get(10)?,
+                sort_order: row.get(11)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn create_candidate_bank_account(&self, b: &CandidateBankAccount) -> Result<(), E> {
+        self.conn()?.execute(
+            "INSERT INTO candidate_bank_accounts (id, candidate_id, bank_name, account_number, account_holder, account_type, bank_country, currency, swift_code, iban, is_primary, sort_order) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)",
+            params![b.id, b.candidate_id, b.bank_name, b.account_number, b.account_holder, b.account_type, b.bank_country, b.currency, b.swift_code, b.iban, b.is_primary, b.sort_order],
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_candidate_bank_account(&self, id: &str) -> Result<(), E> {
+        let affected = self.conn()?.execute("DELETE FROM candidate_bank_accounts WHERE id=?", params![id])?;
+        if affected == 0 {
+            return Err(E("candidate bank account not found".into()));
+        }
+        Ok(())
+    }
+
+    // ── Candidate Country Fields ──
+
+    pub fn list_candidate_country_fields(&self, candidate_id: &str) -> Result<Vec<CandidateCountryField>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare(
+            "SELECT id, candidate_id, country, field_name, field_value, field_type, sort_order FROM candidate_country_fields WHERE candidate_id=? ORDER BY sort_order ASC"
+        )?;
+        let rows = stmt.query_map(params![candidate_id], |row| {
+            Ok(CandidateCountryField {
+                id: row.get(0)?,
+                candidate_id: row.get(1)?,
+                country: row.get(2)?,
+                field_name: row.get(3)?,
+                field_value: row.get(4)?,
+                field_type: row.get(5)?,
+                sort_order: row.get(6)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn create_candidate_country_field(&self, f: &CandidateCountryField) -> Result<(), E> {
+        self.conn()?.execute(
+            "INSERT INTO candidate_country_fields (id, candidate_id, country, field_name, field_value, field_type, sort_order) VALUES (?1,?2,?3,?4,?5,?6,?7)",
+            params![f.id, f.candidate_id, f.country, f.field_name, f.field_value, f.field_type, f.sort_order],
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_candidate_country_field(&self, id: &str) -> Result<(), E> {
+        let affected = self.conn()?.execute("DELETE FROM candidate_country_fields WHERE id=?", params![id])?;
+        if affected == 0 {
+            return Err(E("candidate country field not found".into()));
         }
         Ok(())
     }

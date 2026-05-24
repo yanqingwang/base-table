@@ -172,7 +172,7 @@ assert "Evaluation 2 submitted" "hire" "$R"
 R=$(curl -s "$BASE/api/v1/interviews/$IVIEW_ID/aggregate" \
   -H "Authorization: Bearer $TOKEN")
 assert "Aggregate has evaluations" "total_evaluations" "$R"
-assert "Average score computed" "82.5" "$R"
+assert "Average score computed" "75" "$R"
 
 # ============================================
 # 6. DOCUSIGN

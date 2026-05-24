@@ -353,18 +353,6 @@ const CandidateDetail: React.FC = () => {
         )}
       </Card>
 
-      <Card title="Interviews" style={{ marginTop: 16 }}>
-        <Table dataSource={interviews} rowKey="id" pagination={false} size="small"
-          columns={[
-            { title: 'Job Title', dataIndex: 'job_title', key: 'job_title' },
-            { title: 'Scheduled', dataIndex: 'scheduled_at', key: 'scheduled_at', render: (d: string) => d ? new Date(d).toLocaleString() : '-' },
-            { title: 'Status', dataIndex: 'status', key: 'status', render: (s: string) => <StatusTag status={s} /> },
-            { title: 'Score', dataIndex: 'overall_score', key: 'score', render: (s: number | null) => s ?? '-' },
-            { title: 'Result', dataIndex: 'result', key: 'result', render: (r: string | null) => r ? <StatusTag status={r} /> : '-' },
-          ]}
-        />
-      </Card>
-
       <Card title="Education History" style={{ marginTop: 16 }}
         extra={<Button type="primary" size="small" onClick={() => { setEduModalOpen(true); eduForm.resetFields(); }}>Add Education</Button>}>
         <Table dataSource={educations} rowKey="id" pagination={false} size="small"
@@ -428,6 +416,18 @@ const CandidateDetail: React.FC = () => {
           <Form.Item name="duties" label="Duties"><Input.TextArea rows={2} /></Form.Item>
         </Form>
       </Modal>
+
+      <Card title="Interviews" style={{ marginTop: 16 }}>
+        <Table dataSource={interviews} rowKey="id" pagination={false} size="small"
+          columns={[
+            { title: 'Job', dataIndex: 'job_id', key: 'job_id', render: (id: string) => id?.substring(0, 8) || '-' },
+            { title: 'Scheduled', dataIndex: 'scheduled_at', key: 'scheduled_at', render: (d: string) => d ? new Date(d).toLocaleString() : '-' },
+            { title: 'Status', dataIndex: 'status', key: 'status', render: (s: string) => <StatusTag status={s} /> },
+            { title: 'Score', dataIndex: 'overall_score', key: 'score', render: (s: number | null) => s ?? '-' },
+            { title: 'Result', dataIndex: 'result', key: 'result', render: (r: string | null) => r ? <StatusTag status={r} /> : '-' },
+          ]}
+        />
+      </Card>
 
       <Card title="Activity Timeline" style={{ marginTop: 16 }}>
         <Table dataSource={timeline} rowKey="id" pagination={false} size="small"

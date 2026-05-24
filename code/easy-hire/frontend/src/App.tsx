@@ -11,6 +11,8 @@ import CandidateDetail from './pages/candidates/CandidateDetail';
 import NewCandidate from './pages/candidates/NewCandidate';
 import CandidateImport from './pages/candidates/CandidateImport';
 import InterviewList from './pages/interviews/InterviewList';
+import InterviewDetail from './pages/interviews/InterviewDetail';
+import EvaluationForm from './pages/evaluations/EvaluationForm';
 import ApprovalList from './pages/approvals/ApprovalList';
 import AgencyCandidates from './pages/agency/AgencyCandidates';
 import EmployeeList from './pages/employees/EmployeeList';
@@ -68,6 +70,8 @@ const App: React.FC = () => {
         <Route path="/candidates/:id" element={<CandidateDetail />} />
         <Route path="/candidates/import" element={<CandidateImport />} />
         <Route path="/interviews" element={<InterviewList />} />
+        <Route path="/interviews/:id" element={<InterviewDetail />} />
+        <Route path="/evaluations/:interviewId" element={<EvaluationForm />} />
         <Route path="/approvals" element={<ApprovalList />} />
         <Route path="/agency/candidates" element={<AgencyCandidates />} />
         <Route path="/employees" element={<EmployeeList />} />

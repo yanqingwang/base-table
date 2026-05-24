@@ -68,6 +68,46 @@ export interface Interview {
   updated_at: string;
 }
 
+export interface InterviewRound {
+  id: string;
+  interview_id: string;
+  round_number: number;
+  round_type: string;
+  scheduled_at: string | null;
+  status: string;
+  created_at: string;
+}
+
+export interface InterviewAssignment {
+  id: string;
+  interview_id: string;
+  round_id: string | null;
+  interviewer_id: string;
+  status: string;
+  created_at: string;
+}
+
+export interface InterviewEvaluation {
+  id: string;
+  interview_id: string;
+  round_id: string | null;
+  interviewer_id: string;
+  skill_scores: string;
+  overall_score: number | null;
+  comments: string | null;
+  recommendation: string;
+  submitted_at: string | null;
+  created_at: string;
+}
+
+export interface EvalAggregate {
+  interview_id: string;
+  total_evaluations: number;
+  average_score: number | null;
+  recommendations: Record<string, number>;
+  evaluations: InterviewEvaluation[];
+}
+
 export interface Approval {
   id: string;
   candidate_id: string;
@@ -249,6 +289,26 @@ const api = {
       client.put(`/interviews/${id}/checkin`).then((r) => r.data),
     evaluate: (id: string, data: { skill_scores?: string; overall_score?: number; comments?: string; result?: string }) =>
       client.put(`/interviews/${id}/evaluate`, data).then((r) => r.data),
+    rounds: {
+      list: (interviewId: string) =>
+        client.get<InterviewRound[]>(`/interviews/${interviewId}/rounds`).then(r => r.data),
+      create: (data: { interview_id: string; round_number: number; round_type?: string; scheduled_at?: string }) =>
+        client.post<InterviewRound>(`/interviews/${data.interview_id}/rounds`, data).then(r => r.data),
+    },
+    assignments: {
+      list: (interviewId: string) =>
+        client.get<InterviewAssignment[]>(`/interviews/${interviewId}/assignments`).then(r => r.data),
+      create: (data: { interview_id: string; round_id?: string; interviewer_id: string }) =>
+        client.post<InterviewAssignment>('/interviews/assign', data).then(r => r.data),
+    },
+    evaluations: {
+      list: (interviewId: string) =>
+        client.get<InterviewEvaluation[]>(`/interviews/${interviewId}/evaluations`).then(r => r.data),
+      submit: (data: { interview_id: string; round_id?: string; overall_score?: number; comments?: string; recommendation?: string }) =>
+        client.post<InterviewEvaluation>('/evaluations', data).then(r => r.data),
+      aggregate: (interviewId: string) =>
+        client.get<EvalAggregate>(`/interviews/${interviewId}/aggregate`).then(r => r.data),
+    },
   },
   approvals: {
     pending: () =>

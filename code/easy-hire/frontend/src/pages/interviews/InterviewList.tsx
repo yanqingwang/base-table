@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Table, Button, Space, Select, Typography, Spin, Modal, Form, Input, InputNumber, message, DatePicker } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import api, { Interview } from '../../api/client';
@@ -6,6 +7,7 @@ import StatusTag from '../../components/StatusTag';
 import dayjs from 'dayjs';
 
 const InterviewList: React.FC = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState<Interview[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
@@ -74,6 +76,7 @@ const InterviewList: React.FC = () => {
       title: 'Actions', key: 'actions',
       render: (_: unknown, r: Interview) => (
         <Space>
+          <Button size="small" onClick={() => navigate(`/interviews/${r.id}`)}>Details</Button>
           {r.status === 'scheduled' && (
             <>
               <Button size="small" onClick={() => handleCheckin(r.id)}>Check-in</Button>

@@ -53,6 +53,7 @@ pub async fn public_get_job(
         return Err(E("job not found".into()));
     }
     let _ = s.db.increment_job_views(&id);
+    let job = s.db.job_by_id(&id)?;
     Ok(Json(job))
 }
 
@@ -150,16 +151,30 @@ pub async fn list_jobs(
 pub async fn create_job(
     State(s): State<Arc<S>>,
     auth_user: auth::AuthUser,
-    Json(mut input): Json<db::Job>,
+    Json(input): Json<Value>,
 ) -> Result<(StatusCode, Json<db::Job>), E> {
     auth::check_role(&auth_user, &["admin", "recruiter"])?;
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
-    input.id = id.clone();
-    input.created_at = now.clone();
-    input.updated_at = now;
-    input.views = 0;
-    s.db.create_job(&input)?;
+    let job = db::Job {
+        id: id.clone(),
+        title: input.get("title").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        description: input.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        location: input.get("location").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        salary_min: input.get("salary_min").and_then(|v| v.as_f64()),
+        salary_max: input.get("salary_max").and_then(|v| v.as_f64()),
+        salary_currency: input.get("salary_currency").and_then(|v| v.as_str()).unwrap_or("USD").to_string(),
+        department: input.get("department").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        requirements: input.get("requirements").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        responsibilities: input.get("responsibilities").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        employment_type: input.get("employment_type").and_then(|v| v.as_str()).unwrap_or("full-time").to_string(),
+        status: input.get("status").and_then(|v| v.as_str()).unwrap_or("draft").to_string(),
+        posted_by: input.get("posted_by").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        views: 0,
+        created_at: now.clone(),
+        updated_at: now,
+    };
+    s.db.create_job(&job)?;
     let job = s.db.job_by_id(&id)?;
     Ok((StatusCode::CREATED, Json(job)))
 }
@@ -176,10 +191,29 @@ pub async fn update_job(
     State(s): State<Arc<S>>,
     auth_user: auth::AuthUser,
     Path(id): Path<String>,
-    Json(input): Json<db::Job>,
+    Json(input): Json<Value>,
 ) -> Result<Json<db::Job>, E> {
     auth::check_role(&auth_user, &["admin", "recruiter"])?;
-    s.db.update_job(&id, &input)?;
+    let existing = s.db.job_by_id(&id)?;
+    let merged = db::Job {
+        id: id.clone(),
+        title: input.get("title").and_then(|v| v.as_str()).unwrap_or(&existing.title).to_string(),
+        description: input.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()).or(existing.description),
+        location: input.get("location").and_then(|v| v.as_str()).map(|s| s.to_string()).or(existing.location),
+        salary_min: input.get("salary_min").and_then(|v| v.as_f64()).or(existing.salary_min),
+        salary_max: input.get("salary_max").and_then(|v| v.as_f64()).or(existing.salary_max),
+        salary_currency: input.get("salary_currency").and_then(|v| v.as_str()).unwrap_or(&existing.salary_currency).to_string(),
+        department: input.get("department").and_then(|v| v.as_str()).map(|s| s.to_string()).or(existing.department),
+        requirements: input.get("requirements").and_then(|v| v.as_str()).map(|s| s.to_string()).or(existing.requirements),
+        responsibilities: input.get("responsibilities").and_then(|v| v.as_str()).map(|s| s.to_string()).or(existing.responsibilities),
+        employment_type: input.get("employment_type").and_then(|v| v.as_str()).unwrap_or(&existing.employment_type).to_string(),
+        status: input.get("status").and_then(|v| v.as_str()).unwrap_or(&existing.status).to_string(),
+        posted_by: input.get("posted_by").and_then(|v| v.as_str()).map(|s| s.to_string()).or(existing.posted_by),
+        views: existing.views,
+        created_at: existing.created_at,
+        updated_at: chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string(),
+    };
+    s.db.update_job(&id, &merged)?;
     let job = s.db.job_by_id(&id)?;
     Ok(Json(job))
 }

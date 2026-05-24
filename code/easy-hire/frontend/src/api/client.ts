@@ -295,6 +295,12 @@ export interface Job {
   views: number;
   created_at: string;
   updated_at: string;
+  department_id: string | null;
+  location_id: string | null;
+  category_id: string | null;
+  currency_id: string | null;
+  headcount: number;
+  hiring_manager_id: string | null;
 }
 
 export interface JobApplication {

@@ -22,7 +22,7 @@ pub mod jobs;
 pub mod successfactors;
 
 use auth::AuthUser;
-use db::{D, Candidate, CandidateEducation, CandidateWorkExperience, Interview, InterviewRound, InterviewAssignment, InterviewEvaluation, Approval, Employee, Document, TrainingCourse, TrainingRecord};
+use db::{D, Candidate, CandidateEducation, CandidateWorkExperience, CandidateSkill, CandidateCertificate, Interview, InterviewRound, InterviewAssignment, InterviewEvaluation, InterviewQueue, Approval, Employee, Document, TrainingCourse, TrainingRecord, Country, Currency, Department, Location, JobCategory};
 use error::E;
 
 pub struct S {
@@ -193,6 +193,38 @@ struct EvalInput {
     recommendation: Option<String>,
 }
 
+#[derive(Deserialize)]
+struct EnqueueInput {
+    candidate_id: String,
+    job_id: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct CallNextInput {
+    job_id: String,
+}
+
+#[derive(Deserialize)]
+struct QueueStatusInput {
+    status: String,
+}
+
+#[derive(Deserialize)]
+struct SkillInput {
+    skill_name: String,
+    proficiency: Option<String>,
+    years_of_experience: Option<f64>,
+}
+
+#[derive(Deserialize)]
+struct CertificateInput {
+    certificate_name: String,
+    issuing_authority: Option<String>,
+    issue_date: Option<String>,
+    expiry_date: Option<String>,
+    certificate_number: Option<String>,
+}
+
 pub fn path() -> PathBuf {
     std::env::var("EASY_HIRE_DB")
         .map(PathBuf::from)
@@ -285,6 +317,19 @@ pub fn router(state: Arc<S>) -> Router {
         .route("/api/v1/export/candidates", get(export::export_candidates))
         .route("/api/v1/export/employees", get(export::export_employees))
         .route("/api/v1/export/interviews", get(export::export_interviews))
+        .route("/api/v1/queue/enqueue", post(enqueue_candidate))
+        .route("/api/v1/queue/call-next", post(call_next_candidate))
+        .route("/api/v1/queue", get(list_queue))
+        .route("/api/v1/queue/:id/status", put(update_queue_status))
+        .route("/api/v1/candidates/:candidate_id/skills", get(list_candidate_skills).post(create_candidate_skill))
+        .route("/api/v1/candidates/:candidate_id/skills/:id", delete(delete_candidate_skill))
+        .route("/api/v1/candidates/:candidate_id/certificates", get(list_candidate_certificates).post(create_candidate_certificate))
+        .route("/api/v1/candidates/:candidate_id/certificates/:id", delete(delete_candidate_certificate))
+        .route("/api/v1/countries", get(list_countries))
+        .route("/api/v1/currencies", get(list_currencies))
+        .route("/api/v1/departments", get(list_departments))
+        .route("/api/v1/locations", get(list_locations))
+        .route("/api/v1/job-categories", get(list_job_categories))
         .layer(cors)
         .with_state(state)
 }
@@ -1261,6 +1306,122 @@ async fn aggregate_evaluations(
     Ok(Json(agg))
 }
 
+async fn enqueue_candidate(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Json(input): Json<EnqueueInput>,
+) -> Result<Json<InterviewQueue>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter"])?;
+    let queue = s.db.enqueue_candidate(&input.candidate_id, input.job_id.as_deref())?;
+    Ok(Json(queue))
+}
+
+async fn call_next_candidate(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Json(input): Json<CallNextInput>,
+) -> Result<Json<InterviewQueue>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter"])?;
+    let queue = s.db.call_next(&input.job_id)?;
+    Ok(Json(queue))
+}
+
+async fn list_queue(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Query(q): Query<std::collections::HashMap<String, String>>,
+) -> Result<Json<Vec<InterviewQueue>>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter", "manager"])?;
+    let job_id = q.get("job_id").map(|s| s.as_str());
+    let status = q.get("status").map(|s| s.as_str());
+    Ok(Json(s.db.list_queue(job_id, status)?))
+}
+
+async fn update_queue_status(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Path(id): Path<String>,
+    Json(input): Json<QueueStatusInput>,
+) -> Result<Json<Value>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter"])?;
+    s.db.update_queue_status(&id, &input.status)?;
+    Ok(Json(serde_json::json!({"updated": id, "status": input.status})))
+}
+
+async fn list_candidate_skills(
+    State(s): State<Arc<S>>,
+    Path(candidate_id): Path<String>,
+) -> Result<Json<Vec<CandidateSkill>>, E> {
+    s.db.list_candidate_skills(&candidate_id).map(Json)
+}
+
+async fn create_candidate_skill(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Path(candidate_id): Path<String>,
+    Json(input): Json<SkillInput>,
+) -> Result<Json<CandidateSkill>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter", "agency"])?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let skill = CandidateSkill {
+        id,
+        candidate_id,
+        skill_name: input.skill_name,
+        proficiency: input.proficiency,
+        years_of_experience: input.years_of_experience,
+    };
+    s.db.create_candidate_skill(&skill)?;
+    Ok(Json(skill))
+}
+
+async fn delete_candidate_skill(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Path((_candidate_id, id)): Path<(String, String)>,
+) -> Result<Json<Value>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter"])?;
+    s.db.delete_candidate_skill(&id)?;
+    Ok(Json(serde_json::json!({"deleted": id})))
+}
+
+async fn list_candidate_certificates(
+    State(s): State<Arc<S>>,
+    Path(candidate_id): Path<String>,
+) -> Result<Json<Vec<CandidateCertificate>>, E> {
+    s.db.list_candidate_certificates(&candidate_id).map(Json)
+}
+
+async fn create_candidate_certificate(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Path(candidate_id): Path<String>,
+    Json(input): Json<CertificateInput>,
+) -> Result<Json<CandidateCertificate>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter", "agency"])?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let cert = CandidateCertificate {
+        id,
+        candidate_id,
+        certificate_name: input.certificate_name,
+        issuing_authority: input.issuing_authority,
+        issue_date: input.issue_date,
+        expiry_date: input.expiry_date,
+        certificate_number: input.certificate_number,
+    };
+    s.db.create_candidate_certificate(&cert)?;
+    Ok(Json(cert))
+}
+
+async fn delete_candidate_certificate(
+    State(s): State<Arc<S>>,
+    auth_user: AuthUser,
+    Path((_candidate_id, id)): Path<(String, String)>,
+) -> Result<Json<Value>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter"])?;
+    s.db.delete_candidate_certificate(&id)?;
+    Ok(Json(serde_json::json!({"deleted": id})))
+}
+
 fn get_one_round(d: &D, id: &str) -> Result<InterviewRound, E> {
     let c = d.conn().map_err(|e| E(e.to_string()))?;
     c.query_row(
@@ -1296,6 +1457,26 @@ fn get_one_assignment(d: &D, id: &str) -> Result<InterviewAssignment, E> {
             })
         },
     ).map_err(|e| E(e.to_string()))
+}
+
+async fn list_countries(State(s): State<Arc<S>>) -> Result<Json<Vec<Country>>, E> {
+    s.db.list_countries().map(Json)
+}
+
+async fn list_currencies(State(s): State<Arc<S>>) -> Result<Json<Vec<Currency>>, E> {
+    s.db.list_currencies().map(Json)
+}
+
+async fn list_departments(State(s): State<Arc<S>>) -> Result<Json<Vec<Department>>, E> {
+    s.db.list_departments().map(Json)
+}
+
+async fn list_locations(State(s): State<Arc<S>>) -> Result<Json<Vec<Location>>, E> {
+    s.db.list_locations().map(Json)
+}
+
+async fn list_job_categories(State(s): State<Arc<S>>) -> Result<Json<Vec<JobCategory>>, E> {
+    s.db.list_job_categories().map(Json)
 }
 
 fn get_one_evaluation(d: &D, id: &str) -> Result<InterviewEvaluation, E> {

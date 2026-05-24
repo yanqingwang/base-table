@@ -49,11 +49,16 @@ const sourceOptions = [
 
 const statusOptions = [
   { value: 'new', label: 'New' },
-  { value: 'applied', label: 'Applied' },
-  { value: 'screened', label: 'Screened' },
+  { value: 'screening', label: 'Screening' },
+  { value: 'queue_waiting', label: 'Queue Waiting' },
   { value: 'interviewing', label: 'Interviewing' },
+  { value: 'evaluated', label: 'Evaluated' },
   { value: 'offered', label: 'Offered' },
+  { value: 'document_signing', label: 'Document Signing' },
   { value: 'signed', label: 'Signed' },
+  { value: 'pre_onboarding', label: 'Pre Onboarding' },
+  { value: 'ready_to_sync', label: 'Ready to Sync' },
+  { value: 'synced', label: 'Synced' },
   { value: 'hired', label: 'Hired' },
   { value: 'rejected', label: 'Rejected' },
 ];

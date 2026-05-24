@@ -8,8 +8,9 @@ import {
 import api, { StatsResponse } from '../api/client';
 
 const statusColors: Record<string, string> = {
-  new: 'default', applied: 'blue', screened: 'cyan', interviewing: 'orange',
-  offered: 'purple', signed: 'geekblue', hired: 'green', rejected: 'red',
+  new: 'default', screening: 'cyan', queue_waiting: 'orange', interviewing: 'orange',
+  evaluated: 'purple', offered: 'purple', document_signing: 'geekblue', signed: 'geekblue',
+  pre_onboarding: 'lime', ready_to_sync: 'cyan', synced: 'green', hired: 'green', rejected: 'red',
 };
 
 const Dashboard: React.FC = () => {

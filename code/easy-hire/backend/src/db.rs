@@ -180,6 +180,12 @@ pub struct Job {
     pub views: i64,
     pub created_at: String,
     pub updated_at: String,
+    pub department_id: Option<String>,
+    pub location_id: Option<String>,
+    pub category_id: Option<String>,
+    pub currency_id: Option<String>,
+    pub headcount: i64,
+    pub hiring_manager_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -277,6 +283,81 @@ pub struct CandidateWorkExperience {
     pub created_at: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct InterviewQueue {
+    pub id: String,
+    pub candidate_id: String,
+    pub job_id: Option<String>,
+    pub queue_number: i64,
+    pub status: String,
+    pub called_at: Option<String>,
+    pub completed_at: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CandidateSkill {
+    pub id: String,
+    pub candidate_id: String,
+    pub skill_name: String,
+    pub proficiency: Option<String>,
+    pub years_of_experience: Option<f64>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CandidateCertificate {
+    pub id: String,
+    pub candidate_id: String,
+    pub certificate_name: String,
+    pub issuing_authority: Option<String>,
+    pub issue_date: Option<String>,
+    pub expiry_date: Option<String>,
+    pub certificate_number: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Country {
+    pub id: String,
+    pub code: String,
+    pub name: String,
+    pub phone_code: Option<String>,
+    pub has_special_fields: i64,
+    pub is_active: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Currency {
+    pub id: String,
+    pub code: String,
+    pub name: String,
+    pub symbol: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Department {
+    pub id: String,
+    pub name: String,
+    pub parent_id: Option<String>,
+    pub is_active: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Location {
+    pub id: String,
+    pub name: String,
+    pub country_id: Option<String>,
+    pub city: Option<String>,
+    pub address: Option<String>,
+    pub is_active: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct JobCategory {
+    pub id: String,
+    pub name: String,
+    pub is_active: i64,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ImportResult {
     pub imported: usize,
@@ -349,7 +430,7 @@ impl D {
                 resume_text TEXT,
                 resume_file_url TEXT,
                 profile_photo_url TEXT,
-                status TEXT NOT NULL DEFAULT 'new' CHECK(status IN ('new','applied','screened','interviewing','offered','signed','hired','rejected')),
+                status TEXT NOT NULL DEFAULT 'new' CHECK(status IN ('new','screening','queue_waiting','interviewing','evaluated','offered','document_signing','signed','pre_onboarding','ready_to_sync','synced','hired','rejected')),
                 source TEXT DEFAULT 'direct' CHECK(source IN ('agency','direct','referral','other')),
                 notes TEXT,
                 created_at TEXT DEFAULT (datetime('now')),
@@ -563,8 +644,85 @@ impl D {
                 duties TEXT,
                 created_at TEXT DEFAULT (datetime('now'))
             );
+
+            CREATE TABLE IF NOT EXISTS interview_queue (
+                id TEXT PRIMARY KEY,
+                candidate_id TEXT NOT NULL REFERENCES candidates(id),
+                job_id TEXT REFERENCES jobs(id),
+                queue_number INTEGER NOT NULL,
+                status TEXT DEFAULT 'waiting' CHECK(status IN ('waiting','called','interviewing','completed','skipped','absent')),
+                called_at TEXT,
+                completed_at TEXT,
+                created_at TEXT DEFAULT (datetime('now'))
+            );
+
+            CREATE TABLE IF NOT EXISTS candidate_skills (
+                id TEXT PRIMARY KEY,
+                candidate_id TEXT NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+                skill_name TEXT NOT NULL,
+                proficiency TEXT,
+                years_of_experience REAL,
+                UNIQUE(candidate_id, skill_name)
+            );
+
+            CREATE TABLE IF NOT EXISTS candidate_certificates (
+                id TEXT PRIMARY KEY,
+                candidate_id TEXT NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+                certificate_name TEXT NOT NULL,
+                issuing_authority TEXT,
+                issue_date TEXT,
+                expiry_date TEXT,
+                certificate_number TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS countries (
+                id TEXT PRIMARY KEY,
+                code TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                phone_code TEXT,
+                has_special_fields INTEGER DEFAULT 0,
+                is_active INTEGER DEFAULT 1
+            );
+
+            CREATE TABLE IF NOT EXISTS currencies (
+                id TEXT PRIMARY KEY,
+                code TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                symbol TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS departments (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                parent_id TEXT,
+                is_active INTEGER DEFAULT 1
+            );
+
+            CREATE TABLE IF NOT EXISTS locations (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                country_id TEXT,
+                city TEXT,
+                address TEXT,
+                is_active INTEGER DEFAULT 1
+            );
+
+            CREATE TABLE IF NOT EXISTS job_categories (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                is_active INTEGER DEFAULT 1
+            );
             "
         )?;
+        // Add v2.0 FK columns to jobs table (safe to run if columns already exist)
+        let _ = c.execute_batch("
+            ALTER TABLE jobs ADD COLUMN department_id TEXT;
+            ALTER TABLE jobs ADD COLUMN location_id TEXT;
+            ALTER TABLE jobs ADD COLUMN category_id TEXT;
+            ALTER TABLE jobs ADD COLUMN currency_id TEXT;
+            ALTER TABLE jobs ADD COLUMN headcount INTEGER DEFAULT 1;
+            ALTER TABLE jobs ADD COLUMN hiring_manager_id TEXT;
+        ");
         // Add DocuSign and SF columns (safe to run if columns already exist)
         for (table, column, def) in &[
             ("employees", "sf_sync_status", "TEXT DEFAULT 'pending'"),
@@ -578,6 +736,40 @@ impl D {
             let sql = format!("ALTER TABLE {} ADD COLUMN {} {}", table, column, def);
             let _ = c.execute(&sql, []);
         }
+        // Seed master data
+        let _ = c.execute_batch("
+            INSERT OR IGNORE INTO countries (id, code, name, phone_code) VALUES
+                ('cn','CN','China','86'),
+                ('us','US','United States','1'),
+                ('sg','SG','Singapore','65'),
+                ('ph','PH','Philippines','63'),
+                ('my','MY','Malaysia','60'),
+                ('th','TH','Thailand','66'),
+                ('vn','VN','Vietnam','84'),
+                ('id','ID','Indonesia','62'),
+                ('jp','JP','Japan','81'),
+                ('kr','KR','South Korea','82');
+            INSERT OR IGNORE INTO currencies (id, code, name, symbol) VALUES
+                ('cny','CNY','Chinese Yuan','¥'),
+                ('usd','USD','US Dollar','$'),
+                ('eur','EUR','Euro','€'),
+                ('jpy','JPY','Japanese Yen','¥'),
+                ('gbp','GBP','British Pound','£'),
+                ('sgd','SGD','Singapore Dollar','S$'),
+                ('php','PHP','Philippine Peso','₱'),
+                ('myr','MYR','Malaysian Ringgit','RM'),
+                ('thb','THB','Thai Baht','฿'),
+                ('idr','IDR','Indonesian Rupiah','Rp'),
+                ('vnd','VND','Vietnamese Dong','₫');
+            INSERT OR IGNORE INTO departments (id, name) VALUES
+                ('eng','Engineering'),
+                ('prod','Product'),
+                ('sales','Sales'),
+                ('mkt','Marketing'),
+                ('hr','HR'),
+                ('fin','Finance'),
+                ('ops','Operations');
+        ");
         Ok(())
     }
 
@@ -1517,7 +1709,7 @@ impl D {
 
     pub fn list_jobs(&self, status: Option<&str>, q: Option<&str>) -> Result<Vec<Job>, E> {
         let c = self.conn()?;
-        let sql = "SELECT id, title, description, location, country_code, city, salary_min, salary_max, salary_currency, department, requirements, responsibilities, employment_type, status, posted_by, views, created_at, updated_at FROM jobs WHERE (?1 IS NULL OR status=?1) AND (?2 IS NULL OR title LIKE '%'||?2||'%') ORDER BY created_at DESC".to_string();
+        let sql = "SELECT id, title, description, location, country_code, city, salary_min, salary_max, salary_currency, department, requirements, responsibilities, employment_type, status, posted_by, views, created_at, updated_at, department_id, location_id, category_id, currency_id, headcount, hiring_manager_id FROM jobs WHERE (?1 IS NULL OR status=?1) AND (?2 IS NULL OR title LIKE '%'||?2||'%') ORDER BY created_at DESC".to_string();
         let mut stmt = c.prepare(&sql)?;
         let rows = stmt.query_map(params![status, q], |row| {
             Ok(Job {
@@ -1539,6 +1731,12 @@ impl D {
                 views: row.get(15)?,
                 created_at: row.get(16)?,
                 updated_at: row.get(17)?,
+                department_id: row.get(18)?,
+                location_id: row.get(19)?,
+                category_id: row.get(20)?,
+                currency_id: row.get(21)?,
+                headcount: row.get(22)?,
+                hiring_manager_id: row.get(23)?,
             })
         })?;
         Ok(rows.filter_map(|r| r.ok()).collect())
@@ -1546,7 +1744,7 @@ impl D {
 
     pub fn job_by_id(&self, id: &str) -> Result<Job, E> {
         self.conn()?.query_row(
-            "SELECT id, title, description, location, country_code, city, salary_min, salary_max, salary_currency, department, requirements, responsibilities, employment_type, status, posted_by, views, created_at, updated_at FROM jobs WHERE id=?",
+            "SELECT id, title, description, location, country_code, city, salary_min, salary_max, salary_currency, department, requirements, responsibilities, employment_type, status, posted_by, views, created_at, updated_at, department_id, location_id, category_id, currency_id, headcount, hiring_manager_id FROM jobs WHERE id=?",
             params![id],
             |row| {
                 Ok(Job {
@@ -1568,6 +1766,12 @@ impl D {
                     views: row.get(15)?,
                     created_at: row.get(16)?,
                     updated_at: row.get(17)?,
+                    department_id: row.get(18)?,
+                    location_id: row.get(19)?,
+                    category_id: row.get(20)?,
+                    currency_id: row.get(21)?,
+                    headcount: row.get(22)?,
+                    hiring_manager_id: row.get(23)?,
                 })
             },
         ).map_err(|_| E("job not found".into()))
@@ -1575,16 +1779,16 @@ impl D {
 
     pub fn create_job(&self, j: &Job) -> Result<(), E> {
         self.conn()?.execute(
-            "INSERT INTO jobs (id, title, description, location, country_code, city, salary_min, salary_max, salary_currency, department, requirements, responsibilities, employment_type, status, posted_by) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15)",
-            params![j.id, j.title, j.description, j.location, j.country_code, j.city, j.salary_min, j.salary_max, j.salary_currency, j.department, j.requirements, j.responsibilities, j.employment_type, j.status, j.posted_by],
+            "INSERT INTO jobs (id, title, description, location, country_code, city, salary_min, salary_max, salary_currency, department, requirements, responsibilities, employment_type, status, posted_by, department_id, location_id, category_id, currency_id, headcount, hiring_manager_id) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21)",
+            params![j.id, j.title, j.description, j.location, j.country_code, j.city, j.salary_min, j.salary_max, j.salary_currency, j.department, j.requirements, j.responsibilities, j.employment_type, j.status, j.posted_by, j.department_id, j.location_id, j.category_id, j.currency_id, j.headcount, j.hiring_manager_id],
         )?;
         Ok(())
     }
 
     pub fn update_job(&self, id: &str, j: &Job) -> Result<(), E> {
         let affected = self.conn()?.execute(
-            "UPDATE jobs SET title=?1,description=?2,location=?3,country_code=?4,city=?5,salary_min=?6,salary_max=?7,salary_currency=?8,department=?9,requirements=?10,responsibilities=?11,employment_type=?12,status=?13,updated_at=datetime('now') WHERE id=?14",
-            params![j.title, j.description, j.location, j.country_code, j.city, j.salary_min, j.salary_max, j.salary_currency, j.department, j.requirements, j.responsibilities, j.employment_type, j.status, id],
+            "UPDATE jobs SET title=?1,description=?2,location=?3,country_code=?4,city=?5,salary_min=?6,salary_max=?7,salary_currency=?8,department=?9,requirements=?10,responsibilities=?11,employment_type=?12,status=?13,department_id=?14,location_id=?15,category_id=?16,currency_id=?17,headcount=?18,hiring_manager_id=?19,updated_at=datetime('now') WHERE id=?20",
+            params![j.title, j.description, j.location, j.country_code, j.city, j.salary_min, j.salary_max, j.salary_currency, j.department, j.requirements, j.responsibilities, j.employment_type, j.status, j.department_id, j.location_id, j.category_id, j.currency_id, j.headcount, j.hiring_manager_id, id],
         )?;
         if affected == 0 {
             return Err(E("job not found".into()));
@@ -2178,6 +2382,253 @@ impl D {
             return Err(E("candidate work experience not found".into()));
         }
         Ok(())
+    }
+
+    pub fn enqueue_candidate(&self, candidate_id: &str, job_id: Option<&str>) -> Result<InterviewQueue, E> {
+        let c = self.conn()?;
+        let today = chrono::Utc::now().format("%Y-%m-%d").to_string();
+        let max_queue: i64 = c.query_row(
+            "SELECT COALESCE(MAX(queue_number), 0) FROM interview_queue WHERE job_id=?1 AND date(created_at)=?2",
+            params![job_id, today],
+            |r| r.get(0),
+        )?;
+        let queue_number = max_queue + 1;
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
+        c.execute(
+            "INSERT INTO interview_queue (id, candidate_id, job_id, queue_number, status, created_at) VALUES (?1,?2,?3,?4,'waiting',?5)",
+            params![id, candidate_id, job_id, queue_number, now],
+        )?;
+        Ok(InterviewQueue {
+            id,
+            candidate_id: candidate_id.to_string(),
+            job_id: job_id.map(String::from),
+            queue_number,
+            status: "waiting".to_string(),
+            called_at: None,
+            completed_at: None,
+            created_at: now,
+        })
+    }
+
+    pub fn call_next(&self, job_id: &str) -> Result<InterviewQueue, E> {
+        let c = self.conn()?;
+        let row = c.query_row(
+            "SELECT id, candidate_id, job_id, queue_number, status, called_at, completed_at, created_at FROM interview_queue WHERE job_id=?1 AND status='waiting' ORDER BY queue_number ASC LIMIT 1",
+            params![job_id],
+            |row| {
+                Ok(InterviewQueue {
+                    id: row.get(0)?,
+                    candidate_id: row.get(1)?,
+                    job_id: row.get(2)?,
+                    queue_number: row.get(3)?,
+                    status: row.get(4)?,
+                    called_at: row.get(5)?,
+                    completed_at: row.get(6)?,
+                    created_at: row.get(7)?,
+                })
+            },
+        ).map_err(|_| E("no waiting candidates in queue".into()))?;
+        let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
+        c.execute(
+            "UPDATE interview_queue SET status='called', called_at=?1 WHERE id=?2",
+            params![now, row.id],
+        )?;
+        Ok(InterviewQueue {
+            status: "called".to_string(),
+            called_at: Some(now),
+            ..row
+        })
+    }
+
+    pub fn list_queue(&self, job_id: Option<&str>, status: Option<&str>) -> Result<Vec<InterviewQueue>, E> {
+        let c = self.conn()?;
+        let mut sql = "SELECT id, candidate_id, job_id, queue_number, status, called_at, completed_at, created_at FROM interview_queue WHERE 1=1".to_string();
+        let mut p: Vec<Box<dyn rusqlite::ToSql>> = vec![];
+        if let Some(j) = job_id {
+            sql.push_str(" AND job_id=?");
+            p.push(Box::new(j.to_string()));
+        }
+        if let Some(s) = status {
+            sql.push_str(" AND status=?");
+            p.push(Box::new(s.to_string()));
+        }
+        sql.push_str(" ORDER BY queue_number ASC");
+        let mut stmt = c.prepare(&sql)?;
+        let refs: Vec<&dyn rusqlite::ToSql> = p.iter().map(|b| b.as_ref()).collect();
+        let rows = stmt.query_map(refs.as_slice(), |row| {
+            Ok(InterviewQueue {
+                id: row.get(0)?,
+                candidate_id: row.get(1)?,
+                job_id: row.get(2)?,
+                queue_number: row.get(3)?,
+                status: row.get(4)?,
+                called_at: row.get(5)?,
+                completed_at: row.get(6)?,
+                created_at: row.get(7)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn update_queue_status(&self, id: &str, status: &str) -> Result<(), E> {
+        let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
+        let mut extra = String::new();
+        let mut extra_val: Option<String> = None;
+        if status == "completed" {
+            extra = ", completed_at=?".to_string();
+            extra_val = Some(now.clone());
+        }
+        let sql = format!("UPDATE interview_queue SET status=?1{} WHERE id=?2", extra);
+        let affected = match extra_val {
+            Some(ref val) => self.conn()?.execute(&sql, params![status, val, id])?,
+            None => self.conn()?.execute(&sql, params![status, id])?,
+        };
+        if affected == 0 {
+            return Err(E("queue entry not found".into()));
+        }
+        Ok(())
+    }
+
+    pub fn list_candidate_skills(&self, candidate_id: &str) -> Result<Vec<CandidateSkill>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare(
+            "SELECT id, candidate_id, skill_name, proficiency, years_of_experience FROM candidate_skills WHERE candidate_id=? ORDER BY skill_name"
+        )?;
+        let rows = stmt.query_map(params![candidate_id], |row| {
+            Ok(CandidateSkill {
+                id: row.get(0)?,
+                candidate_id: row.get(1)?,
+                skill_name: row.get(2)?,
+                proficiency: row.get(3)?,
+                years_of_experience: row.get(4)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn create_candidate_skill(&self, s: &CandidateSkill) -> Result<(), E> {
+        self.conn()?.execute(
+            "INSERT INTO candidate_skills (id, candidate_id, skill_name, proficiency, years_of_experience) VALUES (?1,?2,?3,?4,?5)",
+            params![s.id, s.candidate_id, s.skill_name, s.proficiency, s.years_of_experience],
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_candidate_skill(&self, id: &str) -> Result<(), E> {
+        let affected = self.conn()?.execute("DELETE FROM candidate_skills WHERE id=?", params![id])?;
+        if affected == 0 {
+            return Err(E("candidate skill not found".into()));
+        }
+        Ok(())
+    }
+
+    pub fn list_candidate_certificates(&self, candidate_id: &str) -> Result<Vec<CandidateCertificate>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare(
+            "SELECT id, candidate_id, certificate_name, issuing_authority, issue_date, expiry_date, certificate_number FROM candidate_certificates WHERE candidate_id=? ORDER BY issue_date DESC"
+        )?;
+        let rows = stmt.query_map(params![candidate_id], |row| {
+            Ok(CandidateCertificate {
+                id: row.get(0)?,
+                candidate_id: row.get(1)?,
+                certificate_name: row.get(2)?,
+                issuing_authority: row.get(3)?,
+                issue_date: row.get(4)?,
+                expiry_date: row.get(5)?,
+                certificate_number: row.get(6)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn create_candidate_certificate(&self, c: &CandidateCertificate) -> Result<(), E> {
+        self.conn()?.execute(
+            "INSERT INTO candidate_certificates (id, candidate_id, certificate_name, issuing_authority, issue_date, expiry_date, certificate_number) VALUES (?1,?2,?3,?4,?5,?6,?7)",
+            params![c.id, c.candidate_id, c.certificate_name, c.issuing_authority, c.issue_date, c.expiry_date, c.certificate_number],
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_candidate_certificate(&self, id: &str) -> Result<(), E> {
+        let affected = self.conn()?.execute("DELETE FROM candidate_certificates WHERE id=?", params![id])?;
+        if affected == 0 {
+            return Err(E("candidate certificate not found".into()));
+        }
+        Ok(())
+    }
+
+    pub fn list_countries(&self) -> Result<Vec<Country>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare("SELECT id, code, name, phone_code, has_special_fields, is_active FROM countries ORDER BY name")?;
+        let rows = stmt.query_map([], |row| {
+            Ok(Country {
+                id: row.get(0)?,
+                code: row.get(1)?,
+                name: row.get(2)?,
+                phone_code: row.get(3)?,
+                has_special_fields: row.get(4)?,
+                is_active: row.get(5)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn list_currencies(&self) -> Result<Vec<Currency>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare("SELECT id, code, name, symbol FROM currencies ORDER BY name")?;
+        let rows = stmt.query_map([], |row| {
+            Ok(Currency {
+                id: row.get(0)?,
+                code: row.get(1)?,
+                name: row.get(2)?,
+                symbol: row.get(3)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn list_departments(&self) -> Result<Vec<Department>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare("SELECT id, name, parent_id, is_active FROM departments ORDER BY name")?;
+        let rows = stmt.query_map([], |row| {
+            Ok(Department {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                parent_id: row.get(2)?,
+                is_active: row.get(3)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn list_locations(&self) -> Result<Vec<Location>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare("SELECT id, name, country_id, city, address, is_active FROM locations ORDER BY name")?;
+        let rows = stmt.query_map([], |row| {
+            Ok(Location {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                country_id: row.get(2)?,
+                city: row.get(3)?,
+                address: row.get(4)?,
+                is_active: row.get(5)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn list_job_categories(&self) -> Result<Vec<JobCategory>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare("SELECT id, name, is_active FROM job_categories ORDER BY name")?;
+        let rows = stmt.query_map([], |row| {
+            Ok(JobCategory {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                is_active: row.get(2)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
     }
 }
 

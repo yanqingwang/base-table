@@ -109,7 +109,7 @@ pub async fn public_apply(
                 resume_text: input.resume_text.clone(),
                 resume_file_url: None,
                 profile_photo_url: None,
-                status: "applied".to_string(),
+                status: "screening".to_string(),
                 source: "direct".to_string(),
                 notes: None,
                 created_at: now.clone(),
@@ -178,6 +178,12 @@ pub async fn create_job(
         views: 0,
         created_at: now.clone(),
         updated_at: now,
+        department_id: input.get("department_id").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        location_id: input.get("location_id").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        category_id: input.get("category_id").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        currency_id: input.get("currency_id").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        headcount: input.get("headcount").and_then(|v| v.as_i64()).unwrap_or(1),
+        hiring_manager_id: input.get("hiring_manager_id").and_then(|v| v.as_str()).map(|s| s.to_string()),
     };
     s.db.create_job(&job)?;
     let job = s.db.job_by_id(&id)?;
@@ -222,6 +228,12 @@ pub async fn update_job(
         views: existing.views,
         created_at: existing.created_at,
         updated_at: chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string(),
+        department_id: input.get("department_id").and_then(|v| v.as_str()).map(|s| s.to_string()).or(existing.department_id),
+        location_id: input.get("location_id").and_then(|v| v.as_str()).map(|s| s.to_string()).or(existing.location_id),
+        category_id: input.get("category_id").and_then(|v| v.as_str()).map(|s| s.to_string()).or(existing.category_id),
+        currency_id: input.get("currency_id").and_then(|v| v.as_str()).map(|s| s.to_string()).or(existing.currency_id),
+        headcount: input.get("headcount").and_then(|v| v.as_i64()).unwrap_or(existing.headcount),
+        hiring_manager_id: input.get("hiring_manager_id").and_then(|v| v.as_str()).map(|s| s.to_string()).or(existing.hiring_manager_id),
     };
     s.db.update_job(&id, &merged)?;
     let job = s.db.job_by_id(&id)?;

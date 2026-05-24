@@ -3,9 +3,16 @@ import { Tag } from 'antd';
 
 const statusColors: Record<string, string> = {
   new: 'blue',
-  screened: 'cyan',
+  screening: 'cyan',
+  queue_waiting: 'orange',
   interviewing: 'orange',
+  evaluated: 'purple',
   offered: 'gold',
+  document_signing: 'geekblue',
+  signed: 'green',
+  pre_onboarding: 'lime',
+  ready_to_sync: 'cyan',
+  synced: 'green',
   hired: 'green',
   rejected: 'red',
   pending: 'orange',
@@ -20,7 +27,6 @@ const statusColors: Record<string, string> = {
   active: 'green',
   inactive: 'default',
   terminated: 'red',
-  signed: 'green',
   expired: 'red',
 };
 

@@ -1,14 +1,16 @@
-use std::collections::HashMap;
-use std::path::PathBuf;
-use rusqlite::{Connection, params};
+use rusqlite::{params, TransactionBehavior};
+use r2d2::Pool;
+use r2d2_sqlite::SqliteConnectionManager;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashMap;
+use std::path::PathBuf;
 
 use crate::error::E;
 
 #[derive(Debug, Clone)]
 pub struct D {
-    pub p: PathBuf,
+    pub pool: Pool<SqliteConnectionManager>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -392,16 +394,28 @@ pub struct ImportResult {
 
 impl D {
     pub fn new(p: PathBuf) -> Result<Self, E> {
-        if let Some(pp) = p.parent() {
-            std::fs::create_dir_all(pp)?;
+        let manager = SqliteConnectionManager::file(&p);
+        let pool = Pool::builder()
+            .max_size(10)
+            .build(manager)
+            .map_err(|e| E(e.to_string()))?;
+        // Apply PRAGMAs to initial connection for schema init
+        {
+            let c = pool.get().map_err(|e| E(e.to_string()))?;
+            c.execute_batch(
+                "PRAGMA journal_mode=WAL;
+                 PRAGMA foreign_keys=ON;
+                 PRAGMA busy_timeout=5000;
+                 PRAGMA synchronous=NORMAL;"
+            )?;
         }
-        let db = D { p };
+        let db = D { pool };
         db.init()?;
         Ok(db)
     }
 
-    pub fn conn(&self) -> Result<Connection, E> {
-        Ok(Connection::open(&self.p)?)
+    pub fn conn(&self) -> Result<r2d2::PooledConnection<SqliteConnectionManager>, E> {
+        self.pool.get().map_err(|e| E(e.to_string()))
     }
 
     fn init(&self) -> Result<(), E> {
@@ -413,7 +427,7 @@ impl D {
                 email TEXT UNIQUE,
                 phone TEXT,
                 password_hash TEXT NOT NULL,
-                role TEXT NOT NULL CHECK(role IN ('admin','recruiter','manager','agency','trainer','worker')),
+                role TEXT NOT NULL CHECK(role IN ('admin','recruiter','manager','agency','trainer','worker','interviewer')),
                 name TEXT NOT NULL,
                 company_id TEXT,
                 language_pref TEXT DEFAULT 'en',
@@ -456,7 +470,7 @@ impl D {
                 resume_text TEXT,
                 resume_file_url TEXT,
                 profile_photo_url TEXT,
-                status TEXT NOT NULL DEFAULT 'new' CHECK(status IN ('new','screening','queue_waiting','interviewing','evaluated','offered','document_signing','signed','pre_onboarding','ready_to_sync','synced','hired','rejected')),
+                status TEXT NOT NULL DEFAULT 'applied' CHECK(status IN ('applied','screened','interviewed','offered','hired','rejected','withdrawn')),
                 source TEXT DEFAULT 'direct' CHECK(source IN ('agency','direct','referral','other')),
                 notes TEXT,
                 created_at TEXT DEFAULT (datetime('now')),
@@ -736,14 +750,16 @@ impl D {
             "
         )?;
         // Add v2.0 FK columns to jobs table (safe to run if columns already exist)
-        let _ = c.execute_batch("
+        let _ = c.execute_batch(
+            "
             ALTER TABLE jobs ADD COLUMN department_id TEXT;
             ALTER TABLE jobs ADD COLUMN location_id TEXT;
             ALTER TABLE jobs ADD COLUMN category_id TEXT;
             ALTER TABLE jobs ADD COLUMN currency_id TEXT;
             ALTER TABLE jobs ADD COLUMN headcount INTEGER DEFAULT 1;
             ALTER TABLE jobs ADD COLUMN hiring_manager_id TEXT;
-        ");
+        ",
+        );
         // Add DocuSign and SF columns (safe to run if columns already exist)
         for (table, column, def) in &[
             ("employees", "sf_sync_status", "TEXT DEFAULT 'pending'"),
@@ -757,8 +773,21 @@ impl D {
             let sql = format!("ALTER TABLE {} ADD COLUMN {} {}", table, column, def);
             let _ = c.execute(&sql, []);
         }
+        // Add indexes for common query patterns
+        let _ = c.execute_batch(
+            "CREATE INDEX IF NOT EXISTS idx_candidates_phone ON candidates(phone);
+             CREATE INDEX IF NOT EXISTS idx_candidates_status ON candidates(status);
+             CREATE INDEX IF NOT EXISTS idx_candidates_agency ON candidates(agency_id);
+             CREATE INDEX IF NOT EXISTS idx_interviews_candidate ON interviews(candidate_id);
+             CREATE INDEX IF NOT EXISTS idx_interviews_job ON interviews(job_id);
+             CREATE INDEX IF NOT EXISTS idx_queue_job_status ON interview_queue(job_id, status);
+             CREATE INDEX IF NOT EXISTS idx_approvals_assigned ON approvals(assigned_to, status);
+             CREATE INDEX IF NOT EXISTS idx_job_applications_job ON job_applications(job_id);
+             CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, entity_id);"
+        );
         // Seed master data
-        let _ = c.execute_batch("
+        let _ = c.execute_batch(
+            "
             INSERT OR IGNORE INTO countries (id, code, name, phone_code) VALUES
                 ('cn','CN','China','86'),
                 ('us','US','United States','1'),
@@ -790,7 +819,8 @@ impl D {
                 ('hr','HR'),
                 ('fin','Finance'),
                 ('ops','Operations');
-        ");
+        ",
+        );
         Ok(())
     }
 
@@ -846,7 +876,12 @@ impl D {
         Ok(())
     }
 
-    pub fn list_candidates(&self, status: Option<&str>, source: Option<&str>, q: Option<&str>) -> Result<Vec<Candidate>, E> {
+    pub fn list_candidates(
+        &self,
+        status: Option<&str>,
+        source: Option<&str>,
+        q: Option<&str>,
+    ) -> Result<Vec<Candidate>, E> {
         let c = self.conn()?;
         let mut sql = "SELECT id, user_id, agency_id, name, phone, email, id_number, country_code, date_of_birth, gender, nationality, address, city, province, postal_code, education_level, education_school, education_major, education_year, work_experience_years, previous_employer, previous_position, previous_duration, previous_duties, languages, certifications, emergency_contact_name, emergency_contact_phone, emergency_contact_relation, skills, resume_text, resume_file_url, profile_photo_url, status, source, notes, created_at, updated_at FROM candidates WHERE 1=1".to_string();
         let mut p: Vec<Box<dyn rusqlite::ToSql>> = vec![];
@@ -913,17 +948,26 @@ impl D {
         Ok(rows.filter_map(|r| r.ok()).collect())
     }
 
-    pub fn candidate_by_phone_or_email(&self, phone: Option<&str>, email: Option<&str>) -> Result<Vec<Candidate>, E> {
+    pub fn candidate_by_phone_or_email(
+        &self,
+        phone: Option<&str>,
+        email: Option<&str>,
+    ) -> Result<Vec<Candidate>, E> {
         let c = self.conn()?;
+        // ponytail: dynamic params via Box<dyn ToSql> — stdlib approach, no custom builder needed
         let mut sql = "SELECT id, user_id, agency_id, name, phone, email, id_number, country_code, date_of_birth, gender, nationality, address, city, province, postal_code, education_level, education_school, education_major, education_year, work_experience_years, previous_employer, previous_position, previous_duration, previous_duties, languages, certifications, emergency_contact_name, emergency_contact_phone, emergency_contact_relation, skills, resume_text, resume_file_url, profile_photo_url, status, source, notes, created_at, updated_at FROM candidates WHERE 1=0".to_string();
+        let mut params: Vec<Box<dyn rusqlite::ToSql>> = vec![];
         if let Some(p) = phone {
-            sql.push_str(&format!(" OR phone='{}'", p.replace('\'', "''")));
+            sql.push_str(" OR phone=?");
+            params.push(Box::new(p.to_string()));
         }
         if let Some(e) = email {
-            sql.push_str(&format!(" OR email='{}'", e.replace('\'', "''")));
+            sql.push_str(" OR email=?");
+            params.push(Box::new(e.to_string()));
         }
         let mut stmt = c.prepare(&sql)?;
-        let rows = stmt.query_map([], |row| {
+        let refs: Vec<&dyn rusqlite::ToSql> = params.iter().map(|b| b.as_ref()).collect();
+        let rows = stmt.query_map(refs.as_slice(), |row| {
             Ok(Candidate {
                 id: row.get(0)?,
                 user_id: row.get(1)?,
@@ -1053,7 +1097,9 @@ impl D {
     }
 
     pub fn delete_candidate(&self, id: &str) -> Result<(), E> {
-        let affected = self.conn()?.execute("DELETE FROM candidates WHERE id=?", params![id])?;
+        let affected = self
+            .conn()?
+            .execute("DELETE FROM candidates WHERE id=?", params![id])?;
         if affected == 0 {
             return Err(E("candidate not found".into()));
         }
@@ -1072,7 +1118,11 @@ impl D {
         Ok(())
     }
 
-    pub fn import_candidates_csv(&self, csv_data: &str, agency_id: Option<&str>) -> Result<ImportResult, E> {
+    pub fn import_candidates_csv(
+        &self,
+        csv_data: &str,
+        agency_id: Option<&str>,
+    ) -> Result<ImportResult, E> {
         let mut imported = 0;
         let mut errors = vec![];
         let c = self.conn()?;
@@ -1097,22 +1147,38 @@ impl D {
             let phone = fields.get(1).map(|s| s.trim().to_string());
             let email = fields.get(2).map(|s| s.trim().to_string());
             let id_number = fields.get(3).map(|s| s.trim().to_string());
-            let country_code = fields.get(4).map(|s| s.trim().to_string()).unwrap_or_else(|| "PH".to_string());
-            let skills = fields.get(5).map(|s| s.trim().to_string()).unwrap_or_default();
+            let country_code = fields
+                .get(4)
+                .map(|s| s.trim().to_string())
+                .unwrap_or_else(|| "PH".to_string());
+            let skills = fields
+                .get(5)
+                .map(|s| s.trim().to_string())
+                .unwrap_or_default();
             let skills_json = if skills.is_empty() {
                 "[]".to_string()
             } else {
-                let parts: Vec<String> = skills.split(';').map(|s| format!("\"{}\"", s.trim())).collect();
+                let parts: Vec<String> = skills
+                    .split(';')
+                    .map(|s| format!("\"{}\"", s.trim()))
+                    .collect();
                 format!("[{}]", parts.join(","))
             };
-            let source = fields.get(6).map(|s| s.trim().to_string()).unwrap_or_else(|| "direct".to_string());
+            let source = fields
+                .get(6)
+                .map(|s| s.trim().to_string())
+                .unwrap_or_else(|| "direct".to_string());
             let notes = fields.get(7).map(|s| s.trim().to_string());
 
             if let (Some(ref p), Some(ref e)) = (&phone, &email) {
-                let mut dup_check = c.prepare("SELECT COUNT(*) FROM candidates WHERE phone=? OR email=?")?;
+                let mut dup_check =
+                    c.prepare("SELECT COUNT(*) FROM candidates WHERE phone=? OR email=?")?;
                 let dup_count: i64 = dup_check.query_row(params![p, e], |r| r.get(0))?;
                 if dup_count > 0 {
-                    errors.push(format!("line {}: duplicate phone or email (skipped)", i + 1));
+                    errors.push(format!(
+                        "line {}: duplicate phone or email (skipped)",
+                        i + 1
+                    ));
                     continue;
                 }
             } else if let Some(ref p) = &phone {
@@ -1203,7 +1269,11 @@ impl D {
         Ok(rows.filter_map(|r| r.ok()).collect())
     }
 
-    pub fn list_interviews(&self, status: Option<&str>, job_id: Option<&str>) -> Result<Vec<Interview>, E> {
+    pub fn list_interviews(
+        &self,
+        status: Option<&str>,
+        job_id: Option<&str>,
+    ) -> Result<Vec<Interview>, E> {
         let c = self.conn()?;
         let mut sql = "SELECT id, candidate_id, job_title, job_id, scheduled_at, check_in_at, interviewer_id, skill_scores, overall_score, comments, status, result, created_at, updated_at FROM interviews WHERE 1=1".to_string();
         let mut p: Vec<Box<dyn rusqlite::ToSql>> = vec![];
@@ -1284,7 +1354,14 @@ impl D {
         Ok(())
     }
 
-    pub fn evaluate_interview(&self, id: &str, skill_scores: &str, overall_score: f64, comments: &str, result: &str) -> Result<(), E> {
+    pub fn evaluate_interview(
+        &self,
+        id: &str,
+        skill_scores: &str,
+        overall_score: f64,
+        comments: &str,
+        result: &str,
+    ) -> Result<(), E> {
         let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
         let affected = self.conn()?.execute(
             "UPDATE interviews SET skill_scores=?, overall_score=?, comments=?, result=?, status='completed', updated_at=? WHERE id=?",
@@ -1361,7 +1438,12 @@ impl D {
         Ok(())
     }
 
-    pub fn transfer_approval(&self, id: &str, new_assigned_to: &str, comments: &str) -> Result<(Approval, Approval), E> {
+    pub fn transfer_approval(
+        &self,
+        id: &str,
+        new_assigned_to: &str,
+        comments: &str,
+    ) -> Result<(Approval, Approval), E> {
         let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
         let c = self.conn()?;
         let original = self.approval_by_id(id)?;
@@ -1556,7 +1638,14 @@ impl D {
         }))
     }
 
-    pub fn log_audit(&self, user_id: &str, action: &str, entity_type: &str, entity_id: &str, details: &str) -> Result<(), E> {
+    pub fn log_audit(
+        &self,
+        user_id: &str,
+        action: &str,
+        entity_type: &str,
+        entity_id: &str,
+        details: &str,
+    ) -> Result<(), E> {
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
         self.conn()?.execute(
@@ -1583,17 +1672,6 @@ impl D {
             })
         })?;
         Ok(rows.filter_map(|r| r.ok()).collect())
-    }
-
-    pub fn update_employee(&self, id: &str, emp: &Employee) -> Result<(), E> {
-        let affected = self.conn()?.execute(
-            "UPDATE employees SET department=?, position=?, contract_start=?, contract_end=?, status=?, updated_at=? WHERE id=?",
-            params![emp.department, emp.position, emp.contract_start, emp.contract_end, emp.status, emp.updated_at, id],
-        )?;
-        if affected == 0 {
-            return Err(E("employee not found".into()));
-        }
-        Ok(())
     }
 
     pub fn list_jobs(&self, status: Option<&str>, q: Option<&str>) -> Result<Vec<Job>, E> {
@@ -1686,7 +1764,9 @@ impl D {
     }
 
     pub fn delete_job(&self, id: &str) -> Result<(), E> {
-        let affected = self.conn()?.execute("DELETE FROM jobs WHERE id=?", params![id])?;
+        let affected = self
+            .conn()?
+            .execute("DELETE FROM jobs WHERE id=?", params![id])?;
         if affected == 0 {
             return Err(E("job not found".into()));
         }
@@ -1694,14 +1774,16 @@ impl D {
     }
 
     pub fn increment_job_views(&self, id: &str) -> Result<(), E> {
-        self.conn()?.execute(
-            "UPDATE jobs SET views=views+1 WHERE id=?",
-            params![id],
-        )?;
+        self.conn()?
+            .execute("UPDATE jobs SET views=views+1 WHERE id=?", params![id])?;
         Ok(())
     }
 
-    pub fn list_applications(&self, job_id: Option<&str>, status: Option<&str>) -> Result<Vec<JobApplication>, E> {
+    pub fn list_applications(
+        &self,
+        job_id: Option<&str>,
+        status: Option<&str>,
+    ) -> Result<Vec<JobApplication>, E> {
         let c = self.conn()?;
         let mut sql = "SELECT id, job_id, candidate_id, name, email, phone, resume_text, resume_file_url, cover_letter, status, created_at, updated_at FROM job_applications WHERE 1=1".to_string();
         let mut p: Vec<Box<dyn rusqlite::ToSql>> = vec![];
@@ -1913,7 +1995,11 @@ impl D {
             }));
         }
         let scores: Vec<f64> = evals.iter().filter_map(|e| e.overall_score).collect();
-        let avg = if scores.is_empty() { None } else { Some(scores.iter().sum::<f64>() / scores.len() as f64) };
+        let avg = if scores.is_empty() {
+            None
+        } else {
+            Some(scores.iter().sum::<f64>() / scores.len() as f64)
+        };
         let mut recs = std::collections::HashMap::new();
         for e in &evals {
             *recs.entry(e.recommendation.clone()).or_insert(0i64) += 1;
@@ -1927,7 +2013,12 @@ impl D {
         }))
     }
 
-    pub fn update_docusign_status(&self, envelope_id: &str, status: &str, webhook_data: Option<&str>) -> Result<(), E> {
+    pub fn update_docusign_status(
+        &self,
+        envelope_id: &str,
+        status: &str,
+        webhook_data: Option<&str>,
+    ) -> Result<(), E> {
         let c = self.conn()?;
         c.execute(
             "UPDATE documents SET docusign_status=?1, docusign_webhook_data=?2 WHERE docusign_envelope_id=?3",
@@ -2097,7 +2188,8 @@ impl D {
         let c = self.conn()?;
 
         // Basic candidate stats
-        let total_candidates: i64 = c.query_row("SELECT COUNT(*) FROM candidates", [], |r| r.get(0))?;
+        let total_candidates: i64 =
+            c.query_row("SELECT COUNT(*) FROM candidates", [], |r| r.get(0))?;
 
         // Candidates by status
         let mut by_status = HashMap::new();
@@ -2120,14 +2212,20 @@ impl D {
         }
 
         // Jobs stats
-        let active_jobs: i64 = c.query_row("SELECT COUNT(*) FROM jobs WHERE status='active'", [], |r| r.get(0))?;
+        let active_jobs: i64 =
+            c.query_row("SELECT COUNT(*) FROM jobs WHERE status='active'", [], |r| {
+                r.get(0)
+            })?;
         let total_jobs: i64 = c.query_row("SELECT COUNT(*) FROM jobs", [], |r| r.get(0))?;
-        let total_views: i64 = c.query_row("SELECT COALESCE(SUM(views), 0) FROM jobs", [], |r| r.get(0))?;
+        let total_views: i64 =
+            c.query_row("SELECT COALESCE(SUM(views), 0) FROM jobs", [], |r| r.get(0))?;
 
         // Applications stats
-        let total_apps: i64 = c.query_row("SELECT COUNT(*) FROM job_applications", [], |r| r.get(0))?;
+        let total_apps: i64 =
+            c.query_row("SELECT COUNT(*) FROM job_applications", [], |r| r.get(0))?;
         let mut apps_by_status = HashMap::new();
-        let mut stmt = c.prepare("SELECT status, COUNT(*) FROM job_applications GROUP BY status")?;
+        let mut stmt =
+            c.prepare("SELECT status, COUNT(*) FROM job_applications GROUP BY status")?;
         let rows = stmt.query_map([], |row| {
             Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
         })?;
@@ -2136,16 +2234,34 @@ impl D {
         }
 
         // Interview stats
-        let total_interviews: i64 = c.query_row("SELECT COUNT(*) FROM interviews", [], |r| r.get(0))?;
-        let completed_interviews: i64 = c.query_row("SELECT COUNT(*) FROM interviews WHERE status='completed'", [], |r| r.get(0))?;
+        let total_interviews: i64 =
+            c.query_row("SELECT COUNT(*) FROM interviews", [], |r| r.get(0))?;
+        let completed_interviews: i64 = c.query_row(
+            "SELECT COUNT(*) FROM interviews WHERE status='completed'",
+            [],
+            |r| r.get(0),
+        )?;
 
         // Employee stats
-        let total_employees: i64 = c.query_row("SELECT COUNT(*) FROM employees", [], |r| r.get(0))?;
-        let active_employees: i64 = c.query_row("SELECT COUNT(*) FROM employees WHERE status='active'", [], |r| r.get(0))?;
+        let total_employees: i64 =
+            c.query_row("SELECT COUNT(*) FROM employees", [], |r| r.get(0))?;
+        let active_employees: i64 = c.query_row(
+            "SELECT COUNT(*) FROM employees WHERE status='active'",
+            [],
+            |r| r.get(0),
+        )?;
 
         // Funnel: hired, rejected
-        let hired: i64 = c.query_row("SELECT COUNT(*) FROM candidates WHERE status='hired'", [], |r| r.get(0))?;
-        let rejected: i64 = c.query_row("SELECT COUNT(*) FROM candidates WHERE status='rejected'", [], |r| r.get(0))?;
+        let hired: i64 = c.query_row(
+            "SELECT COUNT(*) FROM candidates WHERE status='hired'",
+            [],
+            |r| r.get(0),
+        )?;
+        let rejected: i64 = c.query_row(
+            "SELECT COUNT(*) FROM candidates WHERE status='rejected'",
+            [],
+            |r| r.get(0),
+        )?;
         let conversion_rate = if total_candidates > 0 {
             format!("{:.1}%", (hired as f64 / total_candidates as f64) * 100.0)
         } else {
@@ -2160,7 +2276,10 @@ impl D {
         ).ok().flatten();
 
         // Interview evaluations stats
-        let total_evaluations: i64 = c.query_row("SELECT COUNT(*) FROM interview_evaluations", [], |r| r.get(0))?;
+        let total_evaluations: i64 =
+            c.query_row("SELECT COUNT(*) FROM interview_evaluations", [], |r| {
+                r.get(0)
+            })?;
         let avg_eval_score: Option<f64> = c.query_row(
             "SELECT AVG(overall_score) FROM interview_evaluations WHERE overall_score IS NOT NULL",
             [],
@@ -2209,7 +2328,10 @@ impl D {
         Ok(())
     }
 
-    pub fn list_candidate_educations(&self, candidate_id: &str) -> Result<Vec<CandidateEducation>, E> {
+    pub fn list_candidate_educations(
+        &self,
+        candidate_id: &str,
+    ) -> Result<Vec<CandidateEducation>, E> {
         let c = self.conn()?;
         let mut stmt = c.prepare(
             "SELECT id, candidate_id, level, school, major, graduation_year, notes, created_at FROM candidate_educations WHERE candidate_id=? ORDER BY graduation_year DESC"
@@ -2230,7 +2352,9 @@ impl D {
     }
 
     pub fn delete_candidate_education(&self, id: &str) -> Result<(), E> {
-        let affected = self.conn()?.execute("DELETE FROM candidate_educations WHERE id=?", params![id])?;
+        let affected = self
+            .conn()?
+            .execute("DELETE FROM candidate_educations WHERE id=?", params![id])?;
         if affected == 0 {
             return Err(E("candidate education not found".into()));
         }
@@ -2245,7 +2369,10 @@ impl D {
         Ok(())
     }
 
-    pub fn list_candidate_work_experiences(&self, candidate_id: &str) -> Result<Vec<CandidateWorkExperience>, E> {
+    pub fn list_candidate_work_experiences(
+        &self,
+        candidate_id: &str,
+    ) -> Result<Vec<CandidateWorkExperience>, E> {
         let c = self.conn()?;
         let mut stmt = c.prepare(
             "SELECT id, candidate_id, employer, position, start_date, end_date, duration, duties, created_at FROM candidate_work_experiences WHERE candidate_id=? ORDER BY start_date DESC"
@@ -2267,17 +2394,26 @@ impl D {
     }
 
     pub fn delete_candidate_work_experience(&self, id: &str) -> Result<(), E> {
-        let affected = self.conn()?.execute("DELETE FROM candidate_work_experiences WHERE id=?", params![id])?;
+        let affected = self.conn()?.execute(
+            "DELETE FROM candidate_work_experiences WHERE id=?",
+            params![id],
+        )?;
         if affected == 0 {
             return Err(E("candidate work experience not found".into()));
         }
         Ok(())
     }
 
-    pub fn enqueue_candidate(&self, candidate_id: &str, job_id: Option<&str>) -> Result<InterviewQueue, E> {
-        let c = self.conn()?;
+    pub fn enqueue_candidate(
+        &self,
+        candidate_id: &str,
+        job_id: Option<&str>,
+    ) -> Result<InterviewQueue, E> {
+        let mut tx_c = self.conn()?;
+        // ponytail: BEGIN IMMEDIATE prevents two callers getting same queue_number
+        let tx = tx_c.transaction_with_behavior(TransactionBehavior::Immediate)?;
         let today = chrono::Utc::now().format("%Y-%m-%d").to_string();
-        let max_queue: i64 = c.query_row(
+        let max_queue: i64 = tx.query_row(
             "SELECT COALESCE(MAX(queue_number), 0) FROM interview_queue WHERE job_id=?1 AND date(created_at)=?2",
             params![job_id, today],
             |r| r.get(0),
@@ -2285,10 +2421,11 @@ impl D {
         let queue_number = max_queue + 1;
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
-        c.execute(
+        tx.execute(
             "INSERT INTO interview_queue (id, candidate_id, job_id, queue_number, status, created_at) VALUES (?1,?2,?3,?4,'waiting',?5)",
             params![id, candidate_id, job_id, queue_number, now],
         )?;
+        tx.commit()?;
         Ok(InterviewQueue {
             id,
             candidate_id: candidate_id.to_string(),
@@ -2302,8 +2439,10 @@ impl D {
     }
 
     pub fn call_next(&self, job_id: &str) -> Result<InterviewQueue, E> {
-        let c = self.conn()?;
-        let row = c.query_row(
+        let mut tx_c = self.conn()?;
+        // ponytail: BEGIN IMMEDIATE prevents two callers getting the same candidate
+        let tx = tx_c.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let row = tx.query_row(
             "SELECT id, candidate_id, job_id, queue_number, status, called_at, completed_at, created_at FROM interview_queue WHERE job_id=?1 AND status='waiting' ORDER BY queue_number ASC LIMIT 1",
             params![job_id],
             |row| {
@@ -2320,10 +2459,11 @@ impl D {
             },
         ).map_err(|_| E("no waiting candidates in queue".into()))?;
         let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
-        c.execute(
-            "UPDATE interview_queue SET status='called', called_at=?1 WHERE id=?2",
+        tx.execute(
+            "UPDATE interview_queue SET status='called', called_at=?1 WHERE id=?2 AND status='waiting'",
             params![now, row.id],
         )?;
+        tx.commit()?;
         Ok(InterviewQueue {
             status: "called".to_string(),
             called_at: Some(now),
@@ -2331,7 +2471,11 @@ impl D {
         })
     }
 
-    pub fn list_queue(&self, job_id: Option<&str>, status: Option<&str>) -> Result<Vec<InterviewQueue>, E> {
+    pub fn list_queue(
+        &self,
+        job_id: Option<&str>,
+        status: Option<&str>,
+    ) -> Result<Vec<InterviewQueue>, E> {
         let c = self.conn()?;
         let mut sql = "SELECT id, candidate_id, job_id, queue_number, status, called_at, completed_at, created_at FROM interview_queue WHERE 1=1".to_string();
         let mut p: Vec<Box<dyn rusqlite::ToSql>> = vec![];
@@ -2363,19 +2507,18 @@ impl D {
 
     pub fn update_queue_status(&self, id: &str, status: &str) -> Result<(), E> {
         let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
-        let mut extra = String::new();
-        let mut extra_val: Option<String> = None;
         if status == "completed" {
-            extra = ", completed_at=?".to_string();
-            extra_val = Some(now.clone());
-        }
-        let sql = format!("UPDATE interview_queue SET status=?1{} WHERE id=?2", extra);
-        let affected = match extra_val {
-            Some(ref val) => self.conn()?.execute(&sql, params![status, val, id])?,
-            None => self.conn()?.execute(&sql, params![status, id])?,
-        };
-        if affected == 0 {
-            return Err(E("queue entry not found".into()));
+            let sql = "UPDATE interview_queue SET status=?1, completed_at=?2 WHERE id=?3";
+            let affected = self.conn()?.execute(sql, params![status, now, id])?;
+            if affected == 0 {
+                return Err(E(format!("queue entry {} not found", id)));
+            }
+        } else {
+            let sql = "UPDATE interview_queue SET status=?1 WHERE id=?2";
+            let affected = self.conn()?.execute(sql, params![status, id])?;
+            if affected == 0 {
+                return Err(E(format!("queue entry {} not found", id)));
+            }
         }
         Ok(())
     }
@@ -2406,14 +2549,19 @@ impl D {
     }
 
     pub fn delete_candidate_skill(&self, id: &str) -> Result<(), E> {
-        let affected = self.conn()?.execute("DELETE FROM candidate_skills WHERE id=?", params![id])?;
+        let affected = self
+            .conn()?
+            .execute("DELETE FROM candidate_skills WHERE id=?", params![id])?;
         if affected == 0 {
             return Err(E("candidate skill not found".into()));
         }
         Ok(())
     }
 
-    pub fn list_candidate_certificates(&self, candidate_id: &str) -> Result<Vec<CandidateCertificate>, E> {
+    pub fn list_candidate_certificates(
+        &self,
+        candidate_id: &str,
+    ) -> Result<Vec<CandidateCertificate>, E> {
         let c = self.conn()?;
         let mut stmt = c.prepare(
             "SELECT id, candidate_id, certificate_name, issuing_authority, issue_date, expiry_date, certificate_number FROM candidate_certificates WHERE candidate_id=? ORDER BY issue_date DESC"
@@ -2441,7 +2589,9 @@ impl D {
     }
 
     pub fn delete_candidate_certificate(&self, id: &str) -> Result<(), E> {
-        let affected = self.conn()?.execute("DELETE FROM candidate_certificates WHERE id=?", params![id])?;
+        let affected = self
+            .conn()?
+            .execute("DELETE FROM candidate_certificates WHERE id=?", params![id])?;
         if affected == 0 {
             return Err(E("candidate certificate not found".into()));
         }
@@ -2482,7 +2632,9 @@ impl D {
     }
 
     pub fn delete_candidate_address(&self, id: &str) -> Result<(), E> {
-        let affected = self.conn()?.execute("DELETE FROM candidate_addresses WHERE id=?", params![id])?;
+        let affected = self
+            .conn()?
+            .execute("DELETE FROM candidate_addresses WHERE id=?", params![id])?;
         if affected == 0 {
             return Err(E("candidate address not found".into()));
         }
@@ -2491,7 +2643,10 @@ impl D {
 
     // ── Candidate Family Members ──
 
-    pub fn list_candidate_family_members(&self, candidate_id: &str) -> Result<Vec<CandidateFamilyMember>, E> {
+    pub fn list_candidate_family_members(
+        &self,
+        candidate_id: &str,
+    ) -> Result<Vec<CandidateFamilyMember>, E> {
         let c = self.conn()?;
         let mut stmt = c.prepare(
             "SELECT id, candidate_id, name, relationship, phone, email, is_emergency_contact, is_default, address, sort_order FROM candidate_family_members WHERE candidate_id=? ORDER BY sort_order ASC"
@@ -2522,7 +2677,10 @@ impl D {
     }
 
     pub fn delete_candidate_family_member(&self, id: &str) -> Result<(), E> {
-        let affected = self.conn()?.execute("DELETE FROM candidate_family_members WHERE id=?", params![id])?;
+        let affected = self.conn()?.execute(
+            "DELETE FROM candidate_family_members WHERE id=?",
+            params![id],
+        )?;
         if affected == 0 {
             return Err(E("candidate family member not found".into()));
         }
@@ -2531,7 +2689,10 @@ impl D {
 
     // ── Candidate Bank Accounts ──
 
-    pub fn list_candidate_bank_accounts(&self, candidate_id: &str) -> Result<Vec<CandidateBankAccount>, E> {
+    pub fn list_candidate_bank_accounts(
+        &self,
+        candidate_id: &str,
+    ) -> Result<Vec<CandidateBankAccount>, E> {
         let c = self.conn()?;
         let mut stmt = c.prepare(
             "SELECT id, candidate_id, bank_name, account_number, account_holder, account_type, bank_country, currency, swift_code, iban, is_primary, sort_order FROM candidate_bank_accounts WHERE candidate_id=? ORDER BY sort_order ASC"
@@ -2564,7 +2725,10 @@ impl D {
     }
 
     pub fn delete_candidate_bank_account(&self, id: &str) -> Result<(), E> {
-        let affected = self.conn()?.execute("DELETE FROM candidate_bank_accounts WHERE id=?", params![id])?;
+        let affected = self.conn()?.execute(
+            "DELETE FROM candidate_bank_accounts WHERE id=?",
+            params![id],
+        )?;
         if affected == 0 {
             return Err(E("candidate bank account not found".into()));
         }
@@ -2573,7 +2737,10 @@ impl D {
 
     // ── Candidate Country Fields ──
 
-    pub fn list_candidate_country_fields(&self, candidate_id: &str) -> Result<Vec<CandidateCountryField>, E> {
+    pub fn list_candidate_country_fields(
+        &self,
+        candidate_id: &str,
+    ) -> Result<Vec<CandidateCountryField>, E> {
         let c = self.conn()?;
         let mut stmt = c.prepare(
             "SELECT id, candidate_id, country, field_name, field_value, field_type, sort_order FROM candidate_country_fields WHERE candidate_id=? ORDER BY sort_order ASC"
@@ -2601,7 +2768,10 @@ impl D {
     }
 
     pub fn delete_candidate_country_field(&self, id: &str) -> Result<(), E> {
-        let affected = self.conn()?.execute("DELETE FROM candidate_country_fields WHERE id=?", params![id])?;
+        let affected = self.conn()?.execute(
+            "DELETE FROM candidate_country_fields WHERE id=?",
+            params![id],
+        )?;
         if affected == 0 {
             return Err(E("candidate country field not found".into()));
         }
@@ -2640,7 +2810,8 @@ impl D {
 
     pub fn list_departments(&self) -> Result<Vec<Department>, E> {
         let c = self.conn()?;
-        let mut stmt = c.prepare("SELECT id, name, parent_id, is_active FROM departments ORDER BY name")?;
+        let mut stmt =
+            c.prepare("SELECT id, name, parent_id, is_active FROM departments ORDER BY name")?;
         let rows = stmt.query_map([], |row| {
             Ok(Department {
                 id: row.get(0)?,
@@ -2654,7 +2825,9 @@ impl D {
 
     pub fn list_locations(&self) -> Result<Vec<Location>, E> {
         let c = self.conn()?;
-        let mut stmt = c.prepare("SELECT id, name, country_id, city, address, is_active FROM locations ORDER BY name")?;
+        let mut stmt = c.prepare(
+            "SELECT id, name, country_id, city, address, is_active FROM locations ORDER BY name",
+        )?;
         let rows = stmt.query_map([], |row| {
             Ok(Location {
                 id: row.get(0)?,

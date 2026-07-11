@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>旋转木马三视图 | Carousel 3-View</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: #0c0a12;
+  display:flex; justify-content:center; align-items:center;
+  min-height:100vh;
+  font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+  overflow:hidden;
+}
+#wrap {
+  position:relative;
+  background: radial-gradient(ellipse at 50% 30%, #14101e, #0a0810);
+  border-radius:18px;
+  border:1px solid rgba(255,200,100,0.08);
+  box-shadow:0 0 80px rgba(255,150,50,0.05), inset 0 0 100px rgba(255,100,0,0.02);
+  padding:5px;
+}
+canvas {
+  display:block;
+  border-radius:14px;
+}
+#title {
+  position:absolute;
+  top:18px; left:50%; transform:translateX(-50%);
+  font-size:15px; letter-spacing:4px;
+  color:rgba(255,200,150,0.5);
+  text-shadow:0 0 30px rgba(255,180,100,0.08);
+  pointer-events:none; white-space:nowrap;
+}
+.vlabel {
+  position:absolute;
+  bottom:28px;
+  font-size:11px; letter-spacing:2px;
+  color:rgba(255,200,150,0.2);
+  pointer-events:none;
+  text-align:center;
+}
+.vlabel .sub { font-size:9px; color:rgba(255,200,150,0.1); }
+#controls {
+  position:absolute;
+  top:52px; right:20px;
+  display:flex; flex-direction:column; gap:6px;
+}
+#controls button {
+  background:rgba(255,200,150,0.04);
+  border:1px solid rgba(255,200,150,0.1);
+  color:rgba(255,200,150,0.3);
+  padding:4px 12px; border-radius:4px;
+  font-size:10px; cursor:pointer;
+  font-family:inherit; letter-spacing:1px;
+  transition:all 0.25s;
+}
+#controls button:hover {
+  background:rgba(255,200,150,0.08);
+  border-color:rgba(255,200,150,0.2);
+  color:rgba(255,200,150,0.5);
+}
+#controls button.on {
+  border-color:rgba(255,200,100,0.25);
+  color:rgba(255,200,100,0.5);
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c"></canvas>
+  <div id="title">✦ 旋转木马三视图 · CAROUSEL 3-VIEW ✦</div>
+  <div class="vlabel" id="l-front" style="left:50px;">前 视 图<br><span class="sub">FRONT</span></div>
+  <div class="vlabel" id="l-side" style="left:50%;transform:translateX(-50%);bottom:28px;">侧 视 图<br><span class="sub">SIDE</span></div>
+  <div class="vlabel" id="l-top" style="right:50px;">俯 视 图<br><span class="sub">TOP</span></div>
+  <div id="controls">
+    <button id="btn-spin">⟳ 自转</button>
+    <button id="btn-bob" class="on">↕ 起伏</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width = 1020;
+const H = canvas.height = 680;
+
+// ─── Carousel 3D model ───
+const C = {
+  baseR: 85, baseH: 7,
+  poleR: 4, poleH: 155,
+  canopyR: 92, canopyBot: 148, canopyTop: 200,
+  finialH: 8, finialR: 5,
+  animalR: 68, animalN: 10, animalY: 28,
+  bodyW: 22, bodyH: 9, neckL: 10, headR: 4,
+  legL: 12,
+};
+
+// Precompute animal angles
+const animAngles = Array.from({length: C.animalN}, (_, i) => i * Math.PI * 2 / C.animalN);
+
+// Animal colors (carousel palette)
+const animColors = [
+  '#c0392b','#e67e22','#f1c40f','#2ecc71','#1abc9c',
+  '#3498db','#9b59b6','#e84393','#fd79a8','#00cec9',
+];
+
+// ─── State ───
+let spin = true;
+let bob = true;
+let angle = 0;
+let bobPhase = 0;
+
+// ─── Orthographic projection helpers ───
+// view: 'front' → (x,y,z) → (x,y)
+//       'side'  → (x,y,z) → (z,y)
+//       'top'   → (x,y,z) → (x,z)
+function proj(vx, vy, vz, view, ox, oy, sc) {
+  let u, v;
+  switch(view) {
+    case 'front': u = vx; v = -vy; break;
+    case 'side':  u = vz; v = -vy; break;
+    case 'top':   u = vx; v = -vz; break;
+  }
+  return [ox + u * sc, oy + v * sc];
+}
+
+// ─── Drawing helpers ───
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+
+// ─── Draw carousel in a given view ───
+function drawView(ctx, view, cx, cy, sc, rotY) {
+  // Compute ranges for each axis based on view type
+  const draw = (renderFn) => renderFn();
+
+  // ├─ Solid parts list ──────────────────────────
+  // We draw back-to-front based on view direction.
+  // For front/side: draw background stuff first, then center, then foreground
+  // For top: draw in order from bottom up
+
+  // Determine drawing order for animals
+  // front view: ordered by Z (back to front)
+  // side view: ordered by X (back to front)
+  // top view: any order (all visible from above)
+
+  const [baseX, baseY] = proj(0, 0, 0, view, cx, cy, sc);
+
+  // ─── Shadow ───
+  if (view !== 'top') {
+    const shCx = baseX;
+    const shCy = cy + (view === 'front' ? 0.1 : 0) * sc;
+    function rg(a,b,c,d,e,f){return ctx.createRadialGradient(a,b,c,d,e,f);}
+    const sr = Math.max(1, C.baseR * sc * 0.9);
+    const sy = Math.min(isFinite(shCy) ? shCy : cy, H - 1);
+    const sx = Math.min(isFinite(shCx) ? shCx : cx, W - 1);
+    const grad = rg(sx, sy, 0, sx, sy, sr);
+    grad.addColorStop(0, 'rgba(0,0,0,0.18)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.ellipse(sx, sy, sr, sr * 0.28, 0, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // ─── Floor line ───
+  if (view !== 'top') {
+    ctx.strokeStyle = 'rgba(255,200,150,0.04)';
+    ctx.lineWidth = 0.5;
+    const [lx1, ly] = proj(-C.baseR*1.3, 0, 0, view, cx, cy, sc);
+    const [lx2, _] = proj(C.baseR*1.3, 0, 0, view, cx, cy, sc);
+    ctx.beginPath(); ctx.moveTo(lx1, ly); ctx.lineTo(lx2, ly); ctx.stroke();
+  }
+
+  // ─── Animals (back half) ───
+  // Sort: back-to-front based on view direction
+  const sorted = animAngles.map((a,i) => {
+    const x = C.animalR * Math.cos(a + rotY);
+    const z = C.animalR * Math.sin(a + rotY);
+    // Depth value for sorting
+    let depth;
+    switch(view) {
+      case 'front': depth = -z; break;  // more negative Z = farther back
+      case 'side':  depth = x; break;   // more negative X = farther back
+      case 'top':   depth = 0; break;   // don't sort for top
+    }
+    return { angle: a, idx: i, x, z, depth };
+  });
+
+  if (view !== 'top') {
+    sorted.sort((a,b) => b.depth - a.depth); // back to front
+  }
+
+  // Separate back/front halves
+  const backHalf = sorted.filter(a => {
+    if (view === 'front') return a.z < 0;  // behind center
+    if (view === 'side') return a.x < 0;   // behind center
+    return false;
+  });
+  const frontHalf = sorted.filter(a => {
+    if (view === 'front') return a.z >= 0;
+    if (view === 'side') return a.x >= 0;
+    return sorted;
+  });
+
+  // Draw back-half animals
+  backHalf.forEach(a => drawAnimalView(ctx, a.angle, a.idx, view, cx, cy, sc, rotY, 0.5));
+
+  // ─── Center pole ───
+  drawPole(ctx, view, cx, cy, sc);
+
+  // ─── Base platform ───
+  drawBase(ctx, view, cx, cy, sc);
+
+  // ─── Front-half animals ───
+  frontHalf.forEach(a => {
+    if (view === 'top') drawAnimalView(ctx, a.angle, a.idx, view, cx, cy, sc, rotY, 1);
+    else drawAnimalView(ctx, a.angle, a.idx, view, cx, cy, sc, rotY, 1);
+  });
+
+  // ─── Canopy ───
+  drawCanopy(ctx, view, cx, cy, sc);
+
+  // ─── Finial ───
+  drawFinial(ctx, view, cx, cy, sc);
+}
+
+// ─── Base platform ───
+function drawBase(ctx, view, cx, cy, sc) {
+  if (view === 'top') {
+    const [bCx, bCy] = proj(0, 0, 0, view, cx, cy, sc);
+    const r = C.baseR * sc;
+    ctx.beginPath(); ctx.arc(bCx, bCy, r, 0, Math.PI*2);
+    ctx.fillStyle = '#2a1f14';
+    ctx.fill();
+    ctx.strokeStyle = '#4a3520';
+    ctx.lineWidth = 1.5; ctx.stroke();
+    // inner ring
+    ctx.beginPath(); ctx.arc(bCx, bCy, r*0.7, 0, Math.PI*2);
+    ctx.strokeStyle = '#3a2818'; ctx.lineWidth = 0.8; ctx.stroke();
+    // center
+    ctx.beginPath(); ctx.arc(bCx, bCy, r*0.12, 0, Math.PI*2);
+    ctx.fillStyle = '#1a1208'; ctx.fill();
+    return;
+  }
+
+  // Front/side: trapezoid base
+  const h = C.baseH * sc;
+  const [l1x, l1y] = proj(-C.baseR, 0, 0, view, cx, cy, sc);
+  const [r1x, r1y] = proj(C.baseR, 0, 0, view, cx, cy, sc);
+  const [l2x, l2y] = proj(-C.baseR*0.92, -C.baseH, 0, view, cx, cy, sc);
+  const [r2x, r2y] = proj(C.baseR*0.92, -C.baseH, 0, view, cx, cy, sc);
+
+  ctx.beginPath();
+  ctx.moveTo(l1x, l1y); ctx.lineTo(r1x, r1y);
+  ctx.lineTo(r2x, r2y); ctx.lineTo(l2x, l2y); ctx.closePath();
+  const bg = ctx.createLinearGradient(0, l1y, 0, l2y);
+  bg.addColorStop(0, '#3a2818'); bg.addColorStop(1, '#1a1008');
+  ctx.fillStyle = bg; ctx.fill();
+  ctx.strokeStyle = '#5a4028'; ctx.lineWidth = 0.8; ctx.stroke();
+}
+
+// ─── Center pole ───
+function drawPole(ctx, view, cx, cy, sc) {
+  const pR = C.poleR * sc;
+  const pH = C.poleH * sc;
+  const [pCx, pCy] = proj(0, 0, 0, view, cx, cy, sc);
+
+  if (view === 'top') {
+    const [pcx, pcy] = proj(0, 0, 0, view, cx, cy, sc);
+    ctx.beginPath(); ctx.arc(pcx, pcy, pR*2, 0, Math.PI*2);
+    ctx.fillStyle = '#3a2818'; ctx.fill();
+    ctx.beginPath(); ctx.arc(pcx, pcy, pR, 0, Math.PI*2);
+    ctx.fillStyle = '#2a1a10'; ctx.fill();
+    return;
+  }
+
+  // Pole shaft
+  const [topX, topY] = proj(0, -C.poleH, 0, view, cx, cy, sc);
+  const grad = ctx.createLinearGradient(pCx-pR*2, pCy, pCx+pR*2, pCy);
+  grad.addColorStop(0, '#2a1a10');
+  grad.addColorStop(0.3, '#5a3a20');
+  grad.addColorStop(0.5, '#7a5030');
+  grad.addColorStop(0.7, '#5a3a20');
+  grad.addColorStop(1, '#2a1a10');
+  ctx.fillStyle = grad;
+  roundRect(ctx, pCx-pR, topY, pR*2, pH, pR*0.5);
+  ctx.fill();
+  ctx.strokeStyle = '#8a6040'; ctx.lineWidth = 0.3; ctx.stroke();
+
+  // Decorative rings on pole
+  for (let i = 1; i <= 5; i++) {
+    const ry = topY + pH * (i / 6);
+    ctx.fillStyle = '#8a6a38';
+    roundRect(ctx, pCx-pR*1.5, ry-1.5, pR*3, 3, 1);
+    ctx.fill();
+  }
+}
+
+// ─── Canopy ───
+function drawCanopy(ctx, view, cx, cy, sc) {
+  const cBot = C.canopyBot, cTop = C.canopyTop;
+  const cR = C.canopyR * sc;
+
+  if (view === 'top') {
+    const [cCx, cCy] = proj(0, -cBot, view, cx, cy, sc);
+    // Outer circle
+    ctx.beginPath(); ctx.arc(cCx, cCy, cR, 0, Math.PI*2);
+    ctx.fillStyle = '#8a2030';
+    ctx.fill();
+    ctx.strokeStyle = '#b04030'; ctx.lineWidth = 1.5; ctx.stroke();
+
+    // Stripe pattern (radial)
+    for (let i = 0; i < 20; i++) {
+      const a = (i / 20) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(cCx, cCy);
+      ctx.lineTo(cCx + Math.cos(a) * cR*0.95, cCy + Math.sin(a) * cR*0.95);
+      ctx.strokeStyle = i % 2 === 0 ? 'rgba(180,60,40,0.3)' : 'rgba(255,200,100,0.15)';
+      ctx.lineWidth = 6; ctx.stroke();
+    }
+
+    // Inner ring
+    ctx.beginPath(); ctx.arc(cCx, cCy, cR*0.3, 0, Math.PI*2);
+    ctx.strokeStyle = '#b05030'; ctx.lineWidth = 1; ctx.stroke();
+    return;
+  }
+
+  // Front/side: conical canopy
+  const [bLx, bLy] = proj(-C.canopyR, -cBot, 0, view, cx, cy, sc);
+  const [bRx, bRy] = proj(C.canopyR, -cBot, 0, view, cx, cy, sc);
+  const [tLx, tLy] = proj(-C.canopyR*0.12, -cTop, 0, view, cx, cy, sc);
+  const [tRx, tRy] = proj(C.canopyR*0.12, -cTop, 0, view, cx, cy, sc);
+
+  // Canopy body
+  ctx.beginPath();
+  ctx.moveTo(bLx, bLy);
+  ctx.lineTo(tLx, tLy);
+  ctx.lineTo(tRx, tRy);
+  ctx.lineTo(bRx, bRy);
+  ctx.closePath();
+
+  const grad = ctx.createLinearGradient(0, bLy, 0, tLy);
+  grad.addColorStop(0, '#c03030');
+  grad.addColorStop(0.3, '#a02028');
+  grad.addColorStop(0.6, '#801820');
+  grad.addColorStop(1, '#601018');
+  ctx.fillStyle = grad; ctx.fill();
+  ctx.strokeStyle = '#d05040'; ctx.lineWidth = 1.2; ctx.stroke();
+
+  // Vertical stripe lines (ribs)
+  for (let i = 0; i < 12; i++) {
+    const t = i / 12;
+    // x position interpolates from top to bottom
+    const xTop = tLx + (tRx - tLx) * t;
+    const xBot = bLx + (bRx - bLx) * t;
+    const yTop = tLy + (bLy - tLy) * t;
+    ctx.beginPath();
+    ctx.moveTo(xBot, bLy);
+    ctx.lineTo(xTop, yTop);
+    ctx.strokeStyle = i % 2 === 0 ? 'rgba(200,60,50,0.2)' : 'rgba(255,200,100,0.08)';
+    ctx.lineWidth = i % 2 === 0 ? 2 : 1;
+    ctx.stroke();
+  }
+
+  // Bottom edge (scalloped trim)
+  const scallopN = 16;
+  for (let i = 0; i < scallopN; i++) {
+    const t = i / scallopN;
+    const x = bLx + (bRx - bLx) * t;
+    const ns = 3; // scallop size
+    ctx.beginPath();
+    ctx.arc(x, bLy + ns, ns, Math.PI, 0, false);
+    ctx.fillStyle = '#d08020';
+    ctx.fill();
+  }
+
+  // Canopy underside shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.beginPath();
+  ctx.moveTo(bLx, bLy);
+  ctx.lineTo(bLx + (bRx-bLx)*0.05, bLy + 6);
+  ctx.lineTo(bRx - (bRx-bLx)*0.05, bLy + 6);
+  ctx.lineTo(bRx, bLy);
+  ctx.fill();
+}
+
+// ─── Finial (top decoration) ───
+function drawFinial(ctx, view, cx, cy, sc) {
+  const fY = -C.canopyTop;
+  if (view === 'top') {
+    const [fCx, fCy] = proj(0, fY, view, cx, cy, sc);
+    ctx.beginPath(); ctx.arc(fCx, fCy, C.finialR * sc, 0, Math.PI*2);
+    ctx.fillStyle = '#d09020'; ctx.fill();
+    ctx.strokeStyle = '#f0b040'; ctx.lineWidth = 1; ctx.stroke();
+    return;
+  }
+  const [fCx, bY] = proj(0, fY, view, cx, cy, sc);
+  const [_, tY] = proj(0, fY - C.finialH, view, cx, cy, sc);
+  const r = C.finialR * sc;
+
+  // Spike
+  ctx.beginPath();
+  ctx.moveTo(fCx - r*0.4, bY);
+  ctx.lineTo(fCx, tY);
+  ctx.lineTo(fCx + r*0.4, bY);
+  ctx.closePath();
+  ctx.fillStyle = '#d09020'; ctx.fill();
+
+  // Ball
+  ctx.beginPath();
+  ctx.arc(fCx, bY, r, 0, Math.PI*2);
+  if (isFinite(fCx) && isFinite(bY) && isFinite(r) && r > 0) {
+    const grad = ctx.createRadialGradient(fCx-r*0.3, bY-r*0.3, 0, fCx, bY, r);
+    grad.addColorStop(0, '#f0c040');
+    grad.addColorStop(0.6, '#d09020');
+    grad.addColorStop(1, '#805010');
+    ctx.fillStyle = grad;
+  } else {
+    ctx.fillStyle = '#d09020';
+  }
+  ctx.fill();
+  ctx.strokeStyle = '#f0b040'; ctx.lineWidth = 0.8; ctx.stroke();
+}
+
+// ─── Animal (horse) ───
+function drawAnimalView(ctx, angle, idx, view, cx, cy, sc, rotY, opacity) {
+  const x = C.animalR * Math.cos(angle + rotY);
+  const z = C.animalR * Math.sin(angle + rotY);
+  const bobAmt = bob ? Math.sin(bobPhase + idx * 1.2) * 3 : 0;
+  const ay = C.animalY + bobAmt;
+  const color = animColors[idx % animColors.length];
+  const dark = '#1a0a10';
+
+  if (view === 'top') {
+    const [ax, az] = proj(x, 0, z, view, cx, cy, sc);
+    const s = 5;
+    // horse body from above
+    ctx.fillStyle = color + '60';
+    ctx.beginPath();
+    ctx.ellipse(ax, az, C.bodyW/2 * sc * 0.15, C.bodyH * sc * 0.15, 0, 0, Math.PI*2);
+    ctx.fill();
+    // head
+    const hDir = Math.atan2(-Math.sin(angle + rotY), Math.cos(angle + rotY));
+    ctx.beginPath();
+    ctx.arc(ax + Math.cos(hDir)*4, az + Math.sin(hDir)*4, 2, 0, Math.PI*2);
+    ctx.fill();
+    return;
+  }
+
+  const isFront = view === 'front';
+  const [aCx, aCy] = proj(x, ay, z, view, cx, cy, sc);
+  const s = sc * 0.15;
+
+  // Determine facing direction for the horse
+  // Horses face forward (along the tangent = perpendicular to radius)
+  const facingX = -Math.sin(angle + rotY); // local forward X
+  const facingZ = Math.cos(angle + rotY);  // local forward Z
+
+  let horseFacesRight;
+  if (view === 'front') {
+    horseFacesRight = facingZ < 0 ? 1 : -1; // toward viewer or away
+  } else { // side
+    horseFacesRight = facingX > 0 ? 1 : -1;
+  }
+
+  ctx.save();
+  ctx.globalAlpha = opacity;
+
+  // Legs
+  const legW = 1.5 * s;
+  const legH = C.legL * s;
+  ctx.strokeStyle = dark;
+  ctx.lineWidth = legW;
+  ctx.lineCap = 'round';
+
+  const legSpread = isFront ? 5 * s : 2.5 * s;
+  const legOffsets = isFront
+    ? [-legSpread, -legSpread*0.3, legSpread*0.3, legSpread]
+    : [-legSpread, -legSpread*0.6, legSpread*0.6, legSpread];
+
+  legOffsets.forEach((off, li) => {
+    const lx = aCx + off * (isFront ? 1 : horseFacesRight);
+    const ly = aCy + 2*s;
+    const legBob = Math.sin(bobPhase + idx * 1.2 + li * 1.5) * (bob ? 2 : 0);
+    ctx.beginPath();
+    ctx.moveTo(lx, ly);
+    ctx.lineTo(lx + legBob*0.3, ly + legH + legBob*0.5);
+    ctx.stroke();
+  });
+
+  // Body
+  const bW = C.bodyW * s * (isFront ? 1 : 0.4);
+  const bH = C.bodyH * s;
+  ctx.fillStyle = color;
+  roundRect(ctx, aCx - bW/2, aCy - bH/2, bW, bH, 3);
+  ctx.fill();
+  ctx.strokeStyle = dark; ctx.lineWidth = 0.5; ctx.stroke();
+
+  // Saddle
+  ctx.fillStyle = '#d09020';
+  roundRect(ctx, aCx - bW*0.35, aCy - bH*0.5, bW*0.7, bH*0.6, 2);
+  ctx.fill();
+
+  // Neck & Head
+  const neckDir = isFront ? horseFacesRight : horseFacesRight;
+  const nX = aCx + neckDir * (bW/2 + C.neckL * s * 0.3);
+  const nY = aCy - bH*0.3;
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = C.neckL * s * 0.4;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(aCx + neckDir * bW/2, aCy - bH*0.2);
+  ctx.lineTo(nX, nY);
+  ctx.stroke();
+
+  // Head
+  const hR = C.headR * s;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(nX, nY, hR, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = dark; ctx.lineWidth = 0.5; ctx.stroke();
+
+  // Eye
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(nX + neckDir * hR*0.3, nY - hR*0.2, hR*0.3, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = '#111';
+  ctx.beginPath();
+  ctx.arc(nX + neckDir * hR*0.4, nY - hR*0.2, hR*0.15, 0, Math.PI*2);
+  ctx.fill();
+
+  // Ear
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(nX + neckDir * hR*0.3, nY - hR*1);
+  ctx.lineTo(nX + neckDir * hR*0.6, nY - hR*1.6);
+  ctx.lineTo(nX + neckDir * hR*0.1, nY - hR*1.3);
+  ctx.fill();
+
+  // Tail
+  ctx.strokeStyle = dark;
+  ctx.lineWidth = 1.2 * s;
+  ctx.beginPath();
+  const tX = aCx - neckDir * bW/2;
+  ctx.moveTo(tX, aCy - bH*0.2);
+  ctx.quadraticCurveTo(tX - neckDir * 6*s, aCy + 2*s, tX - neckDir * 4*s, aCy + 6*s);
+  ctx.stroke();
+
+  // Pole through horse
+  const [pCx, pCy] = proj(0, C.animalY, 0, view, cx, cy, sc);
+  ctx.strokeStyle = 'rgba(200,180,140,0.5)';
+  ctx.lineWidth = 2 * s;
+  ctx.setLineDash([2, 3]);
+  ctx.beginPath();
+  ctx.moveTo(pCx, pCy - 8*s);
+  ctx.lineTo(pCx, pCy + 8*s);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.restore();
+}
+
+// ─── Draw viewport frame ───
+function drawViewport(ctx, x, y, w, h, label) {
+  // Glass panel effect
+  ctx.fillStyle = 'rgba(255,200,150,0.015)';
+  roundRect(ctx, x, y, w, h, 10);
+  ctx.fill();
+
+  ctx.strokeStyle = 'rgba(255,200,150,0.06)';
+  ctx.lineWidth = 1;
+  roundRect(ctx, x, y, w, h, 10);
+  ctx.stroke();
+
+  // Corner ornaments
+  const co = 12;
+  ctx.strokeStyle = 'rgba(255,200,150,0.08)';
+  ctx.lineWidth = 0.5;
+  [[x+1, y+1, 1,1], [x+w-1, y+1, -1,1],
+   [x+1, y+h-1, 1,-1], [x+w-1, y+h-1, -1,-1]].forEach(([cx, cy, dx, dy]) => {
+    ctx.beginPath();
+    ctx.moveTo(cx + dx*co, cy);
+    ctx.lineTo(cx, cy);
+    ctx.lineTo(cx, cy + dy*co);
+    ctx.stroke();
+  });
+}
+
+// ─── Lights around canopy ───
+function drawLights(ctx, view, cx, cy, sc, rotY, t) {
+  if (view === 'top') return;
+  const lightN = 20;
+  const ly = -C.canopyBot;
+  for (let i = 0; i < lightN; i++) {
+    const a = (i / lightN) * Math.PI * 2 + rotY;
+    const lx = C.canopyR * 0.98 * Math.cos(a);
+    const lz = C.canopyR * 0.98 * Math.sin(a);
+
+    // Only draw front-facing lights
+    let inView;
+    if (view === 'front') inView = lz > -C.canopyR * 0.3;
+    else inView = lx < C.canopyR * 0.3;
+    if (!inView) continue;
+
+    const [lCx, lCy] = proj(lx, ly, lz, view, cx, cy, sc);
+    const flicker = 0.7 + Math.sin(t * 0.003 + i * 1.7) * 0.3;
+    const colors = ['#ff6b6b','#ffd93d','#6bcbff','#ff8a5c','#a8e6cf','#dda0dd'];
+    const c = colors[i % colors.length];
+    const r = 3 + Math.sin(t * 0.002 + i) * 0.5;
+
+    ctx.shadowColor = c;
+    ctx.shadowBlur = 10 * flicker;
+    ctx.fillStyle = c;
+    ctx.globalAlpha = 0.6 * flicker;
+    ctx.beginPath();
+    ctx.arc(lCx, lCy, r, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ─── Ambient particles ───
+const particles = [];
+for (let i = 0; i < 30; i++) {
+  particles.push({
+    x: Math.random() * W,
+    y: Math.random() * H,
+    vx: (Math.random() - 0.5) * 0.15,
+    vy: (Math.random() - 0.5) * 0.1 - 0.05,
+    r: 0.5 + Math.random() * 0.8,
+    a: 0.1 + Math.random() * 0.3,
+    phase: Math.random() * Math.PI * 2,
+  });
+}
+
+// ─── Main render loop ───
+function render(timestamp) {
+  const t = timestamp || 0;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Background gradient
+  const bg = ctx.createRadialGradient(W/2, H*0.3, 50, W/2, H*0.3, 600);
+  bg.addColorStop(0, '#161222');
+  bg.addColorStop(0.5, '#0e0c18');
+  bg.addColorStop(1, '#08060e');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle background pattern
+  ctx.strokeStyle = 'rgba(255,200,150,0.02)';
+  ctx.lineWidth = 0.3;
+  for (let i = 0; i < 20; i++) {
+    const r = 60 + i * 30;
+    ctx.beginPath();
+    ctx.arc(W/2, H*0.4, r, 0, Math.PI*2);
+    ctx.stroke();
+  }
+
+  // ─── Viewport definitions ───
+  const pad = 20;
+  const gap = 14;
+  const vW = 305, vH = 470;
+  const vTop = 58;
+  const totalW = vW * 3 + gap * 2;
+  const vLeft = (W - totalW) / 2;
+
+  const views = [
+    { id: 'front', x: vLeft, y: vTop, w: vW, h: vH, cx: vLeft + vW/2, cy: vTop + vH/2 + 40,
+      sc: 1.65, label: 'FRONT' },
+    { id: 'side', x: vLeft + vW + gap, y: vTop, w: vW, h: vH,
+      cx: vLeft + vW + gap + vW/2, cy: vTop + vH/2 + 40,
+      sc: 1.65, label: 'SIDE' },
+    { id: 'top', x: vLeft + (vW + gap) * 2, y: vTop, w: vW, h: vH,
+      cx: vLeft + (vW + gap) * 2 + vW/2, cy: vTop + vH/2 + 10,
+      sc: 1.55, label: 'TOP' },
+  ];
+
+  // Update state
+  if (spin) angle += 0.008;
+  if (bob) bobPhase += 0.035;
+
+  // Draw each viewport
+  views.forEach((v, idx) => {
+    drawViewport(ctx, v.x, v.y, v.w, v.h, v.label);
+
+    // RotY varies by view
+    let rotY;
+    if (v.id === 'front') rotY = angle;
+    else if (v.id === 'side') rotY = angle + Math.PI/2;
+    else rotY = angle + 0.3;
+
+    // Clip to viewport (subtle)
+    ctx.save();
+    ctx.beginPath();
+    roundRect(ctx, v.x+2, v.y+2, v.w-4, v.h-4, 8);
+    ctx.clip();
+
+    // Floor shadow gradient
+    const flY = v.cy + 150 * v.sc * 0.08;
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    ctx.beginPath();
+    ctx.ellipse(v.cx, flY, 120, 20, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    drawView(ctx, v.id, v.cx, v.cy, v.sc, rotY);
+    drawLights(ctx, v.id, v.cx, v.cy, v.sc, rotY, t);
+
+    ctx.restore();
+
+    // Label
+    ctx.fillStyle = 'rgba(255,200,150,0.12)';
+    ctx.font = '10px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(v.label, v.x + v.w/2, v.y + v.h - 12);
+  });
+
+  // ─── Particles ───
+  particles.forEach(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    if (p.x < 0) p.x = W;
+    if (p.x > W) p.x = 0;
+    if (p.y < 0) p.y = H;
+    if (p.y > H) p.y = 0;
+    p.a = 0.15 + Math.sin(t * 0.002 + p.phase) * 0.1;
+
+    ctx.fillStyle = `rgba(255,220,180,${p.a})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+    ctx.fill();
+  });
+
+  // ─── Bottom info ───
+  ctx.fillStyle = 'rgba(255,200,150,0.06)';
+  ctx.font = '10px "Segoe UI", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('10 匹木马 · 三视图正交投影 · 10 Horses · 3-View Orthographic', W/2, H - 12);
+
+  requestAnimationFrame(render);
+}
+
+// ─── Controls ───
+document.getElementById('btn-spin').addEventListener('click', function() {
+  spin = !spin;
+  this.classList.toggle('on', spin);
+});
+
+document.getElementById('btn-bob').addEventListener('click', function() {
+  bob = !bob;
+  this.classList.toggle('on', bob);
+});
+
+// ─── Start ───
+requestAnimationFrame(render);
+</script>
+</body>
+</html>

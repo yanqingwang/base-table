@@ -1,0 +1,9 @@
+{"type": "project", "timestamp": "2026-06-21T10:14:00Z", "description": "【小豹子的成长之旅】系列童话项目创建 - 10个故事（勇敢/坚强/果断/坚持/诚实/自信/善良/包容/责任/智慧），主角小豹子+猫咪咪，A4双栏打印排版，全文拼音ruby标注，10幅SVG插图，edge-tts AI语音朗读(Xiaoxiao)"}
+{"type": "milestone", "timestamp": "2026-06-21T23:59:00Z", "description": "DocuSign 任务全部完成 — DEV2/V4/V3 模板就绪, 批量发送/CDP/WEB 三通道可用"}
+{"type": "config", "timestamp": "2026-06-21T23:59:00Z", "description": "DEV2 template created: a984ec81-9dc0-4480-9a27-55b3ce1c7d1b (MY_Offer_Laird_Bulk_Send-DEV2)"}
+{"type": "config", "timestamp": "2026-06-21T23:59:00Z", "description": "PRD 账户映射更新: TE-Malaysia(694285719), TE-Korea(694285458), TE Connectivity"}
+{"type": "document", "timestamp": "2026-06-21T23:59:00Z", "description": "OPS.md 更新 — DEV2 模板信息, 已知限制(选项卡/DocGen)")
+{"type": "script", "timestamp": "2026-06-21T23:59:00Z", "description": "CDP bulk send script: DEV/scripts/docusign_bulk_send_cdp.js"}
+{"type": "script", "timestamp": "2026-06-21T23:59:00Z", "description": "Web console consolidated to single dashboard page"}
+{"type": "milestone", "timestamp": "2026-06-21T23:59:00Z", "description": "Template tab audit completed: 105/116 editable, 11 locked (auto-numbered family fields)"}
+{"type": "config", "timestamp": "2026-06-21T23:59:00Z", "description": "Account 694285458 (TE-Korea) accessible via webapp — 78 envelopes"}

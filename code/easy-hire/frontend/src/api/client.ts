@@ -97,6 +97,41 @@ export interface CandidateWorkExperience {
   created_at: string;
 }
 
+export interface CandidateAddress {
+  id: string;
+  candidate_id: string;
+  address_type: string;
+  is_primary: number;
+  country?: string;
+  state?: string;
+  city?: string;
+  district?: string;
+  street?: string;
+  postal_code?: string;
+  sort_order: number;
+}
+
+export interface CandidateFamilyMember {
+  id: string;
+  candidate_id: string;
+  name: string;
+  relationship?: string;
+  phone?: string;
+  is_emergency_contact: number;
+}
+
+export interface CandidateBankAccount {
+  id: string;
+  candidate_id: string;
+  bank_name: string;
+  account_number: string;
+  account_holder?: string;
+  branch?: string;
+  swift_code?: string;
+  currency?: string;
+  is_primary: number;
+}
+
 export interface Interview {
   id: string;
   candidate_id: string;
@@ -253,6 +288,27 @@ export interface Job {
   hiring_manager_id: string | null;
 }
 
+export interface Department {
+  id: string;
+  name: string;
+  description?: string;
+  is_active: number;
+}
+
+export interface Location {
+  id: string;
+  name: string;
+  country?: string;
+  city?: string;
+  timezone?: string;
+}
+
+export interface JobCategory {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 export interface JobApplication {
   id: string;
   job_id: string;
@@ -267,6 +323,29 @@ export interface JobApplication {
   created_at: string;
   updated_at: string;
 }
+
+export interface InterviewQueue {
+  id: string;
+  candidate_id: string;
+  job_id?: string;
+  queue_number: number;
+  status: string; // waiting | called | in_progress | completed | skipped
+  called_at?: string;
+  started_at?: string;
+  completed_at?: string;
+  created_at: string;
+}
+
+export const queueApi = {
+  list: (params?: { job_id?: string; status?: string }) =>
+    client.get<InterviewQueue[]>('/queue', { params }),
+  enqueue: (data: { candidate_id: string; job_id?: string }) =>
+    client.post<InterviewQueue>('/queue/enqueue', data),
+  callNext: (job_id: string) =>
+    client.post<InterviewQueue>('/queue/call-next', { job_id }),
+  updateStatus: (id: string, status: string) =>
+    client.put(`/queue/${id}/status`, { status }),
+};
 
 const api = {
   auth: {
@@ -303,6 +382,21 @@ const api = {
       list: (candidateId: string) => client.get<CandidateWorkExperience[]>(`/candidates/${candidateId}/work-experiences`).then(r => r.data),
       create: (candidateId: string, data: Partial<CandidateWorkExperience>) => client.post<CandidateWorkExperience>(`/candidates/${candidateId}/work-experiences`, data).then(r => r.data),
       delete: (candidateId: string, id: string) => client.delete(`/candidates/${candidateId}/work-experiences/${id}`).then(r => r.data),
+    },
+    addresses: {
+      list: (cid: string) => client.get<CandidateAddress[]>(`/candidates/${cid}/addresses`).then(r => r.data),
+      create: (cid: string, data: Partial<CandidateAddress>) => client.post<CandidateAddress>(`/candidates/${cid}/addresses`, data).then(r => r.data),
+      delete: (cid: string, id: string) => client.delete(`/candidates/${cid}/addresses/${id}`).then(r => r.data),
+    },
+    familyMembers: {
+      list: (cid: string) => client.get<CandidateFamilyMember[]>(`/candidates/${cid}/family-members`).then(r => r.data),
+      create: (cid: string, data: Partial<CandidateFamilyMember>) => client.post<CandidateFamilyMember>(`/candidates/${cid}/family-members`, data).then(r => r.data),
+      delete: (cid: string, id: string) => client.delete(`/candidates/${cid}/family-members/${id}`).then(r => r.data),
+    },
+    bankAccounts: {
+      list: (cid: string) => client.get<CandidateBankAccount[]>(`/candidates/${cid}/bank-accounts`).then(r => r.data),
+      create: (cid: string, data: Partial<CandidateBankAccount>) => client.post<CandidateBankAccount>(`/candidates/${cid}/bank-accounts`, data).then(r => r.data),
+      delete: (cid: string, id: string) => client.delete(`/candidates/${cid}/bank-accounts/${id}`).then(r => r.data),
     },
   },
   interviews: {
@@ -412,16 +506,25 @@ const api = {
     candidates: () => client.get('/export/candidates', { responseType: 'blob' }).then(r => {
       const url = window.URL.createObjectURL(new Blob([r.data]));
       const a = document.createElement('a'); a.href = url; a.download = 'candidates.csv'; a.click();
+      window.URL.revokeObjectURL(url);
     }),
     employees: () => client.get('/export/employees', { responseType: 'blob' }).then(r => {
       const url = window.URL.createObjectURL(new Blob([r.data]));
       const a = document.createElement('a'); a.href = url; a.download = 'employees.csv'; a.click();
+      window.URL.revokeObjectURL(url);
     }),
     interviews: () => client.get('/export/interviews', { responseType: 'blob' }).then(r => {
       const url = window.URL.createObjectURL(new Blob([r.data]));
       const a = document.createElement('a'); a.href = url; a.download = 'interviews.csv'; a.click();
+      window.URL.revokeObjectURL(url);
     }),
   },
+};
+
+export const masterDataApi = {
+  listDepartments: () => client.get<Department[]>('/departments'),
+  listLocations: () => client.get<Location[]>('/locations'),
+  listJobCategories: () => client.get<JobCategory[]>('/job-categories'),
 };
 
 export default api;

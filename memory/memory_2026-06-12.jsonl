@@ -1,0 +1,13 @@
+{"type": "work_status", "timestamp": "2026-06-12T16:00:00Z", "project": "docusign", "environment": "DEV", "summary": "MY_Offer_Laird_Bulk_Send template migration from PRD complete"}
+{"type": "milestone", "timestamp": "2026-06-12T16:00:00Z", "description": "Template migration PRD→DEV completed with all 148 tabs + 14 DocGen fields"}
+{"type": "milestone", "timestamp": "2026-06-12T16:00:00Z", "description": "DocGen issue fixed - copy script now forwards isDocGenDocument, docGenFormFields, isDocGenTemplate"}
+{"type": "milestone", "timestamp": "2026-06-12T16:00:00Z", "description": "Online document generation via template working - 14 DocGen fields populated from CSV/XLSX"}
+{"type": "config", "timestamp": "2026-06-12T16:00:00Z", "description": "DEV template ID: 847c96d3, renamed to MY_Offer_Laird_Bulk_Send-DEV"}
+{"type": "config", "timestamp": "2026-06-12T16:00:00Z", "description": "Sample-Bulk-Recipient.xlsx updated to 113 columns (added HR Manager:: and Document Generation:: prefixes)"}
+{"type": "script", "timestamp": "2026-06-12T16:00:00Z", "description": "send_laird_test.py handles HR Manager::, Employee::, Document Generation:: column prefixes"}
+{"type": "script", "timestamp": "2026-06-12T16:00:00Z", "description": "PRD simulate_test.py creates, verifies, voids (never sends)"}
+{"type": "note", "timestamp": "2026-06-12T16:00:00Z", "description": "All test recipients use wangyantsing@qq.com for DEV testing"}
+{"type": "todo", "timestamp": "2026-06-12T16:00:00Z", "description": "Remaining: 221 test envelopes in DEV need cleanup (API timeout), field label edits need web UI"}
+{"type": "fix", "timestamp": "2026-06-13T12:00:00Z", "description": "DocGen endpoint fixed: PUT /envelopes/{id}/documents/{docId} instead of PUT /envelopes/{id} to avoid stripping other envelope documents"}
+{"type": "verification", "timestamp": "2026-06-13T12:00:00Z", "description": "Full verification completed - dry-run with Sample-Bulk-Recipient.xlsx: 141 tab types mapped, 36 tabs built, 14 DocGen fields, 2 roles (HR Manager + Employee), all 3 prefixes handled correctly"}
+{"type": "work_status", "timestamp": "2026-06-13T12:00:00Z", "project": "docusign", "environment": "DEV", "summary": "All 7 requirements verified complete. Pipeline: XLSX→prefix parse→create envelope→DocGen apply→send working"}

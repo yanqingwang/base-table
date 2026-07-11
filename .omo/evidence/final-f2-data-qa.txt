@@ -1,0 +1,109 @@
+F2 Data QA Audit — OPC1 Export Validation
+Date: 2026-04-18
+Plan: .sisyphus/plans/opc1-hris-opportunity-bridge.md
+Frozen window: 2026-01-19 to 2026-04-18 (inclusive)
+
+Files checked
+- Reports/OPC1-demand-companies-500-china-2026-04-18.csv
+- Reports/OPC1-vendors-top100-hris-china-2026-04-18.csv
+- Reports/OPC1-opportunity-matching-china-2026-04-18.csv
+- Reports/*.xlsx -> none found
+- Reports/OPC1-monitoring-and-tooling-brief-2026-04-18.md
+
+Row counts per CSV
+- company CSV: 500
+- vendor CSV: 10
+- matching CSV: 150
+
+1) Company CSV — required columns and signal_date range
+Schema presence
+- Company-master required columns present: PASS
+- Opportunity overlay columns present in export: PASS (`signal_type`, `signal_date`, `signal_evidence_url`, `confidence`, `opportunity_score`)
+
+Schema completeness results
+- Company-master required field blanks: company_id=0, company_name=0, company_market_status=0, sector_primary=0, country=0, employee_band=0, universe=0, universe_as_of=0, universe_source_url=0
+- Opportunity overlay field blanks across 500 rows: signal_type=450, signal_date=450, signal_evidence_url=450, confidence=450, opportunity_score=450
+- Signal-bearing rows: 50 / 500
+- Signal-bearing rows by industry: advanced_manufacturing=32, internet_software=18
+- Missing evidence rate (`signal_evidence_url`): 450/500 = 90.0%
+
+Freshness window compliance
+- Populated `signal_date` min/max: 2026-01-21 -> 2026-04-09
+- Rows outside frozen window: 0
+- Freshness verdict: PASS for populated signal rows
+
+Dedupe / enum QA
+- `company_id` duplicates: 0
+- Company rows by industry: advanced_manufacturing=203, consumer_retail=40, energy_chemicals=111, finance=32, healthcare=57, internet_software=32, logistics_mobility=25
+- Confidence distribution on populated signal rows: M=50
+
+Interim verdict
+- FAIL: 450/500 company rows are missing the opportunity fields required for a fully populated demand-opportunity export.
+
+2) Vendor CSV — required columns and confidence distribution
+Schema presence
+- Required vendor columns present: PASS
+
+Schema completeness results
+- Required field blanks: vendor_id=0, vendor_name=0, vendor_type=0, evidence_url=0, evidence_date=0, as_of_date=0, confidence=0
+- Missing evidence rate (`evidence_url`): 0/10 = 0.0%
+- Row count versus Top100 deliverable target: 10 / 100
+
+Freshness window compliance
+- `evidence_date` min/max: 2026-03-02 -> 2026-03-11
+- Rows outside frozen window: 0
+- `as_of_date` values: 2026-04-18=10
+- Freshness verdict: PASS
+
+Dedupe / enum QA
+- `vendor_id` duplicates: 0
+- Confidence distribution: M=10
+
+Interim verdict
+- FAIL: schema population is clean, but the file named Top100 currently contains only 10 rows.
+
+3) Matching CSV — required columns and term_status values
+Schema presence
+- Canonical required match columns missing from export: source_url, evidence_date
+- Present required-field blanks: company_id=0, company_name=0, delivery_feasibility=0, match_id=0, match_score=0, match_status=0, match_type=0, next_action=0, opportunity_id=0, rationale=0, term_status=0, vendor_id=0, vendor_name=0
+
+Enum / dedupe QA
+- `term_status` distribution: needs_confirmation=150
+- Invalid `term_status` values: none
+- `next_action` distribution: identify_contact=114, monitor=18, validate_industry_fit=18
+- Invalid `next_action` values: validate_industry_fit
+- `match_id` duplicates: 0
+- Canonical dedupe-key duplicates (`opportunity_id + vendor_id + match_type`): 0
+
+Evidence / freshness QA
+- Missing evidence rate against canonical `source_url`: 150/150 = 100.0%
+- Match freshness auditability: FAIL (`evidence_date` column is absent, so row-level freshness cannot be verified)
+
+Interim verdict
+- FAIL: `source_url` and `evidence_date` are missing from the canonical match schema, and `validate_industry_fit` is not an allowed `next_action` enum.
+
+XLSX companion check
+- Expected final companions per plan: company xlsx, vendor xlsx, matching xlsx
+- Found: 0
+- Verdict: FAIL
+
+Summary statistics
+- Company rows by industry: advanced_manufacturing=203, consumer_retail=40, energy_chemicals=111, finance=32, healthcare=57, internet_software=32, logistics_mobility=25
+- Signal-bearing company rows by industry: advanced_manufacturing=32, internet_software=18
+- Company confidence distribution (populated rows only): M=50
+- Vendor confidence distribution: M=10
+- Match `term_status` distribution: needs_confirmation=150
+- Missing evidence rate by export:
+  - company (`signal_evidence_url`): 90.0%
+  - vendor (`evidence_url`): 0.0%
+  - match (`source_url`, canonical schema): 100.0%
+
+Overall verdict
+FAIL
+
+Failure reasons
+- Company export is not fully populated as a demand-opportunity table: only 50 of 500 rows have `signal_type` / `signal_date` / `signal_evidence_url` / `confidence` / `opportunity_score`.
+- Vendor export is short of the Top100 target: 10 rows present.
+- Matching export omits canonical required evidence columns: source_url, evidence_date.
+- Matching export contains invalid enum values in `next_action`: validate_industry_fit.
+- No XLSX companions were generated in `Reports/`.

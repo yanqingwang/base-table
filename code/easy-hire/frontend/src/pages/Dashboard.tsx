@@ -1,32 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Card, Row, Col, Statistic, Table, Tag, Spin, Alert } from 'antd';
 import {
   TeamOutlined, UserAddOutlined, CheckCircleOutlined, CloseCircleOutlined,
   FileTextOutlined, EyeOutlined, ScheduleOutlined,
   RiseOutlined, ClockCircleOutlined
 } from '@ant-design/icons';
-import api, { StatsResponse } from '../api/client';
+import { useStats } from '../hooks/useQueries';
 
 const statusColors: Record<string, string> = {
-  new: 'default', screening: 'cyan', queue_waiting: 'orange', interviewing: 'orange',
-  evaluated: 'purple', offered: 'purple', document_signing: 'geekblue', signed: 'geekblue',
-  pre_onboarding: 'lime', ready_to_sync: 'cyan', synced: 'green', hired: 'green', rejected: 'red',
+  applied: 'blue', screened: 'cyan', interviewed: 'orange', offered: 'gold',
+  hired: 'green', rejected: 'red', withdrawn: 'default',
 };
 
 const Dashboard: React.FC = () => {
-  const [stats, setStats] = useState<StatsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: stats, isLoading, error } = useStats();
 
-  useEffect(() => {
-    api.stats()
-      .then(setStats)
-      .catch(e => setError(e?.response?.data?.message || 'Failed to load stats'))
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) return <Spin size="large" style={{ display: 'block', margin: '48px auto' }} />;
-  if (error) return <Alert type="error" message={error} />;
+  if (isLoading) return <Spin size="large" style={{ display: 'block', margin: '48px auto' }} />;
+  if (error) return <Alert type="error" message={(error as any)?.message || 'Failed to load stats'} />;
   if (!stats) return <Alert type="warning" message="No stats available" />;
 
   const statusData = Object.entries(stats.by_status || {}).map(([status, count]) => ({

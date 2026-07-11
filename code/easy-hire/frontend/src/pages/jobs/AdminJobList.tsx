@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Button, Modal, Form, Input, InputNumber, Select, Tag, Space, message, Popconfirm } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import api, { Job } from '../../api/client';
+import api, { Job, Department, Location, JobCategory, masterDataApi } from '../../api/client';
 
 const statusColors: Record<string, string> = {
   active: 'green', draft: 'orange', closed: 'red', filled: 'blue'
@@ -22,13 +22,22 @@ const AdminJobList: React.FC = () => {
   const [form] = Form.useForm();
   const [applications, setApplications] = useState<any[]>([]);
   const [appModalOpen, setAppModalOpen] = useState(false);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [categories, setCategories] = useState<JobCategory[]>([]);
 
   const loadJobs = () => {
     setLoading(true);
-    api.jobs.list().then(setJobs).finally(() => setLoading(false));
+    api.jobs.list().then(setJobs).catch(() => message.error('Failed to load jobs')).finally(() => setLoading(false));
   };
 
   useEffect(() => { loadJobs(); }, []);
+
+  useEffect(() => {
+    masterDataApi.listDepartments().then(r => setDepartments(r.data)).catch(() => {});
+    masterDataApi.listLocations().then(r => setLocations(r.data)).catch(() => {});
+    masterDataApi.listJobCategories().then(r => setCategories(r.data)).catch(() => {});
+  }, []);
 
   const handleCreate = () => {
     setEditingJob(null);
@@ -43,28 +52,40 @@ const AdminJobList: React.FC = () => {
   };
 
   const handleSave = async () => {
-    const values = await form.validateFields();
-    if (editingJob) {
-      await api.jobs.update(editingJob.id, values);
-      message.success('Job updated');
-    } else {
-      await api.jobs.create(values);
-      message.success('Job created');
+    try {
+      const values = await form.validateFields();
+      if (editingJob) {
+        await api.jobs.update(editingJob.id, values);
+        message.success('Job updated');
+      } else {
+        await api.jobs.create(values);
+        message.success('Job created');
+      }
+      setModalOpen(false);
+      loadJobs();
+    } catch (e: any) {
+      message.error(e?.response?.data || 'Failed to save job');
     }
-    setModalOpen(false);
-    loadJobs();
   };
 
   const handleDelete = async (id: string) => {
-    await api.jobs.deleteJob(id);
-    message.success('Job deleted');
-    loadJobs();
+    try {
+      await api.jobs.deleteJob(id);
+      message.success('Job deleted');
+      loadJobs();
+    } catch {
+      message.error('Failed to delete job');
+    }
   };
 
   const handleViewApplications = async (jobId: string) => {
-    const apps = await api.jobs.applications(jobId);
-    setApplications(apps);
-    setAppModalOpen(true);
+    try {
+      const apps = await api.jobs.applications(jobId);
+      setApplications(apps);
+      setAppModalOpen(true);
+    } catch {
+      message.error('Failed to load applications');
+    }
   };
 
   const columns = [
@@ -137,7 +158,23 @@ const AdminJobList: React.FC = () => {
               ]} />
             </Form.Item>
           </Space>
-          <Form.Item name="department" label="Department"><Input /></Form.Item>
+          <Space style={{ width: '100%' }}>
+            <Form.Item name="department" label="Department">
+              <Select placeholder="Select department" allowClear style={{ width: 180 }}>
+                {departments.map(d => <Select.Option key={d.id} value={d.name}>{d.name}</Select.Option>)}
+              </Select>
+            </Form.Item>
+            <Form.Item name="location" label="Location">
+              <Select placeholder="Select location" allowClear style={{ width: 180 }}>
+                {locations.map(l => <Select.Option key={l.id} value={l.name}>{l.name}</Select.Option>)}
+              </Select>
+            </Form.Item>
+            <Form.Item name="category" label="Category">
+              <Select placeholder="Select category" allowClear style={{ width: 180 }}>
+                {categories.map(c => <Select.Option key={c.id} value={c.name}>{c.name}</Select.Option>)}
+              </Select>
+            </Form.Item>
+          </Space>
           <Form.Item name="requirements" label="Requirements"><Input.TextArea rows={3} /></Form.Item>
           <Form.Item name="responsibilities" label="Responsibilities"><Input.TextArea rows={3} /></Form.Item>
           <Space>

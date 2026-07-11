@@ -1,0 +1,14 @@
+# DocuSign bulk operations tools — Python dependencies
+# Install: pip install -r requirements.txt
+
+# JWT assertion generation for OAuth JWT Grant flow
+PyJWT>=2.0,<3.0
+
+# Load .env credentials without shell sourcing
+python-dotenv>=1.0,<2.0
+
+# Webhook receiver (Flask app)
+flask>=3.0,<4.0
+
+# HTTP requests (used as fallback; primary impl uses urllib)
+# requests>=2.31,<3.0

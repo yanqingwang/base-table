@@ -1,0 +1,9 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "skills": {
+    "directories": [
+      "/home/wang/wk/.agents/skills",
+      "/home/wang/wk/.claude/skills"
+    ]
+  }
+}

@@ -237,6 +237,164 @@ assert "Stats has funnel" "conversion_rate" "$R"
 assert "Stats has evaluations" "average_score" "$R"
 
 # ============================================
+# 10. AUTH SECURITY
+# ============================================
+echo ""
+echo "--- 10. Auth Security ---"
+R=$(curl -s -o /dev/null -w "%{http_code}" $BASE/api/v1/candidates)
+assert "Candidates list requires auth" "401" "$R"
+
+R=$(curl -s -o /dev/null -w "%{http_code}" $BASE/api/v1/interviews)
+assert "Interviews list requires auth" "401" "$R"
+
+R=$(curl -s -o /dev/null -w "%{http_code}" $BASE/api/v1/employees)
+assert "Employees list requires auth" "401" "$R"
+
+R=$(curl -s -o /dev/null -w "%{http_code}" $BASE/api/v1/queue)
+assert "Queue list requires auth" "401" "$R"
+
+R=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer invalid_token" $BASE/api/v1/candidates)
+assert "Invalid token returns 401" "401" "$R"
+
+# ============================================
+# 11. ERROR HANDLING
+# ============================================
+echo ""
+echo "--- 11. Error Handling ---"
+R=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TOKEN" $BASE/api/v1/candidates/nonexistent)
+assert "Non-existent candidate returns 404" "404" "$R"
+
+R=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TOKEN" $BASE/api/v1/interviews/nonexistent)
+assert "Non-existent interview returns 404" "404" "$R"
+
+R=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TOKEN" $BASE/api/v1/employees/nonexistent)
+assert "Non-existent employee returns 404" "404" "$R"
+
+R=$(curl -s -X POST $BASE/api/v1/candidates \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"name":"Dup Test","phone":"+6522222222","source":"direct"}')
+assert "Duplicate phone rejected" "already exists" "$R"
+
+# ============================================
+# 12. CANDIDATE SUB-TABLES
+# ============================================
+echo ""
+echo "--- 12. Candidate Sub-tables ---"
+CID=$(curl -s -X POST $BASE/api/v1/candidates \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"name":"Sub-table Test","phone":"09998887777","source":"direct"}' | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+
+EDU=$(curl -s -X POST "$BASE/api/v1/candidates/$CID/educations" \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"level":"bachelor","school":"MIT","major":"CS","graduation_year":2020}')
+assert "Create education" "MIT" "$EDU"
+
+R=$(curl -s -H "Authorization: Bearer $TOKEN" "$BASE/api/v1/candidates/$CID/educations")
+assert "List educations" "MIT" "$R"
+
+WORK=$(curl -s -X POST "$BASE/api/v1/candidates/$CID/work-experiences" \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"employer":"Google","position":"Engineer","start_date":"2020-01"}')
+assert "Create work experience" "Google" "$WORK"
+
+R=$(curl -s -H "Authorization: Bearer $TOKEN" "$BASE/api/v1/candidates/$CID/work-experiences")
+assert "List work experiences" "Google" "$R"
+
+SKILL=$(curl -s -X POST "$BASE/api/v1/candidates/$CID/skills" \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"skill_name":"Rust","proficiency":"expert","years_of_experience":5}')
+assert "Create skill" "Rust" "$SKILL"
+
+R=$(curl -s -H "Authorization: Bearer $TOKEN" "$BASE/api/v1/candidates/$CID/skills")
+assert "List skills" "Rust" "$R"
+
+CERT=$(curl -s -X POST "$BASE/api/v1/candidates/$CID/certificates" \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"certificate_name":"AWS SA","issuing_authority":"Amazon"}')
+assert "Create certificate" "AWS" "$CERT"
+
+R=$(curl -s -H "Authorization: Bearer $TOKEN" "$BASE/api/v1/candidates/$CID/certificates")
+assert "List certificates" "AWS" "$R"
+
+# ============================================
+# 13. PRE-ONBOARDING SUB-TABLES
+# ============================================
+echo ""
+echo "--- 13. Pre-onboarding Sub-tables ---"
+ADDR=$(curl -s -X POST "$BASE/api/v1/candidates/$CID/addresses" \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"address_type":"home","is_primary":1,"country":"Philippines","city":"Manila","street":"123 Rizal"}')
+assert "Create address" "Manila" "$ADDR"
+
+R=$(curl -s -H "Authorization: Bearer $TOKEN" "$BASE/api/v1/candidates/$CID/addresses")
+assert "List addresses" "Manila" "$R"
+
+FAM=$(curl -s -X POST "$BASE/api/v1/candidates/$CID/family-members" \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"name":"Juan","relationship":"spouse","is_emergency_contact":1}')
+assert "Create family member" "Juan" "$FAM"
+
+R=$(curl -s -H "Authorization: Bearer $TOKEN" "$BASE/api/v1/candidates/$CID/family-members")
+assert "List family members" "Juan" "$R"
+
+BANK=$(curl -s -X POST "$BASE/api/v1/candidates/$CID/bank-accounts" \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"bank_name":"BDO","account_number":"123456789","account_holder":"Maria Santos","currency":"PHP"}')
+assert "Create bank account" "BDO" "$BANK"
+
+R=$(curl -s -H "Authorization: Bearer $TOKEN" "$BASE/api/v1/candidates/$CID/bank-accounts")
+assert "List bank accounts" "BDO" "$R"
+
+# ============================================
+# 14. QUEUE FULL FLOW
+# ============================================
+echo ""
+echo "--- 14. Queue Full Flow ---"
+Q=$(curl -s -X POST $BASE/api/v1/queue/enqueue \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d "{\"candidate_id\":\"$CID\",\"job_id\":\"$JOB_ID\"}")
+QID=$(echo "$Q" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+assert "Queue candidate" "waiting" "$Q"
+
+R=$(curl -s -H "Authorization: Bearer $TOKEN" "$BASE/api/v1/queue?status=waiting")
+assert "List waiting queue" "waiting" "$R"
+
+R=$(curl -s -X POST $BASE/api/v1/queue/call-next \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d "{\"job_id\":\"$JOB_ID\"}")
+assert "Call next candidate" "called" "$R"
+
+R=$(curl -s -X PUT "$BASE/api/v1/queue/$QID/status" \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"status":"completed"}')
+assert "Complete queue entry" "completed" "$R"
+
+R=$(curl -s -H "Authorization: Bearer $TOKEN" "$BASE/api/v1/queue?status=completed")
+assert "List completed queue" "completed" "$R"
+
+# ============================================
+# 15. APPROVAL FLOW
+# ============================================
+echo ""
+echo "--- 15. Approval Flow ---"
+R=$(curl -s -X POST $BASE/api/v1/approvals \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d "{\"candidate_id\":\"$CID\",\"assigned_to\":\"$IV_ID\"}")
+R=$(curl -s -H "Authorization: Bearer $TOKEN" $BASE/api/v1/approvals/pending)
+APPR_ID=$(echo "$R" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0]['id'] if d else '')" 2>/dev/null)
+
+if [ -n "$APPR_ID" ]; then
+  assert "List pending approvals" "pending" "$R"
+
+  R=$(curl -s -X POST "$BASE/api/v1/approvals/$APPR_ID/approve" \
+    -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+    -d '{"comments":"Approved"}')
+  assert "Approve approval" "approved" "$R"
+else
+  echo "  ⚠️ SKIP: No pending approvals to test"
+fi
+
+# ============================================
 # SUMMARY
 # ============================================
 echo ""

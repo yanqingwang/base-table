@@ -1,0 +1,7 @@
+﻿envelope_id,employee_name,employee_email,status,pdf_path,Date Signed ea56aedb-a425-4dbd-a8fe-cd2bd8114087,Name 33a8be46-9cf4-4da2-84df-83dae4372efc,cf__employeeEmail,cf__employeeName,cf__position,cf__startDate
+0d75253b-0439-830f-8029-4d69be65065a,Wang Test One,wang.test1@example.com,exported,/home/wang/wk/code/docusign-keys/exports/2026-06-07/pdfs/Wang_Test_One_0d75253b.pdf,,,wang.test1@example.com,Wang Test One,Factory Worker A,2026-07-01
+421224e5-90b1-8742-80d1-a14a6c6106c0,Wang Test Two,wang.test2@example.com,exported,/home/wang/wk/code/docusign-keys/exports/2026-06-07/pdfs/Wang_Test_Two_421224e5.pdf,,,wang.test2@example.com,Wang Test Two,Factory Worker B,2026-07-01
+bef62a27-23b0-8de3-81f5-dea9fc64069a,Wang Test Three,wang.test3@example.com,exported,/home/wang/wk/code/docusign-keys/exports/2026-06-07/pdfs/Wang_Test_Three_bef62a27.pdf,,,wang.test3@example.com,Wang Test Three,Quality Inspector,2026-07-01
+ff672717-0461-86b1-817c-12deca620621,Test Employee A,289631530@qq.com,exported,/home/wang/wk/code/docusign-keys/exports/2026-06-07/pdfs/Test_Employee_A_ff672717.pdf,,,,,,
+db872dc0-1cda-893f-81a7-1126bc6606fc,Test Employee B,289631530@qq.com,exported,/home/wang/wk/code/docusign-keys/exports/2026-06-07/pdfs/Test_Employee_B_db872dc0.pdf,,,,,,
+5e9122e3-d22e-8c3f-8026-54b0cf6106ec,Test Employee C,289631530@qq.com,exported,/home/wang/wk/code/docusign-keys/exports/2026-06-07/pdfs/Test_Employee_C_5e9122e3.pdf,,,,,,

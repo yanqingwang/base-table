@@ -37,25 +37,7 @@
         }
       },
       {
-        "expr": "Local",
-        "options": {
-          "caseSensitive": false
-        }
-      },
-      {
-        "expr": "hris_tools",
-        "options": {
-          "caseSensitive": false
-        }
-      },
-      {
         "expr": "Script",
-        "options": {
-          "caseSensitive": false
-        }
-      },
-      {
-        "expr": "base-table",
         "options": {
           "caseSensitive": false
         }

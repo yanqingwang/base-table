@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { Layout as AntLayout, Menu, Button, Typography, Dropdown } from 'antd';
+import { useScrollDirection } from '../hooks/useScrollDirection';
 import {
   DashboardOutlined,
   TeamOutlined,
@@ -21,6 +22,8 @@ const Layout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthStore();
+  const { direction, scrolled } = useScrollDirection();
+  const headerHidden = scrolled && direction === 'down';
 
   const handleLogout = () => {
     logout();
@@ -38,6 +41,7 @@ const Layout: React.FC = () => {
       base.push(
         { key: '/candidates', icon: <TeamOutlined />, label: 'Candidates' },
         { key: '/interviews', icon: <ScheduleOutlined />, label: 'Interviews' },
+        { key: '/queue', icon: <TeamOutlined />, label: 'Queue Calling' },
         { key: '/approvals', icon: <CheckCircleOutlined />, label: 'Approvals' },
         { key: '/employees', icon: <UserOutlined />, label: 'Employees' },
         { key: '/reports', icon: <FileTextOutlined />, label: 'Reports' },
@@ -79,6 +83,11 @@ const Layout: React.FC = () => {
             justifyContent: 'flex-end',
             alignItems: 'center',
             borderBottom: '1px solid #f0f0f0',
+            position: 'sticky',
+            top: 0,
+            zIndex: 10,
+            transform: headerHidden ? 'translateY(-100%)' : 'translateY(0)',
+            transition: 'transform 0.2s ease-in-out',
           }}
         >
           <Dropdown

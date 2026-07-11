@@ -1,0 +1,18 @@
+uid=1_0 RootWebArea "SAP Learning: 登录" url="https://accounts.sap.com/saml2/idp/sso"
+  uid=1_1 main
+    uid=1_2 image " logo" url="https://accounts.sap.com/ui/public/cached/tenant/v/3/tenant_logo"
+    uid=1_3 heading "登录" level="1"
+    uid=1_4 heading "SAP Learning" level="2"
+    uid=1_5 form
+      uid=1_6 StaticText "电子邮件或用户名"
+      uid=1_7 textbox "电子邮件或用户名" focusable focused
+    uid=1_8 StaticText "没有账户？"
+    uid=1_9 button "注册"
+    uid=1_10 button "继续"
+  uid=1_11 contentinfo
+    uid=1_12 link "Privacy Policy" url="https://accounts.sap.com/ui/public/viewTextResource?scenario=788c7859-5fb6-4b2d-b0aa-d40ba33d6638&resourceType=RESOURCE_PRIVACYPOLICY"
+      uid=1_13 StaticText "Privacy Policy"
+    uid=1_14 link "Legal Disclosure" url="https://www.sap.com/corporate/en/legal/impressum.html"
+      uid=1_15 StaticText "Legal Disclosure"
+    uid=1_16 link "Cookie Statement" url="https://account.sap.com/core/doc/SAP_IDService-CookieStatement.pdf"
+      uid=1_17 StaticText "Cookie Statement"

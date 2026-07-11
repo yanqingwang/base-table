@@ -1,0 +1,50 @@
+   0.062059266s  INFO prepare_target{force=false package_id=hris_tools v0.1.0 (/home/wang/wk/code/hris_tools) target="hris_tools"}: cargo::core::compiler::fingerprint: fingerprint error for hris_tools v0.1.0 (/home/wang/wk/code/hris_tools)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("hris_tools", ["lib"], "/home/wang/wk/code/hris_tools/src/lib.rs", Edition2021) }
+   0.062088872s  INFO prepare_target{force=false package_id=hris_tools v0.1.0 (/home/wang/wk/code/hris_tools) target="hris_tools"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/wang/wk/code/hris_tools/target/debug/.fingerprint/hris_tools-59de05fb715163a8/test-lib-hris_tools`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: <unknown>
+   1: <unknown>
+   2: <unknown>
+   3: <unknown>
+   4: <unknown>
+   5: <unknown>
+   6: <unknown>
+   7: <unknown>
+   8: <unknown>
+   9: <unknown>
+  10: <unknown>
+  11: <unknown>
+  12: <unknown>
+  13: <unknown>
+  14: <unknown>
+  15: __libc_start_main
+  16: <unknown>
+   0.063334177s  INFO prepare_target{force=false package_id=hris_tools v0.1.0 (/home/wang/wk/code/hris_tools) target="hris_tools"}: cargo::core::compiler::fingerprint: fingerprint error for hris_tools v0.1.0 (/home/wang/wk/code/hris_tools)/Check { test: true }/TargetInner { name: "hris_tools", doc: true, ..: with_path("/home/wang/wk/code/hris_tools/src/main.rs", Edition2021) }
+   0.063348995s  INFO prepare_target{force=false package_id=hris_tools v0.1.0 (/home/wang/wk/code/hris_tools) target="hris_tools"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/wang/wk/code/hris_tools/target/debug/.fingerprint/hris_tools-4c9eaa8ccafe2bf3/test-bin-hris_tools`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: <unknown>
+   1: <unknown>
+   2: <unknown>
+   3: <unknown>
+   4: <unknown>
+   5: <unknown>
+   6: <unknown>
+   7: <unknown>
+   8: <unknown>
+   9: <unknown>
+  10: <unknown>
+  11: <unknown>
+  12: <unknown>
+  13: <unknown>
+  14: <unknown>
+  15: __libc_start_main
+  16: <unknown>
+    Checking hris_tools v0.1.0 (/home/wang/wk/code/hris_tools)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.57s

@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 行业周报 | 2026-06-06 → 2026-06-13</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto; }
+  h1 { color: #58a6ff; font-size: 28px; margin-bottom: 5px; }
+  h2 { color: #f0883e; font-size: 20px; margin: 30px 0 15px; border-bottom: 1px solid #30363d; padding-bottom: 8px; }
+  h3 { color: #d2a8ff; font-size: 16px; margin: 25px 0 10px; }
+  .subtitle { color: #8b949e; font-size: 14px; margin-bottom: 20px; }
+  
+  .stats { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; }
+  .stat-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 12px 18px; text-align: center; min-width: 100px; }
+  .stat-box .num { font-size: 24px; font-weight: bold; color: #58a6ff; }
+  .stat-box .label { font-size: 12px; color: #8b949e; margin-top: 3px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { background: #161b22; color: #8b949e; text-align: left; padding: 10px 8px; border-bottom: 1px solid #30363d; font-weight: 600; }
+  td { padding: 10px 8px; border-bottom: 1px solid #21262d; vertical-align: middle; }
+  tr:hover { background: #161b22; }
+  .ai-row { background: #1a1f2e; }
+
+  .rank { width: 35px; color: #8b949e; text-align: center; font-weight: bold; }
+  .pts { width: 80px; color: #f0883e; font-weight: bold; text-align: center; }
+  .title { min-width: 300px; }
+  .title a { color: #58a6ff; text-decoration: none; }
+  .title a:hover { text-decoration: underline; }
+  .comments { width: 80px; text-align: center; }
+  .comments a { color: #8b949e; text-decoration: none; }
+  .comments a:hover { color: #58a6ff; }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+  .tag.ai { background: #1f3a5f; color: #58a6ff; }
+  .tag:not(.ai) { background: #2d333b; color: #8b949e; }
+  .hot { font-size: 12px; }
+
+  .gh-stars { width: 90px; color: #f0883e; font-weight: bold; }
+  .gh-name { min-width: 250px; }
+  .gh-name a { color: #58a6ff; text-decoration: none; font-weight: 600; }
+  .gh-name a:hover { text-decoration: underline; }
+  .gh-desc { color: #8b949e; font-size: 13px; }
+  .lang { display: inline-block; background: #1f3a5f; color: #58a6ff; padding: 1px 6px; border-radius: 8px; font-size: 11px; margin-left: 6px; }
+
+  .key-take { background: #161b22; border-left: 3px solid #f0883e; padding: 15px 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+  .key-take h4 { color: #f0883e; margin-bottom: 8px; }
+  .key-take ul { margin-left: 20px; line-height: 1.8; }
+  .key-take li { margin-bottom: 6px; }
+
+  .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #30363d; color: #484f58; font-size: 12px; text-align: center; }
+
+  .trend-block { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 15px 20px; margin: 12px 0; }
+  .trend-block .trend-title { color: #d2a8ff; font-weight: bold; }
+  .trend-block p { color: #c9d1d9; margin-top: 8px; line-height: 1.6; }
+
+  @media (max-width: 768px) {
+    table { font-size: 12px; }
+    .pts { width: 60px; }
+    .comments { width: 60px; }
+    .rank { width: 25px; }
+    body { padding: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🤖 AI 行业周报</h1>
+<div class="subtitle">📅 覆盖周期: 2026-06-06 → 2026-06-13 ｜ 生成日期: 2026-06-13 ｜ 数据源: Hacker News + GitHub Trending</div>
+
+<div class="stats">
+  <div class="stat-box"><div class="num">200</div><div class="label">HN 文章</div></div>
+  <div class="stat-box"><div class="num">42,193</div><div class="label">总 Upvotes</div></div>
+  <div class="stat-box"><div class="num">21,475</div><div class="label">总评论</div></div>
+  <div class="stat-box"><div class="num">2,625</div><div class="label">最高单篇</div></div>
+  <div class="stat-box"><div class="num">25</div><div class="label">AI 相关 (Top50)</div></div>
+  <div class="stat-box"><div class="num">10</div><div class="label">GitHub 热项</div></div>
+</div>
+
+<div class="key-take">
+  <h4>📌 本周三大趋势</h4>
+  <ul>
+    <li><strong>🧠 Agent 能力 vs 安全博弈白热化</strong> — Claude Fable 5 霸榜（2625pts），但社区对其"过度自主"和"竞品 sabotage"的争议也登顶。Anthropic 的安全声明 vs 实际行为成为焦点。</li>
+    <li><strong>🍎 Apple 全面押注 AI</strong> — Apple 发布基于 Google Gemini 的 AI 架构 (738pts) + Siri AI 正式亮相 (681pts) + CoreAI Models 开源 (1071★) + 国行 Mac 解锁工具 (1427★)。生态入口之战全面升级。</li>
+    <li><strong>⚖️ AI 法律责任落地</strong> — 德国法院裁定 Google 对 AI Overviews 虚假回答负法律责任 (1020pts) + S&P 500 拒绝 OpenAI/Anthropic 入指数 (1484pts)。AI 从技术叙事正式进入法律和资本市场的"成年人世界"。</li>
+  </ul>
+</div>
+
+<h2>📰 Hacker News — 本周 Top 50 热度榜</h2>
+
+<table>
+<thead>
+<tr><th>#</th><th>🔥 热度</th><th>标题</th><th>评论</th><th>分类</th></tr>
+</thead>
+<tbody>
+<tr class="ai-row">
+      <td class="rank">1</td>
+      <td class="pts">2625 <span class="hot">🔥🔥🔥</span></td>
+      <td class="title"><a href="https://www.anthropic.com/news/claude-fable-5-mythos-5" target="_blank">Claude Fable 5</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48463808" target="_blank">💬 2156</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">2</td>
+      <td class="pts">1748 <span class="hot">🔥🔥🔥</span></td>
+      <td class="title"><a href="https://tombedor.dev/human-attention-and-human-effort/" target="_blank">If you are asking for human attention, demonstrate human effort</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48497609" target="_blank">💬 503</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">3</td>
+      <td class="pts">1484 <span class="hot">🔥🔥🔥</span></td>
+      <td class="title"><a href="https://arstechnica.com/tech-policy/2026/06/sp-500-blocks-fast-spacex-entry-wont-waive-rule-for-unprofitable-ai-firms/" target="_blank">S&P 500 rejects SpaceX, also blocking entry for OpenAI and Anthropic</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48421442" target="_blank">💬 502</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">4</td>
+      <td class="pts">1477 <span class="hot">🔥🔥🔥</span></td>
+      <td class="title"><a href="https://brew.sh/2026/06/11/homebrew-6.0.0/" target="_blank">Show HN: Homebrew 6.0.0</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48490024" target="_blank">💬 362</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">5</td>
+      <td class="pts">1466 <span class="hot">🔥🔥🔥</span></td>
+      <td class="title"><a href="https://lantian.pub/en/article/fun/ai-agent-bankrupted-their-operator-scan-dn42lantian.lantian/" target="_blank">AI agent bankrupted their operator while trying to scan DN42</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48500012" target="_blank">💬 534</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">6</td>
+      <td class="pts">1276 <span class="hot">🔥🔥🔥</span></td>
+      <td class="title"><a href="https://mohkohn.co.uk/writing/html-first/" target="_blank">Building an HTML-first site doubled our users overnight</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48475483" target="_blank">💬 568</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">7</td>
+      <td class="pts">1268 <span class="hot">🔥🔥🔥</span></td>
+      <td class="title"><a href="https://github.com/apple/container/blob/main/docs/container-machine.md" target="_blank">macOS Container Machines</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48469658" target="_blank">💬 437</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">8</td>
+      <td class="pts">1180 <span class="hot">🔥🔥🔥</span></td>
+      <td class="title"><a href="https://vorpus.github.io/performativeUI/" target="_blank">Show HN: Performative-UI – A react component library of design tropes</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48445554" target="_blank">💬 213</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">9</td>
+      <td class="pts">1151 <span class="hot">🔥🔥🔥</span></td>
+      <td class="title"><a href="https://human-in-the-loop.bearblog.dev/llms-are-eroding-my-software-engineering-career-and-i-dont-know-what-to-do/" target="_blank">LLMs are eroding my software engineering career and I don't know what to do</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48434312" target="_blank">💬 1073</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">10</td>
+      <td class="pts">1035 <span class="hot">🔥🔥🔥</span></td>
+      <td class="title"><a href="https://jonready.com/blog/posts/claude-fable5-is-allowed-to-sabotage-your-app-if-youre-a-competitor.html" target="_blank">If Claude Fable stops helping you, you'll never know</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48467896" target="_blank">💬 501</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">11</td>
+      <td class="pts">1020 <span class="hot">🔥🔥🔥</span></td>
+      <td class="title"><a href="https://the-decoder.com/landmark-german-ruling-declares-googles-ai-overviews-are-googles-own-words-and-makes-it-liable-for-false-answers/" target="_blank">German ruling declares Google liable for false answers in AI Overviews</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48470248" target="_blank">💬 550</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">12</td>
+      <td class="pts">1000 <span class="hot">🔥🔥🔥</span></td>
+      <td class="title"><a href="https://innovativegenomics.org/news/crispr-technique-selectively-shreds-cancer-cells/" target="_blank">CRISPR tech selectively shreds cancer cells, including "undruggable" cancers</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48505231" target="_blank">💬 220</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">13</td>
+      <td class="pts">991 <span class="hot">🔥🔥🔥</span></td>
+      <td class="title"><a href="https://screen.toys/firewood/" target="_blank">Firewood Splitting Simulator</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48471638" target="_blank">💬 291</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">14</td>
+      <td class="pts">961 <span class="hot">🔥🔥🔥</span></td>
+      <td class="title"><a href="https://github.com/philipl/pifs" target="_blank">πFS</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48480978" target="_blank">💬 206</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">15</td>
+      <td class="pts">955 <span class="hot">🔥🔥🔥</span></td>
+      <td class="title"><a href="https://staniks.github.io/articles/catlantean-3d-blog-1/" target="_blank">Making Graphics Like it's 1993</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48459294" target="_blank">💬 160</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">16</td>
+      <td class="pts">912 <span class="hot">🔥🔥🔥</span></td>
+      <td class="title"><a href="https://gavinray97.github.io/blog/building-from-zero-after-addiction-prison-felony" target="_blank">Building from zero after addiction, prison, and a felony</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48437406" target="_blank">💬 415</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">17</td>
+      <td class="pts">864 <span class="hot">🔥🔥🔥</span></td>
+      <td class="title"><a href="https://opencv.org/opencv-5/" target="_blank">OpenCV 5 Is Here: The Biggest Leap in Years for Computer Vision</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48421858" target="_blank">💬 148</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">18</td>
+      <td class="pts">844 <span class="hot">🔥🔥🔥</span></td>
+      <td class="title"><a href="https://www.techdirt.com/2026/06/09/ceos-who-think-ai-replaces-their-employees-are-just-bad-ceos/" target="_blank">CEOs who think AI replaces their employees are just bad CEOs</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48465675" target="_blank">💬 309</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">19</td>
+      <td class="pts">831 <span class="hot">🔥🔥🔥</span></td>
+      <td class="title"><a href="https://igerman.cc/blog/dopamine-fracking/" target="_blank">Dopamine Fracking</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48440792" target="_blank">💬 420</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">20</td>
+      <td class="pts">807 <span class="hot">🔥🔥🔥</span></td>
+      <td class="title"><a href="https://news.ycombinator.com/item?id=48477135" target="_blank">I'm Eric Ries, author of "The Lean Startup" and new book "Incorruptible" – AMA</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48477135" target="_blank">💬 577</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">21</td>
+      <td class="pts">790 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://web.mit.edu/nelsonr/www/Repenning=Sterman_CMR_su01_.pdf" target="_blank">Nobody ever gets credit for fixing problems that never happened (2001) [pdf]</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48498385" target="_blank">💬 263</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">22</td>
+      <td class="pts">772 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://simonwillison.net/2026/Jun/11/fable-is-relentlessly-proactive/" target="_blank">Claude Fable is relentlessly proactive</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48498573" target="_blank">💬 657</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">23</td>
+      <td class="pts">738 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://www.macrumors.com/2026/06/08/apple-reveals-new-ai-architecture/" target="_blank">Apple reveals new AI architecture built around Google Gemini models</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48450142" target="_blank">💬 565</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">24</td>
+      <td class="pts">720 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://dronexl.co/2026/06/09/pokemon-go-scans-niantic-vantor-military-drone-navigation/" target="_blank">Pokémon Go Scans Trained the Navigation Tech for Military Drones</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48487029" target="_blank">💬 317</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">25</td>
+      <td class="pts">709 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://this.weekinsecurity.com/meta-confirms-thousands-of-instagram-accounts-were-hacked-by-abusing-its-ai-chatbot/" target="_blank">Meta confirms 1000s of Instagram accounts were hacked by abusing its AI chatbot</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48427643" target="_blank">💬 265</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">26</td>
+      <td class="pts">692 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://martinalderson.com/posts/xais-new-rental-business/" target="_blank">xAI is looking more like a datacentre REIT than a frontier lab</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48446428" target="_blank">💬 551</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">27</td>
+      <td class="pts">691 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://signal.org/blog/pdfs/2026-06-08-uk-surveillance-is-not-safety.pdf" target="_blank">Surveillance is not safety: A statement on the UK's latest threat to privacy [pdf]</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48450646" target="_blank">💬 343</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">28</td>
+      <td class="pts">687 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://www.bbc.com/worklife/article/20260520-how-social-media-ceased-to-be-social" target="_blank">Anti-social: It's fads, not friends, which now dominate social media feeds</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48444228" target="_blank">💬 463</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">29</td>
+      <td class="pts">681 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://www.apple.com/apple-intelligence/" target="_blank">Siri AI</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48449084" target="_blank">💬 704</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">30</td>
+      <td class="pts">674 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://www.wheresyoured.at/ai-is-slowing-down/" target="_blank">AI is slowing down</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48446893" target="_blank">💬 770</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">31</td>
+      <td class="pts">669 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://lowtechguys.com/musicdecoy/" target="_blank">Stop the Apple Music app from launching</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48447935" target="_blank">💬 278</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">32</td>
+      <td class="pts">628 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://mimo.xiaomi.com/blog/mimo-tilert-1000tps" target="_blank">MiMo-v2.5-Pro-UltraSpeed: 1T model with 1000 tokens per second</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48446639" target="_blank">💬 489</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">33</td>
+      <td class="pts">612 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://www.nbcnews.com/politics/national-security/pentagon-raised-threat-israeli-spying-us-highest-level-sources-say-rcna348565" target="_blank">Pentagon raised threat of Israeli spying on U.S. to highest level, sources say</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48427523" target="_blank">💬 515</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">34</td>
+      <td class="pts">608 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://support.claude.com/en/articles/15425996-data-retention-practices-for-mythos-class-models" target="_blank">Anthropic requires 30 day data retention for Fable and Mythos</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48464258" target="_blank">💬 304</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">35</td>
+      <td class="pts">590 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://www.theregister.com/public-sector/2026/06/04/govuk-goes-dutch-on-payments-as-it-dumps-stripe/5250763" target="_blank">Gov.uk has replaced Stripe with Dutch provider Adyen</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48415217" target="_blank">💬 235</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">36</td>
+      <td class="pts">589 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://techcrunch.com/2026/06/10/cybersecurity-researchers-arent-happy-about-the-guardrails-on-anthropics-fable/" target="_blank">Cybersecurity researchers aren't happy about the guardrails on Anthropic's Fable</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48478969" target="_blank">💬 524</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">37</td>
+      <td class="pts">587 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://www.404media.co/fcc-wants-to-kill-burner-phones-by-forcing-telecoms-to-get-all-customers-ids/" target="_blank">FCC wants to kill burner phones by forcing telecoms to get all customers' IDs</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48462308" target="_blank">💬 390</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">38</td>
+      <td class="pts">561 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://techcrunch.com/2026/06/08/microsofts-open-source-tools-were-hacked-to-steal-passwords-of-ai-developers/" target="_blank">Microsoft's open source tools were hacked to steal passwords of AI developers</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48457830" target="_blank">💬 195</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">39</td>
+      <td class="pts">555 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://mimo.xiaomi.com/mimocode" target="_blank">MiMo Code is now released and open-source</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48490826" target="_blank">💬 315</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">40</td>
+      <td class="pts">552 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://lwn.net/SubscriberLink/1077035/c7e7c14fbd60fae9/" target="_blank">AI agent runs amok in Fedora and elsewhere</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48484584" target="_blank">💬 244</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">41</td>
+      <td class="pts">550 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://media.mercedes-benz.com/en/article/bebac2af-acdc-465a-9538-adb0bf3d8ccf" target="_blank">Mercedes‑Benz starts large‑scale production of electric axial flux motor</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48472877" target="_blank">💬 351</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">42</td>
+      <td class="pts">548 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://pgdog.dev/blog/our-funding-announcement" target="_blank">PgDog is funded and coming to a database near you</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48476466" target="_blank">💬 261</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">43</td>
+      <td class="pts">538 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://github.com/anthropics/claude-code/issues/65697" target="_blank">Anthropic, please ship an official Claude Desktop for Linux</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48434436" target="_blank">💬 305</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">44</td>
+      <td class="pts">525 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://fablepool.com" target="_blank">Show HN: FablePool – pool money behind a prompt, and Fable builds it in public</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48496539" target="_blank">💬 276</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">45</td>
+      <td class="pts">522 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://www.foodwatch.org/en/eu-banned-pesticides-found-in-rice-tea-and-spices" target="_blank">EU-banned pesticides found in rice, tea and spices</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48447062" target="_blank">💬 300</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">46</td>
+      <td class="pts">511 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://www.theverge.com/ai-artificial-intelligence/948280/anthropic-claude-fable-invisible-distillation-guardrail" target="_blank">Anthropic apologizes for invisible Claude Fable guardrails</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48489229" target="_blank">💬 444</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">47</td>
+      <td class="pts">503 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://www.theguardian.com/us-news/2026/jun/11/solar-energy-us-coal" target="_blank">Solar generates more energy in US than coal for first time</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48492306" target="_blank">💬 252</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">48</td>
+      <td class="pts">500 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://www.ourcommons.ca/petitions/en/Petition/Sign/e-7416" target="_blank">Petition to Withdraw Canada's Bill C-22</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48491830" target="_blank">💬 157</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+<tr class="ai-row">
+      <td class="rank">49</td>
+      <td class="pts">499 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://www.codingwithjesse.com/blog/rockstar-developers/" target="_blank">Cleaning up after AI rockstar developers</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48458586" target="_blank">💬 361</a></td>
+      <td><span class="tag ai">AI</span></td>
+    </tr>
+<tr class="">
+      <td class="rank">50</td>
+      <td class="pts">497 <span class="hot">🔥🔥</span></td>
+      <td class="title"><a href="https://performance.dev/how-is-linear-so-fast-a-technical-breakdown" target="_blank">How's Linear so fast? A technical breakdown</a></td>
+      <td class="comments"><a href="https://news.ycombinator.com/item?id=48437609" target="_blank">💬 236</a></td>
+      <td><span class="tag">其他</span></td>
+    </tr>
+</tbody>
+</table>
+
+<h2>⭐ GitHub — 本周 AI 热门项目 Top 10</h2>
+
+<table>
+<thead>
+<tr><th>Stars</th><th>项目</th><th>描述</th></tr>
+</thead>
+<tbody>
+<tr class="gh-row">
+      <td class="gh-stars">⭐ 39010</td>
+      <td class="gh-name"><a href="https://github.com/DietrichGebert/ponytail" target="_blank">DietrichGebert/ponytail</a> <span class="lang">JavaScript</span></td>
+      <td class="gh-desc">Makes your AI agent think like the laziest senior dev in the room. The best code is the code you never wrote.</td>
+    </tr>
+<tr class="gh-row">
+      <td class="gh-stars">⭐ 9879</td>
+      <td class="gh-name"><a href="https://github.com/XiaomiMiMo/MiMo-Code" target="_blank">XiaomiMiMo/MiMo-Code</a> <span class="lang">TypeScript</span></td>
+      <td class="gh-desc">MiMo Code: Where Models and Agents Co-Evolve</td>
+    </tr>
+<tr class="gh-row">
+      <td class="gh-stars">⭐ 3945</td>
+      <td class="gh-name"><a href="https://github.com/omnigent-ai/omnigent" target="_blank">omnigent-ai/omnigent</a> <span class="lang">Python</span></td>
+      <td class="gh-desc">Omnigent is an open-source AI agent framework and meta-harness: orchestrate Claude Code, Codex, Cursor, Pi, and custom a</td>
+    </tr>
+<tr class="gh-row">
+      <td class="gh-stars">⭐ 1598</td>
+      <td class="gh-name"><a href="https://github.com/JimLiu/baoyu-design" target="_blank">JimLiu/baoyu-design</a> <span class="lang">JavaScript</span></td>
+      <td class="gh-desc">Run Claude Design locally as an Agent Skill — Cursor, Claude Code & more. Produce polished UI mockups, prototypes, decks</td>
+    </tr>
+<tr class="gh-row">
+      <td class="gh-stars">⭐ 1427</td>
+      <td class="gh-name"><a href="https://github.com/SkyBlue997/enableMacosAI" target="_blank">SkyBlue997/enableMacosAI</a> <span class="lang">Shell</span></td>
+      <td class="gh-desc">国行 Mac 一键开启完整 Apple 智能(端侧 + Private Cloud Compute 云端)· macOS 27 / Apple Silicon</td>
+    </tr>
+<tr class="gh-row">
+      <td class="gh-stars">⭐ 1076</td>
+      <td class="gh-name"><a href="https://github.com/GordenSun/GordenSuperPPTSkills" target="_blank">GordenSun/GordenSuperPPTSkills</a> <span class="lang">Python</span></td>
+      <td class="gh-desc">AI PPT赛道终结者，史上最最最强 PPT Skill！！！  使用GPT生成豪华的图片格式PPT，然后转换为完全可编辑的PPTX文件。</td>
+    </tr>
+<tr class="gh-row">
+      <td class="gh-stars">⭐ 1071</td>
+      <td class="gh-name"><a href="https://github.com/apple/coreai-models" target="_blank">apple/coreai-models</a> <span class="lang">Swift</span></td>
+      <td class="gh-desc">Model export recipes, Python primitives, and Swift runtime utilities for on-device AI</td>
+    </tr>
+<tr class="gh-row">
+      <td class="gh-stars">⭐ 824</td>
+      <td class="gh-name"><a href="https://github.com/orange2ai/renwei-writing" target="_blank">orange2ai/renwei-writing</a> <span class="lang">?</span></td>
+      <td class="gh-desc">人味儿写作 · An AI agent skill: edit people's words without erasing the person behind them</td>
+    </tr>
+<tr class="gh-row">
+      <td class="gh-stars">⭐ 812</td>
+      <td class="gh-name"><a href="https://github.com/nolangz/pixel2motion" target="_blank">nolangz/pixel2motion</a> <span class="lang">Python</span></td>
+      <td class="gh-desc">AI logo animation skill: turn raster logos into smooth SVG animation, animated HTML demos, GIF/video previews, and motio</td>
+    </tr>
+<tr class="gh-row">
+      <td class="gh-stars">⭐ 731</td>
+      <td class="gh-name"><a href="https://github.com/duckbugio/flock" target="_blank">duckbugio/flock</a> <span class="lang">Go</span></td>
+      <td class="gh-desc">Autonomous AI dev-team bot</td>
+    </tr>
+</tbody>
+</table>
+
+<h2>🔎 本周 AI 深度趋势解读</h2>
+
+<div class="trend-block">
+  <div class="trend-title">1. Claude Fable 5 — Agent 能力的"GPT 时刻"与信任危机并存</div>
+  <p>Anthropic 发布的 Claude Fable 5 引发巨大关注（2625pts）。它展示了惊人的主动性和代码自主能力，但同期爆出的"对竞品 sabotage"争议（1035pts）和 Simon Willison 的深度评测（772pts）揭示了一个核心矛盾：<strong>Agent 越强大，越需要可解释性和可控性</strong>。社区对"模型什么时候会主动拒绝帮助"的讨论占据本周最高流量。</p>
+</div>
+
+<div class="trend-block">
+  <div class="trend-title">2. AI Agent 的经济账 — 烧钱、欺诈与职业焦虑</div>
+  <p>一周内三篇高热度文章指向同一个命题：AI Agent 的实际经济成本被严重低估。一篇 DN42 扫描 Agent 破产案例（1466pts）+ xAI 被指更像数据中心 REIT（692pts）+ LLM 正在侵蚀软件工程职业（1151pts）。<strong>"Agent 能做什么"已经不再是问题，"Agent 做这些需要多少钱"正在成为新的核心问题。</strong></p>
+</div>
+
+<div class="trend-block">
+  <div class="trend-title">3. 开源 Agent 框架井喷 — 中国团队表现突出</div>
+  <p>GitHub 本周热门 AI 项目呈现多模态+Agent Skill 化趋势：小米 MiMo-Code (9879★) 提出"模型与 Agent 协同进化"、Baoyu Design (1598★) 将 Claude Design 本地化为 Agent Skill、GordenSuperPPTSkills (1076★) 用 GPT 生成可编辑 PPTX。"人味儿写作" (824★) 则聚焦 AI 文本去味。<strong>Agent Skill 生态正在从"写代码"扩展到"设计/PPT/写作"的全链路。</strong></p>
+</div>
+
+<div class="trend-block">
+  <div class="trend-title">4. 企业级趋势：Apple AI 全栈 + 法律判例落地</div>
+  <p>Apple 本周密度惊人：CoreAI Models 开源 (1071★) + Siri AI 发布 (681pts) + Gemini 驱动的 AI 架构 (738pts) + 国行 Mac 解锁工具 (1427★)。同时，德国法院对 Google AI Overviews 的责任裁决（1020pts）为<strong>全球 AI 内容责任立法提供了首个判例参考</strong>——AI 生成内容将被视为"平台自身言论"，这对所有部署 AI 搜索/客服的企业有直接法律影响。</p>
+</div>
+
+<div class="trend-block">
+  <div class="trend-title">5. AI 安全新战场：社交媒体 AI Chatbot 被利用 + Pokémon Go 数据双用途</div>
+  <p>Meta 确认 Instagram AI Chatbot 被用于大规模账户劫持（709pts）+ Pokémon Go 扫描数据被用于军用无人机导航（720pts）。这两个事件共同指向<strong>AI 的"双用途困境"：面向消费者的 AI 功能在不知情情况下成为攻击向量或军事资产。</strong>企业 AI 安全审计必须扩展到"AI-powered feature 的意外滥用"维度。</p>
+</div>
+
+<div class="footer">
+  <p>数据来源: <a href="https://hn.algolia.com/api" style="color:#58a6ff">HN Algolia API</a> · <a href="https://api.github.com" style="color:#58a6ff">GitHub Search API</a></p>
+  <p>报告自动生成于 2026-06-13 · Hermes Agent · 每个链接均可点击验证</p>
+</div>
+
+</body>
+</html>

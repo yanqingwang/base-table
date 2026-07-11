@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Template Download Management</h1>
+
+<div class="card">
+    <h3>⬇️ Download Templates from PRD</h3>
+    <p style="color:#666;margin-bottom:16px;font-size:13px">
+        Download template definitions and documents from PRD accounts to local storage.
+        Uses GET-only operations — no changes made to PRD.
+        Already-downloaded templates are skipped unless Force is checked.
+    </p>
+
+    <div class="form-row">
+        <div class="form-group" style="flex:1">
+            <label>Account (optional)</label>
+            <select id="dlAccount" style="width:100%">
+                <option value="">-- All Accounts --</option>
+                {% for acct in accounts %}
+                <option value="{{ acct.name }}">{{ acct.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="flex:1">
+            <label>Search Filter (optional)</label>
+            <input type="text" id="dlSearch" placeholder="Template name contains..." style="width:100%">
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-end;gap:8px">
+            <label style="display:flex;align-items:center;gap:4px;font-weight:400;cursor:pointer">
+                <input type="checkbox" id="dlForce"> Force re-download
+            </label>
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-end">
+            <button class="btn btn-sm btn-outline" onclick="previewDownload()">🔍 Preview</button>
+            <button class="btn btn-sm" onclick="startDownload()" style="margin-left:6px">⬇️ Download</button>
+        </div>
+    </div>
+    <div id="dlProgress" style="margin-top:8px"></div>
+    <div id="dlResult" style="margin-top:8px;max-height:400px;overflow-y:auto"></div>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <h3>📋 Downloaded Templates</h3>
+        <div id="downloadedList">
+            <div class="loading">Loading...</div>
+        </div>
+    </div>
+    <div class="card">
+        <h3>📂 Template Directory</h3>
+        <p style="color:#666;font-size:13px">
+            Templates are stored in the <code>templates/</code> folder under the PRD directory.
+            Each template has its own subfolder with definition JSON and documents.
+        </p>
+        <pre id="templateDirListing" style="font-size:11px;max-height:300px">Loading...</pre>
+    </div>
+</div>
+
+<script>
+function previewDownload() {
+    var acct = document.getElementById('dlAccount').value;
+    var search = document.getElementById('dlSearch').value;
+    var el = document.getElementById('dlProgress');
+    el.innerHTML = '<div class="loading">Previewing...</div>';
+
+    var fd = new URLSearchParams();
+    fd.append('account', acct);
+    fd.append('search', search);
+    fd.append('dry_run', '1');
+    fd.append('force', document.getElementById('dlForce').checked ? '1' : '0');
+
+    fetch('/api/templates/download', {method:'POST', body:fd})
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.error) { el.innerHTML = '<div class="flash flash-error">' + d.error + '</div>'; return; }
+            var skipped = d.details.filter(function(x) { return x.status === 'skipped'; }).length;
+            var would = d.details.filter(function(x) { return x.status === 'would_download'; }).length;
+            el.innerHTML = '<div class="flash flash-success">Found <strong>' + d.found + '</strong> template(s) — '
+                + '<strong>' + would + '</strong> new to download, <strong>' + skipped + '</strong> already downloaded</div>';
+        });
+}
+
+function startDownload() {
+    var acct = document.getElementById('dlAccount').value;
+    var search = document.getElementById('dlSearch').value;
+    var el = document.getElementById('dlResult');
+    el.innerHTML = '<div class="loading">⬇️ Downloading templates...</div>';
+
+    var fd = new URLSearchParams();
+    fd.append('account', acct);
+    fd.append('search', search);
+    fd.append('dry_run', '0');
+    fd.append('force', document.getElementById('dlForce').checked ? '1' : '0');
+
+    fetch('/api/templates/download', {method:'POST', body:fd})
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.error) { el.innerHTML = '<div class="flash flash-error">' + d.error + '</div>'; return; }
+            var html = '<div class="flash flash-success">'
+                + 'Downloaded: <strong>' + d.downloaded + '</strong> | '
+                + 'Skipped: <strong>' + (d.found - d.downloaded - d.errors) + '</strong> | '
+                + 'Errors: <strong>' + d.errors + '</strong></div>';
+            html += '<table style="font-size:12px"><thead><tr><th>Name</th><th>Status</th><th>Docs</th></tr></thead><tbody>';
+            d.details.forEach(function(item) {
+                var badge = '';
+                if (item.status === 'downloaded') badge = '<span class="badge badge-completed">✓ Downloaded</span>';
+                else if (item.status === 'skipped') badge = '<span class="badge badge-sent">⏭ Skipped</span>';
+                else if (item.status === 'error') badge = '<span class="badge badge-voided">✗ Error</span>';
+                else if (item.status === 'would_download') badge = '<span class="badge badge-created">🔍 Would DL</span>';
+                html += '<tr><td>' + (item.name || '?') + '</td><td>' + badge + '</td>'
+                    + '<td>' + (item.documents || 0) + '</td></tr>';
+            });
+            html += '</tbody></table>';
+            el.innerHTML = html;
+            loadDownloaded();
+            loadTemplateDir();
+        });
+}
+
+function loadDownloaded() {
+    fetch('/api/templates/downloaded')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            var el = document.getElementById('downloadedList');
+            if (d.error) { el.innerHTML = '<div class="flash flash-error">' + d.error + '</div>'; return; }
+            if (!d.templates.length) { el.innerHTML = '<p style="color:#666;font-size:13px">No templates downloaded yet.</p>'; return; }
+            var html = '<table><thead><tr><th>Name</th><th>Docs</th><th>Downloaded</th></tr></thead><tbody>';
+            d.templates.forEach(function(t) {
+                html += '<tr><td>' + t.name + '</td><td>' + t.documents + '</td><td style="font-size:11px">' + (t.created || '') + '</td></tr>';
+            });
+            html += '</tbody></table>';
+            el.innerHTML = html;
+        });
+}
+
+function loadTemplateDir() {
+    fetch('/api/templates/downloaded')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            var el = document.getElementById('templateDirListing');
+            if (d.error) { el.innerHTML = d.error; return; }
+            var html = '';
+            d.templates.forEach(function(t) {
+                html += t.path + '\n';
+            });
+            el.textContent = html || '(empty)';
+        });
+}
+
+loadDownloaded();
+loadTemplateDir();
+</script>
+{% endblock %}

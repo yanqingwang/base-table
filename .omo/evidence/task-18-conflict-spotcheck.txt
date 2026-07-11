@@ -1,0 +1,52 @@
+Task 18 conflict-rule spot-check
+RUN_DATE=2026-04-18
+AS_OF_DATE=2026-04-18
+WINDOW_START=2026-01-19
+FILES=Reports/OPC1-monitoring-and-tooling-brief-2026-04-18.md, Reports/OPC1-demand-companies-500-china-2026-04-18.csv, Reports/OPC1-opportunity-matching-china-2026-04-18.csv, Reports/OPC1-vendors-top100-hris-china-2026-04-18.csv
+
+Method: spot-check concrete current-output conflicts first, then run bounded rule dry-runs only where the current snapshot has no natural live example (multiple-opportunity-per-company and paywalled escalation).
+
+[PASS] CHECK-01: listed/private overlap => mixed
+- artifact: Reports/OPC1-demand-companies-500-china-2026-04-18.csv line 52
+- entry: 比亚迪 / 002594.SZ / company_market_status=mixed
+- finding: Row preserves both listed and ACFIC provenance URLs and records conflict_resolution=listed_backbone+private_ranking_overlap=>mixed.
+
+[PASS] CHECK-02: listed/private overlap => mixed
+- artifact: Reports/OPC1-demand-companies-500-china-2026-04-18.csv line 53
+- entry: 长城汽车 / 601633.SH / company_market_status=mixed
+- finding: Single canonical row retains SSE ticker while preserving the private-ranking provenance in notes rather than duplicating the company.
+
+[PASS] CHECK-03: listed/private overlap => mixed
+- artifact: Reports/OPC1-demand-companies-500-china-2026-04-18.csv line 447
+- entry: 顺丰控股 / 002352.SZ / company_market_status=mixed
+- finding: The overlap is preserved as one mixed-status entity with both source families visible in notes; no second private-only duplicate row was exported.
+
+[PASS] CHECK-04: alias/language drift across snapshots is reconciled without rewriting historical artifacts
+- artifact: Reports/OPC1-demand-companies-500-china-2026-04-18.csv line 2 + Reports/OPC1-opportunity-matching-china-2026-04-18.csv line 7
+- entry: 京东 vs JD.com, Inc. / current company snapshot vs pilot match artifact
+- finding: The current company universe keeps `京东`, while the pilot match artifact keeps `JD.com, Inc.`. Under the new appendix rule, this is handled as an alias/snapshot reconciliation problem recorded in notes, not by silently rewriting the pilot evidence file.
+
+[PASS] CHECK-05: parent/subsidiary or operating-unit names stay distinct unless parent equivalence is primary-source confirmed
+- artifact: Reports/OPC1-opportunity-matching-china-2026-04-18.csv line 3
+- entry: Foxconn Zhengzhou Operations / O002 / C002
+- finding: The pilot artifact keeps the site-specific operating unit rather than collapsing it into a generic parent label, preserving plant-level workforce-management context that affects matching.
+
+[PASS] CHECK-06: freshness uses original publication date; repost/update timestamps do not reopen the window
+- artifact: Reports/OPC1-opportunity-matching-china-2026-04-18.csv lines 2 and 9
+- entry: M001 BYD evidence_date=2026-01-28; M008 Chery evidence_date=2026-04-12
+- finding: Both rows use original article dates that match the date embedded in the source URL slug. This is consistent with the documented rule to anchor freshness and dedupe on original publication date, not later page refresh time.
+
+[PASS] CHECK-07: paywalled-only claims do not upgrade confidence or term disclosure (bounded dry-run)
+- artifact: Reports/OPC1-vendors-top100-hris-china-2026-04-18.csv lines 2-10 + Reports/OPC1-opportunity-matching-china-2026-04-18.csv lines 2-10
+- entry: Current vendor and match rows remain at accessible-evidence confidence/term states
+- finding: The live rows already avoid over-claiming: vendor confidence is capped at `M` on single accessible secondary evidence, and match rows keep `term_status` at `needs_confirmation`/`not_disclosed`. This check is a bounded rule dry-run because the current snapshot does not include a natural paywalled-only row; under the appendix, an additional paywalled article would remain supporting context only until accessible corroboration exists.
+
+[PASS] CHECK-08: multiple opportunities per company are allowed when the opportunity dedupe key changes
+- artifact: Section 10.6.2 rule dry-run anchored to Reports/OPC1-opportunity-matching-china-2026-04-18.csv line 7 (JD.com, Inc.)
+- entry: JD.com / current expansion-style row M006 as base case
+- finding: The rule remains operator-actionable: a later JD.com compliance signal or a different original event date would create a new opportunity row rather than overwrite the current recruiting/expansion-style record. Only the same normalized entity + signal_type + event_date + anchor would dedupe.
+
+SUMMARY: 8/8 checks passed
+OVERALL=PASS
+
+Key conclusion: the new appendix turns existing dedupe, alias, freshness, and confidence rules into operator-actionable decisions without changing historical evidence semantics.

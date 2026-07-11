@@ -1,0 +1,24 @@
+Task 13 outreach action pack verification
+Date: 2026-04-18
+
+Files checked:
+- Reports/OPC1-monitoring-and-tooling-brief-2026-04-18.md
+- Reports/OPC1-opportunity-matching-china-2026-04-18.csv
+- Reports/OPC1-vendors-top100-hris-china-2026-04-18.csv
+
+Context used:
+- Matching CSV fields confirmed: match_id, opportunity_id, company_id, company_name, vendor_id, vendor_name, match_type, delivery_feasibility, match_score, match_status, term_status, rationale, next_action
+- Vendor CSV fields confirmed: vendor_id, vendor_name, vendor_type, vendor_tags, target_segment_fit, industry_strengths, visibility_level, website_url, evidence_url, evidence_date, confidence, vendor_score, notes
+
+Verification performed:
+1. Confirmed the brief now contains a new top-level section: `## 11. Outreach Action Pack`.
+2. Confirmed the section includes:
+   - vendor cold email template
+   - company cold email template
+   - call script templates
+   - short IM / WeChat / LinkedIn intros
+   - commission / terms confirmation questionnaire
+   - tracking SOP with status fields, cadence, and backfill instructions
+3. Confirmed all templates use placeholders such as `{{company_name}}`, `{{vendor_name}}`, and `{{contact_name}}` with no real personal contact info.
+4. Confirmed later top-level sections were renumbered to keep the brief sequential (`12. Tooling PRD`, `13. Appendix`).
+5. Confirmed this evidence file exists at `.sisyphus/evidence/task-13-script-pack-check.txt`.

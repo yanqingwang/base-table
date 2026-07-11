@@ -1,0 +1,11 @@
+Task 12 vendor reference integrity check
+
+vendor_source=/home/wang/wk/Reports/OPC1-vendors-top100-hris-china-2026-04-18.csv
+matching_output=/home/wang/wk/Reports/OPC1-opportunity-matching-china-2026-04-18.csv
+generated_at=2026-04-18T02:30:02.760210Z
+company_signal_rows=50
+match_rows=150
+unique_vendor_ids_used=4
+vendor_ids_used=V001|V002|V005|V007
+missing_vendor_ids=NONE
+result=PASS

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 行业周报 | 2026-06-27 → 2026-07-10</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto; }
+  h1 { color: #58a6ff; font-size: 28px; margin-bottom: 5px; }
+  h2 { color: #f0883e; font-size: 20px; margin: 30px 0 15px; border-bottom: 1px solid #30363d; padding-bottom: 8px; }
+  h3 { color: #d2a8ff; font-size: 16px; margin: 25px 0 10px; }
+  .subtitle { color: #8b949e; font-size: 14px; margin-bottom: 20px; }
+
+  .stats { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; }
+  .stat-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 12px 18px; text-align: center; min-width: 100px; }
+  .stat-box .num { font-size: 24px; font-weight: bold; color: #58a6ff; }
+  .stat-box .label { font-size: 12px; color: #8b949e; margin-top: 3px; }
+  .stat-box.warn .num { color: #f0883e; }
+  .stat-box.danger .num { color: #f85149; }
+  .stat-box.success .num { color: #3fb950; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { background: #161b22; color: #8b949e; text-align: left; padding: 10px 8px; border-bottom: 1px solid #30363d; font-weight: 600; }
+  td { padding: 10px 8px; border-bottom: 1px solid #21262d; vertical-align: middle; }
+  tr:hover { background: #161b22; }
+  .ai-row { background: #1a1f2e; }
+  .crisis-row { background: #2d1a1a; }
+
+  .rank { width: 35px; color: #8b949e; text-align: center; font-weight: bold; }
+  .pts { width: 80px; color: #f0883e; font-weight: bold; text-align: center; }
+  .title { min-width: 300px; }
+  .title a { color: #58a6ff; text-decoration: none; }
+  .title a:hover { text-decoration: underline; }
+  .comments { width: 80px; text-align: center; }
+  .comments a { color: #8b949e; text-decoration: none; }
+  .comments a:hover { color: #58a6ff; }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+  .tag.ai { background: #1f3a5f; color: #58a6ff; }
+  .tag.policy { background: #3d1f1f; color: #f85149; }
+  .tag.cn { background: #1f3d1f; color: #3fb950; }
+  .tag:not(.ai):not(.policy):not(.cn) { background: #2d333b; color: #8b949e; }
+  .hot { font-size: 12px; }
+
+  .gh-stars { width: 90px; color: #f0883e; font-weight: bold; }
+  .gh-name { min-width: 250px; }
+  .gh-name a { color: #58a6ff; text-decoration: none; font-weight: 600; }
+  .gh-name a:hover { text-decoration: underline; }
+  .gh-desc { color: #8b949e; font-size: 13px; }
+  .lang { display: inline-block; background: #1f3a5f; color: #58a6ff; padding: 1px 6px; border-radius: 8px; font-size: 11px; margin-left: 6px; }
+
+  .key-take { background: #161b22; border-left: 3px solid #f0883e; padding: 15px 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+  .key-take h4 { color: #f0883e; margin-bottom: 8px; }
+  .key-take ul { margin-left: 20px; line-height: 1.8; }
+  .key-take li { margin-bottom: 6px; }
+
+  .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #30363d; color: #484f58; font-size: 12px; text-align: center; }
+
+  .trend-block { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 15px 20px; margin: 12px 0; }
+  .trend-block .trend-title { color: #d2a8ff; font-weight: bold; }
+  .trend-block p { color: #c9d1d9; margin-top: 8px; line-height: 1.6; }
+  .trend-block .badge { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: 10px; margin-left: 6px; vertical-align: middle; }
+  .badge.breaking { background: #f85149; color: #fff; }
+  .badge.trending { background: #d29922; color: #fff; }
+  .badge.deep { background: #58a6ff; color: #fff; }
+
+  .timeline { list-style: none; padding: 0; margin: 12px 0; }
+  .timeline li { padding: 6px 0 6px 24px; border-left: 2px solid #30363d; position: relative; }
+  .timeline li::before { content: ''; position: absolute; left: -7px; top: 12px; width: 12px; height: 12px; border-radius: 50%; background: #58a6ff; }
+  .timeline li .date { color: #8b949e; font-size: 12px; font-family: monospace; }
+  .timeline li.crisis::before { background: #f85149; }
+  .timeline li.cn::before { background: #3fb950; }
+  .timeline li.release::before { background: #3fb950; }
+
+  .event-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; margin: 8px 0; }
+  .event-card .ev-date { color: #8b949e; font-size: 12px; font-family: monospace; }
+  .event-card .ev-title { color: #58a6ff; font-weight: 600; margin: 4px 0; }
+  .event-card .ev-desc { color: #c9d1d9; font-size: 13px; line-height: 1.5; }
+
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+  .compare-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; }
+  .compare-card h4 { color: #d2a8ff; font-size: 14px; margin-bottom: 6px; }
+  .compare-card p { color: #c9d1d9; font-size: 13px; line-height: 1.5; }
+  .compare-card .stat-line { margin-top: 8px; font-size: 12px; color: #8b949e; }
+
+  @media (max-width: 768px) {
+    table { font-size: 12px; }
+    .pts { width: 60px; }
+    .comments { width: 60px; }
+    .rank { width: 25px; }
+    body { padding: 10px; }
+    .compare-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🤖 AI 行业周报</h1>
+<div class="subtitle">📅 覆盖周期: 2026-06-27 → 2026-07-10 ｜ 生成日期: 2026-07-10 ｜ 本期焦点: GPT-5.6 全面上线 · ChatGPT Work 登场 · Fable 5 回归 · 一周四款前沿模型混战</div>
+
+<div class="stats">
+  <div class="stat-box success"><div class="num">🔥 4款</div><div class="label">一周内发布的前沿模型</div></div>
+  <div class="stat-box"><div class="num">🔓 回归</div><div class="label">Fable 5 全球恢复（禁19天）</div></div>
+  <div class="stat-box warn"><div class="num">💸 $1/$6</div><div class="label">GPT-5.6 Luna 最低价</div></div>
+  <div class="stat-box danger"><div class="num">📉 55%→33%</div><div class="label">三巨头 OpenRouter 份额(1–6月)</div></div>
+  <div class="stat-box"><div class="num">⚖️ 8/2</div><div class="label">EU AI Act 透明度倒计时</div></div>
+  <div class="stat-box cn"><div class="num">🇨🇳 7/15</div><div class="label">中国拟人化 AI 新规生效</div></div>
+</div>
+
+<div class="key-take">
+  <h4>📌 本期三大核心信号</h4>
+  <ul>
+    <li><strong>🚀 "超级模型周"：48 小时内 4 款前沿模型齐发</strong> — 7月8日 xAI Grok 4.5、OpenAI GPT-Live 语音模型；7月9日 OpenAI GPT-5.6（Sol/Terra/Luna）与 Meta Muse Spark 1.1 同日登场。价格战白热化：Grok 4.5 $2/$6、Muse Spark 1.1 $1.25/$4.25、GPT-5.6 Luna $1/$6，全部低于 Anthropic 的 $10/$50。</li>
+    <li><strong>🔓 Fable 5 回归与 AI 治理"逐案审查"新常态</strong> — 被禁 19 天后（6/12–7/1）全球恢复，但转为按量计费（$10/$50 per MTok）。美国政府以"出口管制"工具直接干预商用模型已成事实，商务部 CASI 主导审查，6 部委将在 8 月初前定框架，业界共识："不会有 AI 的 FDA"。</li>
+    <li><strong>🤖 Agent 从"功能"升级为"产品"</strong> — OpenAI 推出 ChatGPT Work（合并 Codex，跨应用执行数小时工作流）、Meta Muse Spark 1.1 主打多 Agent 编排；与此同时中国拟人化新规逼出"企业 Agent vs 消费陪伴"的强制分野，Agent 正成为独立计费的"数字员工"。</li>
+  </ul>
+</div>
+
+<h2>📰 本期重大事件时间线</h2>
+
+<ul class="timeline">
+  <li class="release"><span class="date">2026-07-01</span> <strong>🔓 Fable 5 全球恢复上线</strong> — 商务部 6/30 解除出口管制后，Anthropic 于 7/1 全球恢复 Claude Fable 5 / Mythos 5 访问（Claude.ai、Platform、Codex、Cowork）。7/7 前订阅用户可用至每周额度 50%，之后转按量计费。</li>
+  <li><span class="date">2026-07-02</span> <strong>Anthropic 公布 Fable 5 网络安全防护与越狱框架</strong> — 新版分类器针对被利用的越狱技术拦截率 >99%（商务部 CASI 独立验证）。Mythos 5 仍仅限美国获批机构（Glasswing 计划）。</li>
+  <li class="cn"><span class="date">2026-07-05 → 07-06</span> <strong>🇨🇳 字节豆包 / 阿里通义宣布下线拟人化 Agent</strong> — 为 7/15 北京《拟人化 AI 交互服务暂行规定》生效做准备。通义"拟人化交互 Agent 及用户自建 Agent"7/10 下线、广义 Agent 功能 7/15 下线；豆包 Agent 功能 7/15 下线，对话数据 10/15 后清除。企业版 Agent 不在范围内。</li>
+  <li class="release"><span class="date">2026-07-08</span> <strong>xAI（SpaceXAI）发布 Grok 4.5</strong> — Musk 称"Opus 级"，主打 2 倍 token 效率，与 Cursor 共建。定价 $2/$6 per MTok，500K 上下文，为上市后首个大模型发布。</li>
+  <li class="release"><span class="date">2026-07-08</span> <strong>OpenAI 发布 GPT-Live 语音模型</strong> — GPT-Live-1 与 GPT-Live-1 mini 接管 ChatGPT Voice，可后台委派给前沿模型做搜索 / 推理，被评"语音交互的范式拐点"。</li>
+  <li class="release"><span class="date">2026-07-08</span> <strong>Unsloth 发布 DeepSeek-V4-Flash GGUF 量化</strong> — 284B 总参 / 13B 激活、1M 上下文，Q8 量化 162GB（号称无损），本地部署门槛进一步降低。</li>
+  <li class="release"><span class="date">2026-07-09</span> <strong>🚀 OpenAI GPT-5.6 全面 GA + ChatGPT Work</strong> — Sol/Terra/Luna 三档全面开放；同期推出 ChatGPT Work（合并 Codex 的自主工作流 Agent）、ChatGPT Sites（自然语言建站部署）、Ultra 模式；Atlas 浏览器退役，Codex 并入桌面 App。GPT-5.6 成为 M365 Copilot 首选模型。</li>
+  <li class="release"><span class="date">2026-07-09</span> <strong>Meta 发布旗舰 Muse Spark 1.1</strong> — 1M 上下文、多 Agent 编排（主 Agent 规划 + 并行子 Agent），主打 agentic 编码与计算机使用；$1.25/$4.25 per MTok 通过 Meta Model API 公开预览，价格战加剧。</li>
+  <li><span class="date">2026-07-09 → 07-10</span> <strong>OpenAI 高管震荡：Fidji Simo 卸任应用 CEO</strong> — 二号人物（应用业务 CEO）因慢性病 POTS 加重宣布离任转顾问，加入 2026 年一系列高管离职名单。</li>
+</ul>
+
+<h2>📰 头条深度解读</h2>
+
+<h3>🚀 1. "超级模型周"：48 小时四款前沿模型混战</h3>
+
+<div class="trend-block">
+  <div class="trend-title">模型密集发布创纪录 <span class="badge breaking">BREAKING</span></div>
+  <p><strong>7月8日</strong>：xAI 发布 <strong>Grok 4.5</strong>（"Opus 级"，2 倍 token 效率，与 Cursor 共建，定价 $2/$6，500K 上下文）；OpenAI 发布 <strong>GPT-Live</strong> 语音模型接管 ChatGPT Voice。</p>
+  <p><strong>7月9日</strong>：OpenAI <strong>GPT-5.6</strong> 结束"有限预览"全面 GA——Sol（旗舰，$5/$30）、Terra（均衡，$2.50/$15）、Luna（最低成本，$1/$6），据称 agentic 编码比 GPT-5.5 提升 54% token 效率；同日 Meta <strong>Muse Spark 1.1</strong>（1M 上下文、多 Agent 编排、$1.25/$4.25）公开预览。Altman 称 GPT-5.6 是"我们做过最好的模型"。</p>
+  <p><strong>定价全面下探</strong>：四款新模型中三款定价均低于 Anthropic Fable 5 的 $10/$50。Grok 4.5 与 Muse Spark 1.1 直接把"前沿能力"拉到 $2–4 输出区间，GPT-5.6 Luna 更降至 $1/$6——价格战从"中端"打到"旗舰"。</p>
+</div>
+
+<div class="compare-grid">
+  <div class="compare-card">
+    <h4>🏆 OpenAI GPT-5.6</h4>
+    <p>Sol/Terra/Luna 三档；Artificial Analysis Coding Agent Index 上 Sol 以 max 推理达 80.2（领先 Fable 5 的 2.8 分），且用不到一半输出 token、约 1/3 成本。配 ChatGPT Work（合并 Codex）、Sites、Ultra。GPT-5.6 成 M365 Copilot 首选。</p>
+    <div class="stat-line">🔑 Sol $5/$30 · Terra $2.50/$15 · Luna $1/$6（per MTok）</div>
+  </div>
+  <div class="compare-card">
+    <h4>🦊 Meta Muse Spark 1.1</h4>
+    <p>1M 上下文、上下文压缩 + 多 Agent 编排（主 Agent 规划、子 Agent 并行）。可调用原生工具、MCP、自定义 Skill，擅长计算机使用。Zuckerberg 称"强 agentic、工具使用、计算机使用 + 极低价格"。</p>
+    <div class="stat-line">🔑 $1.25/$4.25（per MTok），Meta Model API 公开预览</div>
+  </div>
+</div>
+
+<div class="compare-grid">
+  <div class="compare-card">
+    <h4>⚡ xAI Grok 4.5</h4>
+    <p>Musk 称"Opus 级"，2 倍 token 效率，与 Cursor 共建，面向复杂编码与多步办公任务。Grok Build 默认模型、全档 Cursor 订阅可用、开发者控制台开放（欧盟待定）。</p>
+    <div class="stat-line">🔑 $2/$6（per MTok），500K 上下文</div>
+  </div>
+  <div class="compare-card">
+    <h4>🔊 OpenAI GPT-Live</h4>
+    <p>新一代语音模型，GPT-Live-1 / mini 接管 ChatGPT Voice。可后台委派前沿模型做搜索与推理、保持对话流。被评"语音成为主要输入方式的拐点"，利好 OpenAI 硬件野心。</p>
+    <div class="stat-line">🔑 默认接管 ChatGPT Voice（iOS/Android/Web）</div>
+  </div>
+</div>
+
+<h3>🔓 2. Fable 5 回归：AI 治理进入"逐案审查"新常态</h3>
+
+<div class="trend-block">
+  <div class="trend-title">19 天禁令结束，但规则已永久改变 <span class="badge deep">DEEP</span></div>
+  <p><strong>7/1 全球恢复</strong>：Fable 5 在 6/12 被商务部以出口管制强制全球下线后，于 7/1 恢复。7/7 前订阅用户（Pro/Max/Team/企业高级席）可用至每周额度 50%；之后转按量计费 $10/$50 per MTok，标准企业席须立即走使用额度。Mythos 5 仍仅限美国获批机构（Glasswing 计划）。</p>
+  <p><strong>政府审查机制定型</strong>：商务部"视同出口"（deemed export）原则现已延伸至云端 API 提供的商用前沿模型——任何模型理论上可被"无预警全球停服、且盟友无豁免"。6 部委（NSA、财政部、CISA 等）须在 <strong>8/1 前</strong>交付分类基准，但"不会有 AI 的 FDA"（前白宫 AI 顾问 Sriram Krishnan）。CASI 目前实际主导。结论：<strong>逐案谈判成为行业唯一结算机制，催生 19 天全球断供的条件并未根本改变。</strong></p>
+  <p><strong>OpenAI 的"绿灯"路径</strong>：GPT-5.6 先限"政府批准的组织"预览两周，再于 7/9 获公开放行。Altman 称过程涉及与 Lutnick、Bessent、Cairncross 等官员沟通，但评测专家与方式不透明。OpenAI 自己也表示"政府前置审查不应成为长期默认"。</p>
+</div>
+
+<h3>🤖 3. ChatGPT Work：Agent 成为"产品"，Codex 并入 ChatGPT</h3>
+
+<div class="trend-block">
+  <div class="trend-title">从"聊天工具"到"自主工作者"</div>
+  <p>OpenAI 将 Codex（原开发者 Agent）并入 ChatGPT 桌面 App，并推出 <strong>ChatGPT Work</strong>——一个跨应用、跨文件、可执行数小时复杂项目并交付成品（Excel/Word/网页 App）的 Agent。统一插件目录首批接入 Google Drive、SharePoint、Slack、Teams、Gmail、Outlook、Salesforce、Adobe、Zoom、LinkedIn、GitHub、Canva、Dropbox 等，可用 @ 唤起或自动识别数据源。</p>
+  <p>配套能力：<strong>ChatGPT Sites</strong>（自然语言建站、部署、实时链接）、<strong>Ultra 模式</strong>（多 Agent 并行处理长任务）、Auto-Review（对抗红队中 100% 拦截受保护数据提取）。桌面 App（Mac/Windows）对所有套餐（含免费）开放 Chat/Work/Codex；Web/移动端先放 Pro/Enterprise/Edu，Plus/Business 数日内跟进。</p>
+  <p>分析：这被普遍视为 OpenAI 向"超级 App"的关键一步，也与 Anthropic 从 Claude Code 转向 Cowork 的路线呼应——<strong>编程 Agent 正升级为通用知识工作 Agent</strong>。Constellation Research 的 Holger Mueller 指出企业采纳仍是 OpenAI 的短板，ChatGPT Work 当前已超百万用户，但需快速获得与竞品相当的牵引。</p>
+</div>
+
+<h3>🇨🇳 4. 中国拟人化 AI 新规：消费陪伴 vs 企业 Agent 强制分野</h3>
+
+<div class="trend-block">
+  <div class="trend-title">7/15 生效，全球首个"人格层"监管先例</div>
+  <p>北京《人工智能拟人化交互服务暂行规定》将于 <strong>7/15</strong> 生效，覆盖"模拟人类人格特质、思维方式与沟通风格、提供持续情感交互"的服务，点名极端思想、隐私泄露、身心健康损害、依赖成瘾四类风险。<strong>客服、知识问答、职场助手、教育、科研工具明确豁免</strong>（只要不做持续情感交互）。</p>
+  <p><strong>执行节奏精准卡线</strong>：通义"拟人化交互 Agent 及用户自建 Agent"7/10 下线、广义 Agent 功能 7/15 下线；豆包 Agent 功能 7/15 下线，对话数据 10/15 后不可恢复——监管者要清的是"数据层"的陪伴足迹，而非仅关界面。企业版 Agent（火山引擎运行时、通义企业 API、元宝企业线）不受影响。</p>
+  <p><strong>全球意义</strong>：这是首个监管者把"用户与 Agent 的关系"与"对话历史"纳入合规范围的先例。欧盟与美国正研究同类思路——在保持企业 Agent 生产力的同时切断消费端情感依赖。中国 6 月发布的 Agent 互联互通国家标准（架构/身份码/身份管理/描述/发现/交互/工具七层）为平台级执行提供了技术抓手。</p>
+</div>
+
+<h3>💸 5. 价格战与开源崛起：OpenRouter 三巨头份额 55%→33%</h3>
+
+<div class="trend-block">
+  <div class="trend-title">美国管制"意外"喂大开源</div>
+  <p>TechXplore 报道：美国对 Anthropic、OpenAI 顶级模型的限制反而推高开源（尤其中国）模型兴趣。在路由多模型的 OpenRouter 上，Google/Anthropic/OpenAI 合计使用份额从 1 月的 <strong>55% 降至 6 月的 33%</strong>，中国 DeepSeek 明显领先。GLM-5.2（MIT 许可、1M 上下文）与 DeepSeek V4（Pro 1.6T/49B 激活、Flash 284B/13B 激活、1M 上下文）持续吸粉。</p>
+  <p>西方阵营中法国 Mistral 几乎独撑开源大旗；Meta 已淡出开源倡导。专家警告：当开源模型足够强，政府管制也可能延伸至开源——"若 Mythos 级模型被视为风险，中国也不会愿其开放"。价格下探 + 可获得性，正改变企业采购逻辑。</p>
+</div>
+
+<h2>⭐ GitHub — 本期 AI 热门项目</h2>
+
+<table>
+<thead>
+<tr><th>Stars</th><th>项目</th><th>描述</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td class="gh-stars">⭐ 18K+</td>
+  <td class="gh-name"><a href="https://github.com/agent0ai/agent-zero" target="_blank">agent0ai/agent-zero</a> <span class="lang">Python</span></td>
+  <td class="gh-desc">开源 Agent 框架：Docker 化 Linux 桌面 + 浏览器 DOM 标注 + 实时文档协作 + 技能/插件（v2.3，7/9 更新）</td>
+</tr>
+<tr>
+  <td class="gh-stars">⭐ 13K+</td>
+  <td class="gh-name"><a href="https://github.com/lsdefine/GenericAgent" target="_blank">lsdefine/GenericAgent</a> <span class="lang">Python</span></td>
+  <td class="gh-desc">自进化 Agent：~3K 行核心、自动结晶技能树、<30K 上下文极低 token 消耗；支持 Claude/Gemini/Kimi/MiniMax（7/10 更新）</td>
+</tr>
+<tr>
+  <td class="gh-stars">⭐ 7.7K+</td>
+  <td class="gh-name"><a href="https://github.com/vudovn/ag-kit" target="_blank">vudovn/ag-kit</a> <span class="lang">TypeScript</span></td>
+  <td class="gh-desc">AI Agent 模板库：20 Agent + 45 Skill + 13 工作流，协调模式/持久记忆/上下文压缩（v2026.6.29）</td>
+</tr>
+<tr>
+  <td class="gh-stars">⭐ NEW</td>
+  <td class="gh-name"><a href="https://github.com/deepseek-ai/DeepSeek-V4" target="_blank">deepseek-ai/DeepSeek-V4</a> <span class="lang">Python</span></td>
+  <td class="gh-desc">DeepSeek V4 开源：Pro 1.6T/49B 激活、Flash 284B/13B 激活，1M 上下文，SWE-bench Verified 80.6%</td>
+</tr>
+<tr>
+  <td class="gh-stars">⭐ 活跃</td>
+  <td class="gh-name"><a href="https://github.com/open-gitagent/gitagent" target="_blank">open-gitagent/gitagent</a> <span class="lang">TypeScript</span></td>
+  <td class="gh-desc">git-native 多模态 Agent：身份/规则/记忆/技能全部版本化（"Agent 即仓库"，7/8 更新）</td>
+</tr>
+<tr>
+  <td class="gh-stars">⭐ 热门</td>
+  <td class="gh-name"><a href="https://github.com/THUDM/GLM-5" target="_blank">THUDM/GLM-5</a> <span class="lang">Python</span></td>
+  <td class="gh-desc">智谱 GLM-5.2：MIT 许可、1M 上下文、国产最强开源多模态之一，禁令后国际关注度跃升</td>
+</tr>
+<tr>
+  <td class="gh-stars">⭐ 增长</td>
+  <td class="gh-name"><a href="https://github.com/openai/codex" target="_blank">openai/codex</a> <span class="lang">Rust</span></td>
+  <td class="gh-desc">Codex Agent 开源运行时，随 GPT-5.6 并入 ChatGPT 桌面 App 引发社区热议</td>
+</tr>
+</tbody>
+</table>
+
+<h2>🔎 本期深度趋势解读</h2>
+
+<div class="trend-block">
+  <div class="trend-title">1. 🚀 "发布即 commodity"——前沿模型的稀缺性正在蒸发</div>
+  <p>48 小时内四款前沿模型同台，且定价集体下探到 $1–6 输出区间。核心信号：<strong>能力差距在收敛，成本与可靠性成为新战场</strong>。当 GPT-5.6 Luna 以 $1/$6、Muse Spark 1.1 以 $1.25/$4.25 提供"够用"的前沿能力，Anthropic 的 $10/$50 高端定价承压。行业正从"谁的模型最强"转向"谁的 Agent 最便宜、最可靠、最安全"。</p>
+</div>
+
+<div class="trend-block">
+  <div class="trend-title">2. 🔓 政府成为"影子发布经理"——模型上线需过政治关</div>
+  <p>Fable 5 的 19 天禁令与 GPT-5.6 的"政府批准预览→公开"路径，共同确认：<strong>美国前沿模型发布已事实纳入政府前置审查</strong>。企业须假设"单模型全球部署"存在被无预警中断的风险敞口，多云/多模型策略从最佳实践变为生存必需。8/1 前 6 部委框架若仍模糊，"逐案谈判"将持续。</p>
+</div>
+
+<div class="trend-block">
+  <div class="trend-title">3. 🤖 Agent 产品化：从"功能"到"可计费的数字员工"</div>
+  <p>ChatGPT Work、Muse Spark 1.1 多 Agent 编排、Claude Cowork 同步指向同一趋势：<strong>Agent 不再依附于聊天框，而是独立的产品形态与计费单元</strong>。OpenAI 用 Usage Credits 统一 Codex/Work/Excel/Workspace 的消费池；Anthropic 早将 Agent SDK 独立计量。下一步将是 Agent SLA、Agent 保险、Agent 审计等新业态。</p>
+</div>
+
+<div class="trend-block">
+  <div class="trend-title">4. 🇨🇳 中国"监管+创新"双轨的精密拆分</div>
+  <p>拟人化新规的精妙在于"按使用场景切"：消费陪伴（情感依赖）被清退，企业 Agent（生产力）被鼓励。这与 6 月 Agent 互联互通国标、MIIT 安全/实用/标准化导向构成"政策+标准+协议"组合拳。<strong>结果是同一个 Qwen/豆包 API，消费端不能做情感关系、企业端可以</strong>——这种"人格层"拆分可能被欧美借鉴。</p>
+</div>
+
+<div class="trend-block">
+  <div class="trend-title">5. 💸 开源拐点：管制红利 vs 管制外溢风险</div>
+  <p>OpenRouter 三巨头份额 55%→33% 是开源（尤其中国）模型的强信号。但 Ethan Mollick 等提醒：当开源模型达 Mythos 级，各国政府都可能将其锁定。<strong>短期红利（可获得性 + 低价）真实存在，长期"开源是否安全"将成为新博弈点。</strong>DeepSeek V4-Flash 的本地 GGUF 量化进一步降低部署门槛，边缘与私有化场景受益。</p>
+</div>
+
+<h2>📊 中美 AI 产业周度对比</h2>
+
+<table>
+<thead>
+<tr><th>维度</th><th>🇺🇸 美国</th><th>🇨🇳 中国</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>模型发布</strong></td>
+  <td>GPT-5.6 全面 GA（7/9）、Grok 4.5（7/8）、GPT-Live（7/8）、Muse Spark 1.1（7/9）</td>
+  <td>DeepSeek-V4-Flash GGUF 量化发布（7/8）；GLM-5.2 持续吸粉</td>
+</tr>
+<tr>
+  <td><strong>监管动态</strong></td>
+  <td>Fable 5 解除禁令（7/1）后转按量计费；商务部 CASI 主导审查，8/1 前 6 部委定框架</td>
+  <td>拟人化 AI 新规 7/15 生效，消费陪伴下线、企业 Agent 豁免</td>
+</tr>
+<tr>
+  <td><strong>产品形态</strong></td>
+  <td>ChatGPT Work（合并 Codex）、Sites、Ultra；Agent 成独立计费产品</td>
+  <td>企业 Agent 不受影响，火山引擎/通义企业 API 继续发货</td>
+</tr>
+<tr>
+  <td><strong>价格战</strong></td>
+  <td>Grok 4.5 $2/$6、Muse Spark 1.1 $1.25/$4.25、GPT-5.6 Luna $1/$6，集体低于 Anthropic $10/$50</td>
+  <td>DeepSeek/GLM 开源自部署零边际成本，进一步压低全球价格锚</td>
+</tr>
+<tr>
+  <td><strong>开源生态</strong></td>
+  <td>Meta 淡出开源倡导；Mistral 独撑西方开源；Codex 运行时开源引热议</td>
+  <td>DeepSeek 领跑 OpenRouter；GLM-5.2 MIT 许可国际化；Agent 国标推进互联</td>
+</tr>
+<tr>
+  <td><strong>关键变量</strong></td>
+  <td>OpenAI 高管震荡（Simo 离任）是否影响 IPO 节奏；8/1 审查框架</td>
+  <td>7/15 新规执行后行业调整；国产 Agent 合规功能何时重新上线</td>
+</tr>
+</tbody>
+</table>
+
+<h2>🔮 下期关键变量（7月11日 — 7月24日）</h2>
+
+<div class="event-card">
+  <div class="ev-date">📅 未来两周</div>
+  <div class="ev-title">关注点</div>
+  <div class="ev-desc">
+    <strong>1. 中国拟人化新规 7/15 执行首日实况</strong>：豆包/通义下线后用户迁移与投诉；企业 Agent 是否真"零影响"；监管会否补充细则。<br>
+    <strong>2. GPT-5.6 公开后的真实口碑与采用</strong>：Sol 在 Agents' Last Exam、Coding Agent Index 的实际表现；ChatGPT Work 能否从"重新包装 Codex"变成独立增长极。<br>
+    <strong>3. 价格战第二回合</strong>：Anthropic 是否会为 Fable 5（$10/$50）降价防守；Google Gemini 3.5 Pro 何时全面商用。<br>
+    <strong>4. EU AI Act 透明度义务 8/2 倒计时</strong>：距生效不足一月，企业 AI 内容标注合规准备进入冲刺；首轮违规调查预期。<br>
+    <strong>5. OpenAI 高管震荡余波</strong>：Fidji Simo 离任后应用业务 leadership 真空；IPO（目标 $830B–$1T）时间表是否受 2026 离职潮影响。<br>
+    <strong>6. 美国 8/1 AI 审查框架</strong>：6 部委能否给出可执行流程，或继续"逐案谈判"常态。
+  </div>
+</div>
+
+<div class="footer">
+  <p>数据来源: 公开报道（TechCrunch, The Verge, CNBC, Reuters, SCMP, Nikkei, SiliconANGLE, The Decoder, Platformer, MarkTechPost, TechXplore）· OpenAI/Anthropic/Meta/xAI 官方公告 · Hacker News · GitHub Trending · OSSInsight</p>
+  <p>报告生成于 2026-07-10 · Sisyphus Agent · 本期覆盖周期 2026-06-27 → 2026-07-10</p>
+  <p style="margin-top: 8px; color: #8b949e;">🔄 上一期：2026-06-26（覆盖 6/13→6/26）· 本期为接续双周报</p>
+</div>
+
+</body>
+</html>

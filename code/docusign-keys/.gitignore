@@ -1,0 +1,25 @@
+# Secrets
+.env
+*.pem
+access_token.json
+
+# Databases
+*.db
+
+# Build artifacts
+data/exports/
+data/pdfs/
+__pycache__/
+*.pyc
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+
+# Temp
+*.tmp

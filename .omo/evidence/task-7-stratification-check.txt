@@ -1,0 +1,35 @@
+Task 7 stratification quota check
+RUN_DATE: 2026-04-18
+
+Source access summary:
+- Listed backbone parsed from CSI A500 page: https://legulegu.com/stockdata/index-basic-composition?indexCode=000510.CSI&date=2026-03-31 (500 rows)
+- Private anchor parsed from ACFIC top-500 page: https://www.acfic.org.cn/qlyw/202410/t20241012_229493.html (500 rows)
+- Fortune mixed-company anchor checked: https://www.fortunechina.com/fortune500/c/2025-07/22/content_467138.htm | row_level_table_access=True
+- Hurun private-company anchor checked: https://hurun.net/en-US/Rank/HsRankDetails?pagetype=ctop500 | row_level_html_access=False | note=page is dynamic/hub only in raw HTML
+
+Quota method:
+- Sector quotas are fixed to the remapped 500-row CSI A500 sector distribution across the plan's 7 industries, so private insertion does not drift the ~500 target.
+- Within each sector, top-ranked ACFIC names are inserted first (private or mixed), then remaining slots are backfilled from the listed CSI A500 backbone.
+- Overlaps between ACFIC and the listed backbone are kept as mixed rows; they are not silently dropped.
+- The final CSV uses only the plan's 7 target sectors; no `other` bucket rows remain in the Task 7 output.
+
+Quota vs actual counts:
+- internet_software: quota=32, actual=32, acfic_inserts=8
+- advanced_manufacturing: quota=203, actual=203, acfic_inserts=20
+- consumer_retail: quota=40, actual=40, acfic_inserts=4
+- energy_chemicals: quota=111, actual=111, acfic_inserts=10
+- healthcare: quota=57, actual=57, acfic_inserts=4
+- logistics_mobility: quota=25, actual=25, acfic_inserts=3
+- finance: quota=32, actual=32, acfic_inserts=6
+
+Market-status summary:
+- listed: 445
+- mixed: 3
+- private: 52
+
+Conflict examples preserved as mixed:
+- 比亚迪: CSI A500 (000510.CSI)|ACFIC Private 500 2024 | dedupe_key=比亚迪; provenance=CSI A500 (000510.CSI)|ACFIC Private 500 2024; provenance_urls=https://legulegu.com/stockdata/index-basic-composition?indexCode=000510.CSI&date=2026-03-31|https://www.acfic.org.cn/qlyw/202410/t20241012_229493.html; acfic_rank=7; acfic_province=广东省; acfic_revenue_wan_rmb=60231535; sector_classification=listed_overlap; raw_listed_industry=汽车整车; conflict_resolution=listed_backbone+private_ranking_overlap=>mixed
+- 长城汽车: CSI A500 (000510.CSI)|ACFIC Private 500 2024 | dedupe_key=长城汽车; provenance=CSI A500 (000510.CSI)|ACFIC Private 500 2024; provenance_urls=https://legulegu.com/stockdata/index-basic-composition?indexCode=000510.CSI&date=2026-03-31|https://www.acfic.org.cn/qlyw/202410/t20241012_229493.html; acfic_rank=48; acfic_province=河北省; acfic_revenue_wan_rmb=17321207; sector_classification=listed_overlap; raw_listed_industry=汽车整车; conflict_resolution=listed_backbone+private_ranking_overlap=>mixed
+- 顺丰控股: CSI A500 (000510.CSI)|ACFIC Private 500 2024 | dedupe_key=顺丰控股; provenance=CSI A500 (000510.CSI)|ACFIC Private 500 2024; provenance_urls=https://legulegu.com/stockdata/index-basic-composition?indexCode=000510.CSI&date=2026-03-31|https://www.acfic.org.cn/qlyw/202410/t20241012_229493.html; acfic_rank=24; acfic_province=广东省; acfic_revenue_wan_rmb=25840940; sector_classification=listed_overlap; raw_listed_industry=仓储物流; conflict_resolution=listed_backbone+private_ranking_overlap=>mixed
+
+Verdict: PASS — the real CSV and this evidence file match exactly: 500 rows, 7-sector quotas satisfied, no `other` rows, and listed/private/mixed statuses preserved.

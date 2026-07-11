@@ -1,0 +1,1321 @@
+use std::collections::HashMap;
+use std::path::PathBuf;
+use rusqlite::{Connection, params};
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
+use crate::error::E;
+
+#[derive(Debug, Clone)]
+pub struct D {
+    pub p: PathBuf,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct User {
+    pub id: String,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub password_hash: String,
+    pub role: String,
+    pub name: String,
+    pub company_id: Option<String>,
+    pub language_pref: String,
+    pub active: i64,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Candidate {
+    pub id: String,
+    pub user_id: Option<String>,
+    pub agency_id: Option<String>,
+    pub name: String,
+    pub phone: Option<String>,
+    pub email: Option<String>,
+    pub id_number: Option<String>,
+    pub country_code: String,
+    pub date_of_birth: Option<String>,
+    pub gender: Option<String>,
+    pub nationality: Option<String>,
+    pub address: Option<String>,
+    pub city: Option<String>,
+    pub province: Option<String>,
+    pub postal_code: Option<String>,
+    pub education_level: Option<String>,
+    pub education_school: Option<String>,
+    pub education_major: Option<String>,
+    pub education_year: Option<String>,
+    pub work_experience_years: Option<i64>,
+    pub previous_employer: Option<String>,
+    pub previous_position: Option<String>,
+    pub previous_duration: Option<String>,
+    pub previous_duties: Option<String>,
+    pub languages: Option<String>,
+    pub certifications: Option<String>,
+    pub emergency_contact_name: Option<String>,
+    pub emergency_contact_phone: Option<String>,
+    pub emergency_contact_relation: Option<String>,
+    pub skills: String,
+    pub resume_text: Option<String>,
+    pub resume_file_url: Option<String>,
+    pub profile_photo_url: Option<String>,
+    pub status: String,
+    pub source: String,
+    pub notes: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Interview {
+    pub id: String,
+    pub candidate_id: String,
+    pub job_title: Option<String>,
+    pub scheduled_at: Option<String>,
+    pub check_in_at: Option<String>,
+    pub interviewer_id: Option<String>,
+    pub skill_scores: String,
+    pub overall_score: Option<f64>,
+    pub comments: Option<String>,
+    pub status: String,
+    pub result: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Document {
+    pub id: String,
+    pub entity_type: String,
+    pub entity_id: String,
+    pub doc_type: String,
+    pub file_url: Option<String>,
+    pub signed_at: Option<String>,
+    pub signature_method: Option<String>,
+    pub ocr_data: String,
+    pub status: String,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Employee {
+    pub id: String,
+    pub candidate_id: Option<String>,
+    pub employee_code: Option<String>,
+    pub company_id: Option<String>,
+    pub department: Option<String>,
+    pub position: Option<String>,
+    pub hired_at: Option<String>,
+    pub contract_start: Option<String>,
+    pub contract_end: Option<String>,
+    pub training_completed: i64,
+    pub ehs_certified: i64,
+    pub status: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Approval {
+    pub id: String,
+    pub candidate_id: String,
+    pub request_type: String,
+    pub requested_by: String,
+    pub assigned_to: String,
+    pub status: String,
+    pub comments: Option<String>,
+    pub escalated_at: Option<String>,
+    pub decided_at: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AuditEntry {
+    pub id: String,
+    pub user_id: Option<String>,
+    pub action: String,
+    pub entity_type: Option<String>,
+    pub entity_id: Option<String>,
+    pub details: String,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TrainingCourse {
+    pub id: String,
+    pub title: String,
+    pub course_type: String,
+    pub country: String,
+    pub content_type: String,
+    pub content_url: Option<String>,
+    pub mandatory: i64,
+    pub duration_minutes: Option<i64>,
+    pub order_index: Option<i64>,
+    pub pass_score: Option<i64>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TrainingRecord {
+    pub id: String,
+    pub employee_id: String,
+    pub course_id: String,
+    pub started_at: Option<String>,
+    pub completed_at: Option<String>,
+    pub score: Option<i64>,
+    pub passed: i64,
+    pub certificate_url: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ImportResult {
+    pub imported: usize,
+    pub errors: Vec<String>,
+}
+
+impl D {
+    pub fn new(p: PathBuf) -> Result<Self, E> {
+        if let Some(pp) = p.parent() {
+            std::fs::create_dir_all(pp)?;
+        }
+        let db = D { p };
+        db.init()?;
+        Ok(db)
+    }
+
+    pub fn conn(&self) -> Result<Connection, E> {
+        Ok(Connection::open(&self.p)?)
+    }
+
+    fn init(&self) -> Result<(), E> {
+        let c = self.conn()?;
+        c.execute_batch(
+            "
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY,
+                email TEXT UNIQUE,
+                phone TEXT,
+                password_hash TEXT NOT NULL,
+                role TEXT NOT NULL CHECK(role IN ('admin','recruiter','manager','agency','trainer','worker')),
+                name TEXT NOT NULL,
+                company_id TEXT,
+                language_pref TEXT DEFAULT 'en',
+                active INTEGER DEFAULT 1,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now'))
+            );
+
+            CREATE TABLE IF NOT EXISTS candidates (
+                id TEXT PRIMARY KEY,
+                user_id TEXT,
+                agency_id TEXT,
+                name TEXT NOT NULL,
+                phone TEXT,
+                email TEXT,
+                id_number TEXT,
+                country_code TEXT DEFAULT 'PH',
+                date_of_birth TEXT,
+                gender TEXT,
+                nationality TEXT,
+                address TEXT,
+                city TEXT,
+                province TEXT,
+                postal_code TEXT,
+                education_level TEXT,
+                education_school TEXT,
+                education_major TEXT,
+                education_year TEXT,
+                work_experience_years INTEGER,
+                previous_employer TEXT,
+                previous_position TEXT,
+                previous_duration TEXT,
+                previous_duties TEXT,
+                languages TEXT,
+                certifications TEXT,
+                emergency_contact_name TEXT,
+                emergency_contact_phone TEXT,
+                emergency_contact_relation TEXT,
+                skills TEXT DEFAULT '[]',
+                resume_text TEXT,
+                resume_file_url TEXT,
+                profile_photo_url TEXT,
+                status TEXT NOT NULL DEFAULT 'new' CHECK(status IN ('new','screened','interviewing','offered','hired','rejected')),
+                source TEXT DEFAULT 'direct' CHECK(source IN ('agency','direct','referral','other')),
+                notes TEXT,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now')),
+                FOREIGN KEY (user_id) REFERENCES users(id),
+                FOREIGN KEY (agency_id) REFERENCES users(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS interviews (
+                id TEXT PRIMARY KEY,
+                candidate_id TEXT NOT NULL,
+                job_title TEXT,
+                scheduled_at TEXT,
+                check_in_at TEXT,
+                interviewer_id TEXT,
+                skill_scores TEXT DEFAULT '{}',
+                overall_score REAL,
+                comments TEXT,
+                status TEXT DEFAULT 'scheduled' CHECK(status IN ('scheduled','completed','cancelled','no_show')),
+                result TEXT CHECK(result IN ('pass','fail','pending')),
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now')),
+                FOREIGN KEY (candidate_id) REFERENCES candidates(id),
+                FOREIGN KEY (interviewer_id) REFERENCES users(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS documents (
+                id TEXT PRIMARY KEY,
+                entity_type TEXT NOT NULL CHECK(entity_type IN ('candidate','employee')),
+                entity_id TEXT NOT NULL,
+                doc_type TEXT NOT NULL CHECK(doc_type IN ('contract','id_card','bank_card','certificate','other')),
+                file_url TEXT,
+                signed_at TEXT,
+                signature_method TEXT CHECK(signature_method IN ('electronic','digital','wet')),
+                ocr_data TEXT DEFAULT '{}',
+                status TEXT DEFAULT 'pending' CHECK(status IN ('pending','signed','expired')),
+                created_at TEXT DEFAULT (datetime('now'))
+            );
+
+            CREATE TABLE IF NOT EXISTS employees (
+                id TEXT PRIMARY KEY,
+                candidate_id TEXT UNIQUE,
+                employee_code TEXT UNIQUE,
+                company_id TEXT,
+                department TEXT,
+                position TEXT,
+                hired_at TEXT,
+                contract_start TEXT,
+                contract_end TEXT,
+                training_completed INTEGER DEFAULT 0,
+                ehs_certified INTEGER DEFAULT 0,
+                status TEXT DEFAULT 'active' CHECK(status IN ('active','inactive','terminated')),
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now')),
+                FOREIGN KEY (candidate_id) REFERENCES candidates(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS approvals (
+                id TEXT PRIMARY KEY,
+                candidate_id TEXT NOT NULL,
+                request_type TEXT NOT NULL DEFAULT 'hire' CHECK(request_type IN ('hire','termination','transfer','other')),
+                requested_by TEXT NOT NULL,
+                assigned_to TEXT NOT NULL,
+                status TEXT DEFAULT 'pending' CHECK(status IN ('pending','approved','rejected','transferred')),
+                comments TEXT,
+                escalated_at TEXT,
+                decided_at TEXT,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now')),
+                FOREIGN KEY (candidate_id) REFERENCES candidates(id),
+                FOREIGN KEY (requested_by) REFERENCES users(id),
+                FOREIGN KEY (assigned_to) REFERENCES users(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS audit_logs (
+                id TEXT PRIMARY KEY,
+                user_id TEXT,
+                action TEXT NOT NULL,
+                entity_type TEXT,
+                entity_id TEXT,
+                details TEXT DEFAULT '{}',
+                created_at TEXT DEFAULT (datetime('now')),
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS training_courses (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                course_type TEXT NOT NULL DEFAULT 'onboarding' CHECK(course_type IN ('onboarding','ehs','skills','compliance')),
+                country TEXT DEFAULT 'all',
+                content_type TEXT DEFAULT 'video' CHECK(content_type IN ('video','animation','document','quiz')),
+                content_url TEXT,
+                mandatory INTEGER DEFAULT 0,
+                duration_minutes INTEGER,
+                order_index INTEGER,
+                pass_score INTEGER DEFAULT 80,
+                created_at TEXT DEFAULT (datetime('now'))
+            );
+
+            CREATE TABLE IF NOT EXISTS training_records (
+                id TEXT PRIMARY KEY,
+                employee_id TEXT NOT NULL,
+                course_id TEXT NOT NULL,
+                started_at TEXT,
+                completed_at TEXT,
+                score INTEGER,
+                passed INTEGER DEFAULT 0,
+                certificate_url TEXT,
+                created_at TEXT DEFAULT (datetime('now')),
+                FOREIGN KEY (employee_id) REFERENCES employees(id),
+                FOREIGN KEY (course_id) REFERENCES training_courses(id)
+            );
+            "
+        )?;
+        Ok(())
+    }
+
+    pub fn user_by_email(&self, email: &str) -> Result<User, E> {
+        self.conn()?.query_row(
+            "SELECT id, email, phone, password_hash, role, name, company_id, language_pref, active, created_at, updated_at FROM users WHERE email = ?",
+            params![email],
+            |row| {
+                Ok(User {
+                    id: row.get(0)?,
+                    email: row.get(1)?,
+                    phone: row.get(2)?,
+                    password_hash: row.get(3)?,
+                    role: row.get(4)?,
+                    name: row.get(5)?,
+                    company_id: row.get(6)?,
+                    language_pref: row.get(7)?,
+                    active: row.get(8)?,
+                    created_at: row.get(9)?,
+                    updated_at: row.get(10)?,
+                })
+            },
+        ).map_err(|_| E("user not found".into()))
+    }
+
+    pub fn user_by_id(&self, id: &str) -> Result<User, E> {
+        self.conn()?.query_row(
+            "SELECT id, email, phone, password_hash, role, name, company_id, language_pref, active, created_at, updated_at FROM users WHERE id = ?",
+            params![id],
+            |row| {
+                Ok(User {
+                    id: row.get(0)?,
+                    email: row.get(1)?,
+                    phone: row.get(2)?,
+                    password_hash: row.get(3)?,
+                    role: row.get(4)?,
+                    name: row.get(5)?,
+                    company_id: row.get(6)?,
+                    language_pref: row.get(7)?,
+                    active: row.get(8)?,
+                    created_at: row.get(9)?,
+                    updated_at: row.get(10)?,
+                })
+            },
+        ).map_err(|_| E("user not found".into()))
+    }
+
+    pub fn create_user(&self, u: &User) -> Result<(), E> {
+        self.conn()?.execute(
+            "INSERT INTO users (id, email, phone, password_hash, role, name, company_id, language_pref, active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            params![u.id, u.email, u.phone, u.password_hash, u.role, u.name, u.company_id, u.language_pref, u.active, u.created_at, u.updated_at],
+        )?;
+        Ok(())
+    }
+
+    pub fn list_candidates(&self, status: Option<&str>, source: Option<&str>, q: Option<&str>) -> Result<Vec<Candidate>, E> {
+        let c = self.conn()?;
+        let mut sql = "SELECT id, user_id, agency_id, name, phone, email, id_number, country_code, date_of_birth, gender, nationality, address, city, province, postal_code, education_level, education_school, education_major, education_year, work_experience_years, previous_employer, previous_position, previous_duration, previous_duties, languages, certifications, emergency_contact_name, emergency_contact_phone, emergency_contact_relation, skills, resume_text, resume_file_url, profile_photo_url, status, source, notes, created_at, updated_at FROM candidates WHERE 1=1".to_string();
+        let mut p: Vec<Box<dyn rusqlite::ToSql>> = vec![];
+        if let Some(s) = status {
+            sql.push_str(" AND status=?");
+            p.push(Box::new(s.to_string()));
+        }
+        if let Some(s) = source {
+            sql.push_str(" AND source=?");
+            p.push(Box::new(s.to_string()));
+        }
+        if let Some(qs) = q {
+            sql.push_str(" AND (name LIKE ? OR phone LIKE ? OR email LIKE ?)");
+            let pattern = format!("%{}%", qs);
+            p.push(Box::new(pattern.clone()));
+            p.push(Box::new(pattern.clone()));
+            p.push(Box::new(pattern));
+        }
+        sql.push_str(" ORDER BY created_at DESC");
+        let mut stmt = c.prepare(&sql)?;
+        let refs: Vec<&dyn rusqlite::ToSql> = p.iter().map(|b| b.as_ref()).collect();
+        let rows = stmt.query_map(refs.as_slice(), |row| {
+            Ok(Candidate {
+                id: row.get(0)?,
+                user_id: row.get(1)?,
+                agency_id: row.get(2)?,
+                name: row.get(3)?,
+                phone: row.get(4)?,
+                email: row.get(5)?,
+                id_number: row.get(6)?,
+                country_code: row.get(7)?,
+                date_of_birth: row.get(8)?,
+                gender: row.get(9)?,
+                nationality: row.get(10)?,
+                address: row.get(11)?,
+                city: row.get(12)?,
+                province: row.get(13)?,
+                postal_code: row.get(14)?,
+                education_level: row.get(15)?,
+                education_school: row.get(16)?,
+                education_major: row.get(17)?,
+                education_year: row.get(18)?,
+                work_experience_years: row.get(19)?,
+                previous_employer: row.get(20)?,
+                previous_position: row.get(21)?,
+                previous_duration: row.get(22)?,
+                previous_duties: row.get(23)?,
+                languages: row.get(24)?,
+                certifications: row.get(25)?,
+                emergency_contact_name: row.get(26)?,
+                emergency_contact_phone: row.get(27)?,
+                emergency_contact_relation: row.get(28)?,
+                skills: row.get(29)?,
+                resume_text: row.get(30)?,
+                resume_file_url: row.get(31)?,
+                profile_photo_url: row.get(32)?,
+                status: row.get(33)?,
+                source: row.get(34)?,
+                notes: row.get(35)?,
+                created_at: row.get(36)?,
+                updated_at: row.get(37)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn candidate_by_phone_or_email(&self, phone: Option<&str>, email: Option<&str>) -> Result<Vec<Candidate>, E> {
+        let c = self.conn()?;
+        let mut sql = "SELECT id, user_id, agency_id, name, phone, email, id_number, country_code, date_of_birth, gender, nationality, address, city, province, postal_code, education_level, education_school, education_major, education_year, work_experience_years, previous_employer, previous_position, previous_duration, previous_duties, languages, certifications, emergency_contact_name, emergency_contact_phone, emergency_contact_relation, skills, resume_text, resume_file_url, profile_photo_url, status, source, notes, created_at, updated_at FROM candidates WHERE 1=0".to_string();
+        if let Some(p) = phone {
+            sql.push_str(&format!(" OR phone='{}'", p.replace('\'', "''")));
+        }
+        if let Some(e) = email {
+            sql.push_str(&format!(" OR email='{}'", e.replace('\'', "''")));
+        }
+        let mut stmt = c.prepare(&sql)?;
+        let rows = stmt.query_map([], |row| {
+            Ok(Candidate {
+                id: row.get(0)?,
+                user_id: row.get(1)?,
+                agency_id: row.get(2)?,
+                name: row.get(3)?,
+                phone: row.get(4)?,
+                email: row.get(5)?,
+                id_number: row.get(6)?,
+                country_code: row.get(7)?,
+                date_of_birth: row.get(8)?,
+                gender: row.get(9)?,
+                nationality: row.get(10)?,
+                address: row.get(11)?,
+                city: row.get(12)?,
+                province: row.get(13)?,
+                postal_code: row.get(14)?,
+                education_level: row.get(15)?,
+                education_school: row.get(16)?,
+                education_major: row.get(17)?,
+                education_year: row.get(18)?,
+                work_experience_years: row.get(19)?,
+                previous_employer: row.get(20)?,
+                previous_position: row.get(21)?,
+                previous_duration: row.get(22)?,
+                previous_duties: row.get(23)?,
+                languages: row.get(24)?,
+                certifications: row.get(25)?,
+                emergency_contact_name: row.get(26)?,
+                emergency_contact_phone: row.get(27)?,
+                emergency_contact_relation: row.get(28)?,
+                skills: row.get(29)?,
+                resume_text: row.get(30)?,
+                resume_file_url: row.get(31)?,
+                profile_photo_url: row.get(32)?,
+                status: row.get(33)?,
+                source: row.get(34)?,
+                notes: row.get(35)?,
+                created_at: row.get(36)?,
+                updated_at: row.get(37)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn candidate_by_id(&self, id: &str) -> Result<Candidate, E> {
+        self.conn()?.query_row(
+            "SELECT id, user_id, agency_id, name, phone, email, id_number, country_code, date_of_birth, gender, nationality, address, city, province, postal_code, education_level, education_school, education_major, education_year, work_experience_years, previous_employer, previous_position, previous_duration, previous_duties, languages, certifications, emergency_contact_name, emergency_contact_phone, emergency_contact_relation, skills, resume_text, resume_file_url, profile_photo_url, status, source, notes, created_at, updated_at FROM candidates WHERE id=?",
+            params![id],
+            |row| {
+                Ok(Candidate {
+                    id: row.get(0)?,
+                    user_id: row.get(1)?,
+                    agency_id: row.get(2)?,
+                    name: row.get(3)?,
+                    phone: row.get(4)?,
+                    email: row.get(5)?,
+                    id_number: row.get(6)?,
+                    country_code: row.get(7)?,
+                    date_of_birth: row.get(8)?,
+                    gender: row.get(9)?,
+                    nationality: row.get(10)?,
+                    address: row.get(11)?,
+                    city: row.get(12)?,
+                    province: row.get(13)?,
+                    postal_code: row.get(14)?,
+                    education_level: row.get(15)?,
+                    education_school: row.get(16)?,
+                    education_major: row.get(17)?,
+                    education_year: row.get(18)?,
+                    work_experience_years: row.get(19)?,
+                    previous_employer: row.get(20)?,
+                    previous_position: row.get(21)?,
+                    previous_duration: row.get(22)?,
+                    previous_duties: row.get(23)?,
+                    languages: row.get(24)?,
+                    certifications: row.get(25)?,
+                    emergency_contact_name: row.get(26)?,
+                    emergency_contact_phone: row.get(27)?,
+                    emergency_contact_relation: row.get(28)?,
+                    skills: row.get(29)?,
+                    resume_text: row.get(30)?,
+                    resume_file_url: row.get(31)?,
+                    profile_photo_url: row.get(32)?,
+                    status: row.get(33)?,
+                    source: row.get(34)?,
+                    notes: row.get(35)?,
+                    created_at: row.get(36)?,
+                    updated_at: row.get(37)?,
+                })
+            },
+        ).map_err(|_| E("candidate not found".into()))
+    }
+
+    pub fn create_candidate(&self, c: &Candidate) -> Result<(), E> {
+        self.conn()?.execute(
+            "INSERT INTO candidates (id, user_id, agency_id, name, phone, email, id_number, country_code, date_of_birth, gender, nationality, address, city, province, postal_code, education_level, education_school, education_major, education_year, work_experience_years, previous_employer, previous_position, previous_duration, previous_duties, languages, certifications, emergency_contact_name, emergency_contact_phone, emergency_contact_relation, skills, resume_text, resume_file_url, profile_photo_url, status, source, notes, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            params![
+                c.id, c.user_id, c.agency_id, c.name, c.phone, c.email, c.id_number, c.country_code,
+                c.date_of_birth, c.gender, c.nationality, c.address, c.city, c.province, c.postal_code,
+                c.education_level, c.education_school, c.education_major, c.education_year,
+                c.work_experience_years, c.previous_employer, c.previous_position, c.previous_duration, c.previous_duties,
+                c.languages, c.certifications, c.emergency_contact_name, c.emergency_contact_phone, c.emergency_contact_relation,
+                c.skills, c.resume_text, c.resume_file_url, c.profile_photo_url,
+                c.status, c.source, c.notes, c.created_at, c.updated_at,
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn update_candidate(&self, id: &str, c: &Candidate) -> Result<(), E> {
+        let affected = self.conn()?.execute(
+            "UPDATE candidates SET name=?, phone=?, email=?, id_number=?, country_code=?, date_of_birth=?, gender=?, nationality=?, address=?, city=?, province=?, postal_code=?, education_level=?, education_school=?, education_major=?, education_year=?, work_experience_years=?, previous_employer=?, previous_position=?, previous_duration=?, previous_duties=?, languages=?, certifications=?, emergency_contact_name=?, emergency_contact_phone=?, emergency_contact_relation=?, skills=?, resume_text=?, resume_file_url=?, profile_photo_url=?, status=?, source=?, notes=?, updated_at=? WHERE id=?",
+            params![
+                c.name, c.phone, c.email, c.id_number, c.country_code,
+                c.date_of_birth, c.gender, c.nationality, c.address, c.city, c.province, c.postal_code,
+                c.education_level, c.education_school, c.education_major, c.education_year,
+                c.work_experience_years, c.previous_employer, c.previous_position, c.previous_duration, c.previous_duties,
+                c.languages, c.certifications, c.emergency_contact_name, c.emergency_contact_phone, c.emergency_contact_relation,
+                c.skills, c.resume_text, c.resume_file_url, c.profile_photo_url,
+                c.status, c.source, c.notes, c.updated_at, id,
+            ],
+        )?;
+        if affected == 0 {
+            return Err(E("candidate not found".into()));
+        }
+        Ok(())
+    }
+
+    pub fn delete_candidate(&self, id: &str) -> Result<(), E> {
+        let affected = self.conn()?.execute("DELETE FROM candidates WHERE id=?", params![id])?;
+        if affected == 0 {
+            return Err(E("candidate not found".into()));
+        }
+        Ok(())
+    }
+
+    pub fn update_candidate_status(&self, id: &str, status: &str) -> Result<(), E> {
+        let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
+        let affected = self.conn()?.execute(
+            "UPDATE candidates SET status=?, updated_at=? WHERE id=?",
+            params![status, now, id],
+        )?;
+        if affected == 0 {
+            return Err(E("candidate not found".into()));
+        }
+        Ok(())
+    }
+
+    pub fn import_candidates_csv(&self, csv_data: &str, agency_id: Option<&str>) -> Result<ImportResult, E> {
+        let mut imported = 0;
+        let mut errors = vec![];
+        let c = self.conn()?;
+        for (i, line) in csv_data.lines().enumerate() {
+            if i == 0 && line.to_lowercase().contains("name") {
+                continue;
+            }
+            let line = line.trim();
+            if line.is_empty() {
+                continue;
+            }
+            let fields = parse_csv_line(line);
+            if fields.len() < 3 {
+                errors.push(format!("line {}: insufficient fields", i + 1));
+                continue;
+            }
+            let name = fields[0].trim();
+            if name.is_empty() {
+                errors.push(format!("line {}: name required", i + 1));
+                continue;
+            }
+            let phone = fields.get(1).map(|s| s.trim().to_string());
+            let email = fields.get(2).map(|s| s.trim().to_string());
+            let id_number = fields.get(3).map(|s| s.trim().to_string());
+            let country_code = fields.get(4).map(|s| s.trim().to_string()).unwrap_or_else(|| "PH".to_string());
+            let skills = fields.get(5).map(|s| s.trim().to_string()).unwrap_or_default();
+            let skills_json = if skills.is_empty() {
+                "[]".to_string()
+            } else {
+                let parts: Vec<String> = skills.split(';').map(|s| format!("\"{}\"", s.trim())).collect();
+                format!("[{}]", parts.join(","))
+            };
+            let source = fields.get(6).map(|s| s.trim().to_string()).unwrap_or_else(|| "direct".to_string());
+            let notes = fields.get(7).map(|s| s.trim().to_string());
+
+            if let (Some(ref p), Some(ref e)) = (&phone, &email) {
+                let mut dup_check = c.prepare("SELECT COUNT(*) FROM candidates WHERE phone=? OR email=?")?;
+                let dup_count: i64 = dup_check.query_row(params![p, e], |r| r.get(0))?;
+                if dup_count > 0 {
+                    errors.push(format!("line {}: duplicate phone or email (skipped)", i + 1));
+                    continue;
+                }
+            } else if let Some(ref p) = &phone {
+                let mut dup_check = c.prepare("SELECT COUNT(*) FROM candidates WHERE phone=?")?;
+                let dup_count: i64 = dup_check.query_row(params![p], |r| r.get(0))?;
+                if dup_count > 0 {
+                    errors.push(format!("line {}: duplicate phone (skipped)", i + 1));
+                    continue;
+                }
+            }
+
+            let id = uuid::Uuid::new_v4().to_string();
+            let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
+
+            let result = c.execute(
+                "INSERT INTO candidates (id, agency_id, name, phone, email, id_number, country_code, skills, status, source, notes, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                params![
+                    id,
+                    agency_id,
+                    name,
+                    phone,
+                    email,
+                    id_number,
+                    country_code,
+                    skills_json,
+                    "new",
+                    if agency_id.is_some() { "agency" } else { &source },
+                    notes,
+                    now,
+                    now,
+                ],
+            );
+            match result {
+                Ok(_) => imported += 1,
+                Err(e) => errors.push(format!("line {}: {}", i + 1, e)),
+            }
+        }
+        Ok(ImportResult { imported, errors })
+    }
+
+    pub fn agency_candidates(&self, agency_id: &str) -> Result<Vec<Candidate>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare(
+            "SELECT id, user_id, agency_id, name, phone, email, id_number, country_code, date_of_birth, gender, nationality, address, city, province, postal_code, education_level, education_school, education_major, education_year, work_experience_years, previous_employer, previous_position, previous_duration, previous_duties, languages, certifications, emergency_contact_name, emergency_contact_phone, emergency_contact_relation, skills, resume_text, resume_file_url, profile_photo_url, status, source, notes, created_at, updated_at FROM candidates WHERE agency_id=? ORDER BY created_at DESC"
+        )?;
+        let rows = stmt.query_map(params![agency_id], |row| {
+            Ok(Candidate {
+                id: row.get(0)?,
+                user_id: row.get(1)?,
+                agency_id: row.get(2)?,
+                name: row.get(3)?,
+                phone: row.get(4)?,
+                email: row.get(5)?,
+                id_number: row.get(6)?,
+                country_code: row.get(7)?,
+                date_of_birth: row.get(8)?,
+                gender: row.get(9)?,
+                nationality: row.get(10)?,
+                address: row.get(11)?,
+                city: row.get(12)?,
+                province: row.get(13)?,
+                postal_code: row.get(14)?,
+                education_level: row.get(15)?,
+                education_school: row.get(16)?,
+                education_major: row.get(17)?,
+                education_year: row.get(18)?,
+                work_experience_years: row.get(19)?,
+                previous_employer: row.get(20)?,
+                previous_position: row.get(21)?,
+                previous_duration: row.get(22)?,
+                previous_duties: row.get(23)?,
+                languages: row.get(24)?,
+                certifications: row.get(25)?,
+                emergency_contact_name: row.get(26)?,
+                emergency_contact_phone: row.get(27)?,
+                emergency_contact_relation: row.get(28)?,
+                skills: row.get(29)?,
+                resume_text: row.get(30)?,
+                resume_file_url: row.get(31)?,
+                profile_photo_url: row.get(32)?,
+                status: row.get(33)?,
+                source: row.get(34)?,
+                notes: row.get(35)?,
+                created_at: row.get(36)?,
+                updated_at: row.get(37)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn list_interviews(&self, status: Option<&str>) -> Result<Vec<Interview>, E> {
+        let c = self.conn()?;
+        let mut sql = "SELECT id, candidate_id, job_title, scheduled_at, check_in_at, interviewer_id, skill_scores, overall_score, comments, status, result, created_at, updated_at FROM interviews WHERE 1=1".to_string();
+        let mut p: Vec<Box<dyn rusqlite::ToSql>> = vec![];
+        if let Some(s) = status {
+            sql.push_str(" AND status=?");
+            p.push(Box::new(s.to_string()));
+        }
+        sql.push_str(" ORDER BY created_at DESC");
+        let mut stmt = c.prepare(&sql)?;
+        let refs: Vec<&dyn rusqlite::ToSql> = p.iter().map(|b| b.as_ref()).collect();
+        let rows = stmt.query_map(refs.as_slice(), |row| {
+            Ok(Interview {
+                id: row.get(0)?,
+                candidate_id: row.get(1)?,
+                job_title: row.get(2)?,
+                scheduled_at: row.get(3)?,
+                check_in_at: row.get(4)?,
+                interviewer_id: row.get(5)?,
+                skill_scores: row.get(6)?,
+                overall_score: row.get(7)?,
+                comments: row.get(8)?,
+                status: row.get(9)?,
+                result: row.get(10)?,
+                created_at: row.get(11)?,
+                updated_at: row.get(12)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn interview_by_id(&self, id: &str) -> Result<Interview, E> {
+        self.conn()?.query_row(
+            "SELECT id, candidate_id, job_title, scheduled_at, check_in_at, interviewer_id, skill_scores, overall_score, comments, status, result, created_at, updated_at FROM interviews WHERE id=?",
+            params![id],
+            |row| {
+                Ok(Interview {
+                    id: row.get(0)?,
+                    candidate_id: row.get(1)?,
+                    job_title: row.get(2)?,
+                    scheduled_at: row.get(3)?,
+                    check_in_at: row.get(4)?,
+                    interviewer_id: row.get(5)?,
+                    skill_scores: row.get(6)?,
+                    overall_score: row.get(7)?,
+                    comments: row.get(8)?,
+                    status: row.get(9)?,
+                    result: row.get(10)?,
+                    created_at: row.get(11)?,
+                    updated_at: row.get(12)?,
+                })
+            },
+        ).map_err(|_| E("interview not found".into()))
+    }
+
+    pub fn create_interview(&self, iv: &Interview) -> Result<(), E> {
+        self.conn()?.execute(
+            "INSERT INTO interviews (id, candidate_id, job_title, scheduled_at, check_in_at, interviewer_id, skill_scores, overall_score, comments, status, result, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            params![iv.id, iv.candidate_id, iv.job_title, iv.scheduled_at, iv.check_in_at, iv.interviewer_id, iv.skill_scores, iv.overall_score, iv.comments, iv.status, iv.result, iv.created_at, iv.updated_at],
+        )?;
+        Ok(())
+    }
+
+    pub fn checkin_interview(&self, id: &str) -> Result<(), E> {
+        let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
+        let affected = self.conn()?.execute(
+            "UPDATE interviews SET check_in_at=?, updated_at=? WHERE id=?",
+            params![now, now, id],
+        )?;
+        if affected == 0 {
+            return Err(E("interview not found".into()));
+        }
+        Ok(())
+    }
+
+    pub fn evaluate_interview(&self, id: &str, skill_scores: &str, overall_score: f64, comments: &str, result: &str) -> Result<(), E> {
+        let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
+        let affected = self.conn()?.execute(
+            "UPDATE interviews SET skill_scores=?, overall_score=?, comments=?, result=?, status='completed', updated_at=? WHERE id=?",
+            params![skill_scores, overall_score, comments, result, now, id],
+        )?;
+        if affected == 0 {
+            return Err(E("interview not found".into()));
+        }
+        Ok(())
+    }
+
+    pub fn pending_approvals(&self, user_id: &str) -> Result<Vec<Approval>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare(
+            "SELECT id, candidate_id, request_type, requested_by, assigned_to, status, comments, escalated_at, decided_at, created_at, updated_at FROM approvals WHERE assigned_to=? AND status='pending' ORDER BY created_at ASC"
+        )?;
+        let rows = stmt.query_map(params![user_id], |row| {
+            Ok(Approval {
+                id: row.get(0)?,
+                candidate_id: row.get(1)?,
+                request_type: row.get(2)?,
+                requested_by: row.get(3)?,
+                assigned_to: row.get(4)?,
+                status: row.get(5)?,
+                comments: row.get(6)?,
+                escalated_at: row.get(7)?,
+                decided_at: row.get(8)?,
+                created_at: row.get(9)?,
+                updated_at: row.get(10)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn approval_by_id(&self, id: &str) -> Result<Approval, E> {
+        self.conn()?.query_row(
+            "SELECT id, candidate_id, request_type, requested_by, assigned_to, status, comments, escalated_at, decided_at, created_at, updated_at FROM approvals WHERE id=?",
+            params![id],
+            |row| {
+                Ok(Approval {
+                    id: row.get(0)?,
+                    candidate_id: row.get(1)?,
+                    request_type: row.get(2)?,
+                    requested_by: row.get(3)?,
+                    assigned_to: row.get(4)?,
+                    status: row.get(5)?,
+                    comments: row.get(6)?,
+                    escalated_at: row.get(7)?,
+                    decided_at: row.get(8)?,
+                    created_at: row.get(9)?,
+                    updated_at: row.get(10)?,
+                })
+            },
+        ).map_err(|_| E("approval not found".into()))
+    }
+
+    pub fn create_approval(&self, a: &Approval) -> Result<(), E> {
+        self.conn()?.execute(
+            "INSERT INTO approvals (id, candidate_id, request_type, requested_by, assigned_to, status, comments, escalated_at, decided_at, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            params![a.id, a.candidate_id, a.request_type, a.requested_by, a.assigned_to, a.status, a.comments, a.escalated_at, a.decided_at, a.created_at, a.updated_at],
+        )?;
+        Ok(())
+    }
+
+    pub fn approve_approval(&self, id: &str, comments: &str) -> Result<(), E> {
+        let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
+        let affected = self.conn()?.execute(
+            "UPDATE approvals SET status='approved', comments=?, decided_at=?, updated_at=? WHERE id=? AND status='pending'",
+            params![comments, now, now, id],
+        )?;
+        if affected == 0 {
+            return Err(E("approval not found or already processed".into()));
+        }
+        Ok(())
+    }
+
+    pub fn transfer_approval(&self, id: &str, new_assigned_to: &str, comments: &str) -> Result<(Approval, Approval), E> {
+        let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
+        let c = self.conn()?;
+        let original = self.approval_by_id(id)?;
+
+        c.execute(
+            "UPDATE approvals SET status='transferred', comments=?, updated_at=? WHERE id=? AND status='pending'",
+            params![comments, now, id],
+        )?;
+
+        let new_id = uuid::Uuid::new_v4().to_string();
+        let new_approval = Approval {
+            id: new_id.clone(),
+            candidate_id: original.candidate_id.clone(),
+            request_type: original.request_type.clone(),
+            requested_by: original.requested_by.clone(),
+            assigned_to: new_assigned_to.to_string(),
+            status: "pending".to_string(),
+            comments: Some(comments.to_string()),
+            escalated_at: None,
+            decided_at: None,
+            created_at: now.clone(),
+            updated_at: now.clone(),
+        };
+        c.execute(
+            "INSERT INTO approvals (id, candidate_id, request_type, requested_by, assigned_to, status, comments, escalated_at, decided_at, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            params![new_approval.id, new_approval.candidate_id, new_approval.request_type, new_approval.requested_by, new_approval.assigned_to, new_approval.status, new_approval.comments, new_approval.escalated_at, new_approval.decided_at, new_approval.created_at, new_approval.updated_at],
+        )?;
+
+        Ok((original, new_approval))
+    }
+
+    pub fn reject_approval(&self, id: &str, comments: &str) -> Result<(), E> {
+        let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
+        let affected = self.conn()?.execute(
+            "UPDATE approvals SET status='rejected', comments=?, decided_at=?, updated_at=? WHERE id=? AND status='pending'",
+            params![comments, now, now, id],
+        )?;
+        if affected == 0 {
+            return Err(E("approval not found or already processed".into()));
+        }
+        Ok(())
+    }
+
+    pub fn list_employees(&self) -> Result<Vec<Employee>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare(
+            "SELECT id, candidate_id, employee_code, company_id, department, position, hired_at, contract_start, contract_end, training_completed, ehs_certified, status, created_at, updated_at FROM employees ORDER BY created_at DESC"
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(Employee {
+                id: row.get(0)?,
+                candidate_id: row.get(1)?,
+                employee_code: row.get(2)?,
+                company_id: row.get(3)?,
+                department: row.get(4)?,
+                position: row.get(5)?,
+                hired_at: row.get(6)?,
+                contract_start: row.get(7)?,
+                contract_end: row.get(8)?,
+                training_completed: row.get(9)?,
+                ehs_certified: row.get(10)?,
+                status: row.get(11)?,
+                created_at: row.get(12)?,
+                updated_at: row.get(13)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn employee_by_id(&self, id: &str) -> Result<Employee, E> {
+        self.conn()?.query_row(
+            "SELECT id, candidate_id, employee_code, company_id, department, position, hired_at, contract_start, contract_end, training_completed, ehs_certified, status, created_at, updated_at FROM employees WHERE id=?",
+            params![id],
+            |row| {
+                Ok(Employee {
+                    id: row.get(0)?,
+                    candidate_id: row.get(1)?,
+                    employee_code: row.get(2)?,
+                    company_id: row.get(3)?,
+                    department: row.get(4)?,
+                    position: row.get(5)?,
+                    hired_at: row.get(6)?,
+                    contract_start: row.get(7)?,
+                    contract_end: row.get(8)?,
+                    training_completed: row.get(9)?,
+                    ehs_certified: row.get(10)?,
+                    status: row.get(11)?,
+                    created_at: row.get(12)?,
+                    updated_at: row.get(13)?,
+                })
+            },
+        ).map_err(|_| E("employee not found".into()))
+    }
+
+    pub fn create_employee(&self, emp: &Employee) -> Result<(), E> {
+        self.conn()?.execute(
+            "INSERT INTO employees (id, candidate_id, employee_code, company_id, department, position, hired_at, contract_start, contract_end, training_completed, ehs_certified, status, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            params![emp.id, emp.candidate_id, emp.employee_code, emp.company_id, emp.department, emp.position, emp.hired_at, emp.contract_start, emp.contract_end, emp.training_completed, emp.ehs_certified, emp.status, emp.created_at, emp.updated_at],
+        )?;
+        Ok(())
+    }
+
+    pub fn document_by_id(&self, id: &str) -> Result<Document, E> {
+        self.conn()?.query_row(
+            "SELECT id, entity_type, entity_id, doc_type, file_url, signed_at, signature_method, ocr_data, status, created_at FROM documents WHERE id=?",
+            params![id],
+            |row| {
+                Ok(Document {
+                    id: row.get(0)?,
+                    entity_type: row.get(1)?,
+                    entity_id: row.get(2)?,
+                    doc_type: row.get(3)?,
+                    file_url: row.get(4)?,
+                    signed_at: row.get(5)?,
+                    signature_method: row.get(6)?,
+                    ocr_data: row.get(7)?,
+                    status: row.get(8)?,
+                    created_at: row.get(9)?,
+                })
+            },
+        ).map_err(|_| E("document not found".into()))
+    }
+
+    pub fn create_document(&self, doc: &Document) -> Result<(), E> {
+        self.conn()?.execute(
+            "INSERT INTO documents (id, entity_type, entity_id, doc_type, file_url, signed_at, signature_method, ocr_data, status, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+            params![doc.id, doc.entity_type, doc.entity_id, doc.doc_type, doc.file_url, doc.signed_at, doc.signature_method, doc.ocr_data, doc.status, doc.created_at],
+        )?;
+        Ok(())
+    }
+
+    pub fn sign_document(&self, id: &str, method: &str) -> Result<(), E> {
+        let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
+        let affected = self.conn()?.execute(
+            "UPDATE documents SET status='signed', signed_at=?, signature_method=? WHERE id=? AND status='pending'",
+            params![now, method, id],
+        )?;
+        if affected == 0 {
+            return Err(E("document not found or already signed".into()));
+        }
+        Ok(())
+    }
+
+    pub fn stats(&self) -> Result<Value, E> {
+        let c = self.conn()?;
+        let total: i64 = c.query_row("SELECT COUNT(*) FROM candidates", [], |r| r.get(0))?;
+
+        let mut by_status = HashMap::new();
+        let mut stmt = c.prepare("SELECT status, COUNT(*) FROM candidates GROUP BY status")?;
+        let rows = stmt.query_map([], |r| {
+            let s: String = r.get(0)?;
+            let n: i64 = r.get(1)?;
+            Ok((s, n))
+        })?;
+        for row in rows.flatten() {
+            by_status.insert(row.0, row.1);
+        }
+
+        let mut by_source = HashMap::new();
+        let mut stmt2 = c.prepare("SELECT source, COUNT(*) FROM candidates GROUP BY source")?;
+        let rows2 = stmt2.query_map([], |r| {
+            let s: String = r.get(0)?;
+            let n: i64 = r.get(1)?;
+            Ok((s, n))
+        })?;
+        for row in rows2.flatten() {
+            by_source.insert(row.0, row.1);
+        }
+
+        Ok(serde_json::json!({
+            "total_candidates": total,
+            "by_status": by_status,
+            "by_source": by_source,
+        }))
+    }
+
+    pub fn log_audit(&self, user_id: &str, action: &str, entity_type: &str, entity_id: &str, details: &str) -> Result<(), E> {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
+        self.conn()?.execute(
+            "INSERT INTO audit_logs (id, user_id, action, entity_type, entity_id, details, created_at) VALUES (?,?,?,?,?,?,?)",
+            params![id, user_id, action, entity_type, entity_id, details, now],
+        )?;
+        Ok(())
+    }
+
+    pub fn candidate_timeline(&self, candidate_id: &str) -> Result<Vec<AuditEntry>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare(
+            "SELECT id, user_id, action, entity_type, entity_id, details, created_at FROM audit_logs WHERE entity_id=? ORDER BY created_at DESC"
+        )?;
+        let rows = stmt.query_map(params![candidate_id], |row| {
+            Ok(AuditEntry {
+                id: row.get(0)?,
+                user_id: row.get(1)?,
+                action: row.get(2)?,
+                entity_type: row.get(3)?,
+                entity_id: row.get(4)?,
+                details: row.get(5)?,
+                created_at: row.get(6)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn list_courses(&self) -> Result<Vec<TrainingCourse>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare(
+            "SELECT id, title, course_type, country, content_type, content_url, mandatory, duration_minutes, order_index, pass_score, created_at FROM training_courses ORDER BY order_index ASC, created_at DESC"
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(TrainingCourse {
+                id: row.get(0)?,
+                title: row.get(1)?,
+                course_type: row.get(2)?,
+                country: row.get(3)?,
+                content_type: row.get(4)?,
+                content_url: row.get(5)?,
+                mandatory: row.get(6)?,
+                duration_minutes: row.get(7)?,
+                order_index: row.get(8)?,
+                pass_score: row.get(9)?,
+                created_at: row.get(10)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn course_by_id(&self, id: &str) -> Result<TrainingCourse, E> {
+        self.conn()?.query_row(
+            "SELECT id, title, course_type, country, content_type, content_url, mandatory, duration_minutes, order_index, pass_score, created_at FROM training_courses WHERE id=?",
+            params![id],
+            |row| {
+                Ok(TrainingCourse {
+                    id: row.get(0)?,
+                    title: row.get(1)?,
+                    course_type: row.get(2)?,
+                    country: row.get(3)?,
+                    content_type: row.get(4)?,
+                    content_url: row.get(5)?,
+                    mandatory: row.get(6)?,
+                    duration_minutes: row.get(7)?,
+                    order_index: row.get(8)?,
+                    pass_score: row.get(9)?,
+                    created_at: row.get(10)?,
+                })
+            },
+        ).map_err(|_| E("course not found".into()))
+    }
+
+    pub fn create_course(&self, c: &TrainingCourse) -> Result<(), E> {
+        self.conn()?.execute(
+            "INSERT INTO training_courses (id, title, course_type, country, content_type, content_url, mandatory, duration_minutes, order_index, pass_score, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            params![c.id, c.title, c.course_type, c.country, c.content_type, c.content_url, c.mandatory, c.duration_minutes, c.order_index, c.pass_score, c.created_at],
+        )?;
+        Ok(())
+    }
+
+    pub fn update_course(&self, id: &str, c: &TrainingCourse) -> Result<(), E> {
+        self.conn()?.execute(
+            "UPDATE training_courses SET title=?, course_type=?, country=?, content_type=?, content_url=?, mandatory=?, duration_minutes=?, pass_score=? WHERE id=?",
+            params![c.title, c.course_type, c.country, c.content_type, c.content_url, c.mandatory, c.duration_minutes, c.pass_score, id],
+        )?;
+        Ok(())
+    }
+
+    pub fn create_training_record(&self, r: &TrainingRecord) -> Result<(), E> {
+        self.conn()?.execute(
+            "INSERT INTO training_records (id, employee_id, course_id, started_at, completed_at, score, passed, certificate_url, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+            params![r.id, r.employee_id, r.course_id, r.started_at, r.completed_at, r.score, r.passed, r.certificate_url, r.created_at],
+        )?;
+        Ok(())
+    }
+
+    pub fn training_record_by_id(&self, id: &str) -> Result<TrainingRecord, E> {
+        self.conn()?.query_row(
+            "SELECT id, employee_id, course_id, started_at, completed_at, score, passed, certificate_url, created_at FROM training_records WHERE id=?",
+            params![id],
+            |row| {
+                Ok(TrainingRecord {
+                    id: row.get(0)?,
+                    employee_id: row.get(1)?,
+                    course_id: row.get(2)?,
+                    started_at: row.get(3)?,
+                    completed_at: row.get(4)?,
+                    score: row.get(5)?,
+                    passed: row.get(6)?,
+                    certificate_url: row.get(7)?,
+                    created_at: row.get(8)?,
+                })
+            },
+        ).map_err(|_| E("training record not found".into()))
+    }
+
+    pub fn complete_training(&self, id: &str, completed_at: &str, score: Option<i64>, passed: i64, certificate_url: Option<&str>) -> Result<(), E> {
+        self.conn()?.execute(
+            "UPDATE training_records SET completed_at=?, score=?, passed=?, certificate_url=? WHERE id=?",
+            params![completed_at, score, passed, certificate_url, id],
+        )?;
+        let record = self.training_record_by_id(id)?;
+        let course = self.course_by_id(&record.course_id)?;
+        let c = self.conn()?;
+        if passed > 0 {
+            c.execute(
+                "UPDATE employees SET training_completed=1 WHERE id=?",
+                params![record.employee_id],
+            )?;
+            if course.course_type == "ehs" {
+                c.execute(
+                    "UPDATE employees SET ehs_certified=1 WHERE id=?",
+                    params![record.employee_id],
+                )?;
+            }
+        }
+        Ok(())
+    }
+
+    pub fn update_employee(&self, id: &str, emp: &Employee) -> Result<(), E> {
+        let affected = self.conn()?.execute(
+            "UPDATE employees SET department=?, position=?, contract_start=?, contract_end=?, status=?, updated_at=? WHERE id=?",
+            params![emp.department, emp.position, emp.contract_start, emp.contract_end, emp.status, emp.updated_at, id],
+        )?;
+        if affected == 0 {
+            return Err(E("employee not found".into()));
+        }
+        Ok(())
+    }
+
+    pub fn list_training_records(&self, employee_id: Option<&str>) -> Result<Vec<TrainingRecord>, E> {
+        let c = self.conn()?;
+        let mut sql = "SELECT id, employee_id, course_id, started_at, completed_at, score, passed, certificate_url, created_at FROM training_records WHERE 1=1".to_string();
+        let mut p: Vec<Box<dyn rusqlite::ToSql>> = vec![];
+        if let Some(eid) = employee_id {
+            sql.push_str(" AND employee_id=?");
+            p.push(Box::new(eid.to_string()));
+        }
+        sql.push_str(" ORDER BY created_at DESC");
+        let mut stmt = c.prepare(&sql)?;
+        let refs: Vec<&dyn rusqlite::ToSql> = p.iter().map(|b| b.as_ref()).collect();
+        let rows = stmt.query_map(refs.as_slice(), |row| {
+            Ok(TrainingRecord {
+                id: row.get(0)?,
+                employee_id: row.get(1)?,
+                course_id: row.get(2)?,
+                started_at: row.get(3)?,
+                completed_at: row.get(4)?,
+                score: row.get(5)?,
+                passed: row.get(6)?,
+                certificate_url: row.get(7)?,
+                created_at: row.get(8)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+
+    pub fn list_users(&self) -> Result<Vec<User>, E> {
+        let c = self.conn()?;
+        let mut stmt = c.prepare(
+            "SELECT id, email, phone, password_hash, role, name, company_id, language_pref, active, created_at, updated_at FROM users ORDER BY created_at DESC"
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(User {
+                id: row.get(0)?,
+                email: row.get(1)?,
+                phone: row.get(2)?,
+                password_hash: row.get(3)?,
+                role: row.get(4)?,
+                name: row.get(5)?,
+                company_id: row.get(6)?,
+                language_pref: row.get(7)?,
+                active: row.get(8)?,
+                created_at: row.get(9)?,
+                updated_at: row.get(10)?,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    }
+}
+
+fn parse_csv_line(line: &str) -> Vec<String> {
+    let mut fields = vec![];
+    let mut in_quotes = false;
+    let mut field = String::new();
+    for ch in line.chars() {
+        match ch {
+            '"' => in_quotes = !in_quotes,
+            ',' if !in_quotes => {
+                fields.push(field.trim().to_string());
+                field.clear();
+            }
+            _ => field.push(ch),
+        }
+    }
+    fields.push(field.trim().to_string());
+    fields
+}

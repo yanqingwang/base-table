@@ -1,0 +1,14 @@
+Opportunity score checks
+O-EX1: age=8, total=100, expected=100, pass=True
+O-EX2: age=37, total=70, expected=70, pass=True
+O-EX3: age=83, total=35, expected=35, pass=True
+
+Vendor score checks
+V-EX1: age=14, total=85, expected=85, pass=True
+V-EX2: age=49, total=60, expected=60, pass=True
+V-EX3: age=81, total=35, expected=35, pass=True
+
+Match score checks
+M-EX1: total=100, expected=100, pass=True
+M-EX2: total=69, expected=69, pass=True
+M-EX3: total=24, expected=24, pass=True

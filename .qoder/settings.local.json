@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /home/wang/wk/AIReports/AGI-Industry-Consulting-Report-2026-06.md && echo \"---\" && du -h /home/wang/wk/AIReports/AGI-Industry-Consulting-Report-2026-06.md)"
+    ]
+  }
+}

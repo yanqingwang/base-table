@@ -220,8 +220,10 @@ pub async fn run() -> Result<(), E> {
 }
 
 pub fn router(state: Arc<S>) -> Router {
+    let cors_origin = std::env::var("EASY_HIRE_CORS_ORIGIN")
+        .unwrap_or_else(|_| "http://localhost:5174".into());
     let cors = CorsLayer::new()
-        .allow_origin("http://localhost:5174".parse::<axum::http::HeaderValue>().unwrap())
+        .allow_origin(cors_origin.parse::<axum::http::HeaderValue>().unwrap())
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE, Method::OPTIONS])
         .allow_headers(Any);
 
@@ -287,6 +289,7 @@ pub fn router(state: Arc<S>) -> Router {
         .route("/api/v1/queue/enqueue", post(enqueue_candidate))
         .route("/api/v1/queue/call-next", post(call_next_candidate))
         .route("/api/v1/queue", get(list_queue))
+        .route("/api/v1/queue/stream", get(queue_stream))
         .route("/api/v1/queue/:id/status", put(update_queue_status))
         .route("/api/v1/candidates/:candidate_id/skills", get(list_candidate_skills).post(create_candidate_skill))
         .route("/api/v1/candidates/:candidate_id/skills/:id", delete(delete_candidate_skill))
@@ -376,12 +379,14 @@ async fn list_users(
 
 async fn list_candidates(
     State(s): State<Arc<S>>,
+    auth_user: AuthUser,
     Query(q): Query<CandidateQuery>,
-) -> Json<Vec<Candidate>> {
-    Json(
+) -> Result<Json<Vec<Candidate>>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter", "manager"])?;
+    Ok(Json(
         s.db.list_candidates(q.status.as_deref(), q.source.as_deref(), q.q.as_deref())
             .unwrap_or_default(),
-    )
+    ))
 }
 
 async fn create_candidate(
@@ -437,7 +442,7 @@ async fn create_candidate(
         resume_text: input.get("resume_text").and_then(|v| v.as_str().map(String::from)),
         resume_file_url: input.get("resume_file_url").and_then(|v| v.as_str().map(String::from)),
         profile_photo_url: input.get("profile_photo_url").and_then(|v| v.as_str().map(String::from)),
-        status: "new".to_string(),
+        status: "applied".to_string(),
         source: input.get("source").and_then(|v| v.as_str().map(String::from)).unwrap_or_else(|| "direct".to_string()),
         notes: input.get("notes").and_then(|v| v.as_str().map(String::from)),
         created_at: now.clone(),
@@ -451,6 +456,7 @@ async fn create_candidate(
 
 async fn get_candidate(
     State(s): State<Arc<S>>,
+    _auth_user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<Candidate>, E> {
     s.db.candidate_by_id(&id).map(Json)
@@ -541,6 +547,7 @@ async fn create_candidate_education(
 
 async fn list_candidate_educations(
     State(s): State<Arc<S>>,
+    _auth_user: AuthUser,
     Path(candidate_id): Path<String>,
 ) -> Result<Json<Vec<CandidateEducation>>, E> {
     s.db.list_candidate_educations(&candidate_id).map(Json)
@@ -585,6 +592,7 @@ async fn create_candidate_work_experience(
 
 async fn list_candidate_work_experiences(
     State(s): State<Arc<S>>,
+    _auth_user: AuthUser,
     Path(candidate_id): Path<String>,
 ) -> Result<Json<Vec<CandidateWorkExperience>>, E> {
     s.db.list_candidate_work_experiences(&candidate_id).map(Json)
@@ -613,6 +621,7 @@ async fn import_candidates(
 
 async fn candidate_timeline(
     State(s): State<Arc<S>>,
+    _auth_user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<Vec<db::AuditEntry>>, E> {
     s.db.candidate_timeline(&id).map(Json)
@@ -620,9 +629,11 @@ async fn candidate_timeline(
 
 async fn list_interviews(
     State(s): State<Arc<S>>,
+    auth_user: AuthUser,
     Query(q): Query<InterviewQuery>,
-) -> Json<Vec<Interview>> {
-    Json(s.db.list_interviews(q.status.as_deref(), q.job_id.as_deref()).unwrap_or_default())
+) -> Result<Json<Vec<Interview>>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter", "manager", "interviewer"])?;
+    Ok(Json(s.db.list_interviews(q.status.as_deref(), q.job_id.as_deref()).unwrap_or_default()))
 }
 
 async fn create_interview(
@@ -661,6 +672,7 @@ async fn checkin_interview(
     auth_user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<Value>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter", "interviewer"])?;
     s.db.checkin_interview(&id)?;
     let _ = s.db.log_audit(&auth_user.id, "checkin_interview", "interview", &id, "{}");
     Ok(Json(serde_json::json!({"checked_in": id})))
@@ -672,7 +684,7 @@ async fn evaluate_interview(
     Path(id): Path<String>,
     Json(input): Json<EvaluateInput>,
 ) -> Result<Json<Value>, E> {
-    auth::check_role(&auth_user, &["admin", "recruiter", "trainer"])?;
+    auth::check_role(&auth_user, &["admin", "recruiter", "interviewer"])?;
     let scores = input.skill_scores.unwrap_or_else(|| "{}".to_string());
     let score = input.overall_score.unwrap_or(0.0);
     let comments = input.comments.unwrap_or_default();
@@ -781,7 +793,9 @@ async fn agency_import(
 
 async fn list_employees(
     State(s): State<Arc<S>>,
+    auth_user: AuthUser,
 ) -> Result<Json<Vec<Employee>>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter", "manager"])?;
     s.db.list_employees().map(Json)
 }
 
@@ -827,6 +841,7 @@ async fn create_employee(
 
 async fn get_employee(
     State(s): State<Arc<S>>,
+    _auth_user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<Employee>, E> {
     s.db.employee_by_id(&id).map(Json)
@@ -863,9 +878,11 @@ async fn upload_document(
 
 async fn sign_document(
     State(s): State<Arc<S>>,
+    auth_user: AuthUser,
     Path(id): Path<String>,
     Json(input): Json<SignInput>,
 ) -> Result<Json<Value>, E> {
+    auth::check_role(&auth_user, &["admin", "recruiter"])?;
     let method = input.signature_method.as_deref().unwrap_or("electronic");
     s.db.sign_document(&id, method)?;
     Ok(Json(serde_json::json!({"signed": id})))
@@ -944,6 +961,7 @@ h1{{text-align:center;color:#333}}h2{{color:#555;border-bottom:1px solid #ccc}}
 
 async fn download_document(
     State(s): State<Arc<S>>,
+    _auth_user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<Document>, E> {
     s.db.document_by_id(&id).map(Json)
@@ -992,6 +1010,7 @@ async fn whatsapp_webhook(
 
 async fn interview_calendar(
     State(s): State<Arc<S>>,
+    _auth_user: AuthUser,
 ) -> Result<Json<Value>, E> {
     let interviews = s.db.list_interviews(None, None)?;
     let calendar: Vec<Value> = interviews.into_iter().map(|iv| {
@@ -1008,11 +1027,12 @@ async fn interview_calendar(
 
 async fn report_hiring_funnel(
     State(s): State<Arc<S>>,
+    _auth_user: AuthUser,
 ) -> Result<Json<Value>, E> {
     let _stats = s.db.stats()?;
     let candidates = s.db.list_candidates(None, None, None)?;
     let total = candidates.len();
-    let interviewing = candidates.iter().filter(|c| c.status == "interviewing").count();
+    let interviewing = candidates.iter().filter(|c| c.status == "interviewed").count();
     let offered = candidates.iter().filter(|c| c.status == "offered").count();
     let hired = candidates.iter().filter(|c| c.status == "hired").count();
     let rejected = candidates.iter().filter(|c| c.status == "rejected").count();
@@ -1094,7 +1114,7 @@ async fn submit_evaluation(
     auth_user: AuthUser,
     Json(input): Json<EvalInput>,
 ) -> Result<(StatusCode, Json<InterviewEvaluation>), E> {
-    auth::check_role(&auth_user, &["admin", "recruiter", "manager"])?;
+    auth::check_role(&auth_user, &["admin", "recruiter", "manager", "interviewer"])?;
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
     let eval = InterviewEvaluation {
@@ -1119,7 +1139,7 @@ async fn list_evaluations(
     auth_user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<Vec<InterviewEvaluation>>, E> {
-    auth::check_role(&auth_user, &["admin", "recruiter", "manager"])?;
+    auth::check_role(&auth_user, &["admin", "recruiter", "manager", "interviewer"])?;
     let evals = s.db.list_evaluations(&id)?;
     Ok(Json(evals))
 }
@@ -1129,7 +1149,7 @@ async fn aggregate_evaluations(
     auth_user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<Value>, E> {
-    auth::check_role(&auth_user, &["admin", "recruiter", "manager"])?;
+    auth::check_role(&auth_user, &["admin", "recruiter", "manager", "interviewer"])?;
     let agg = s.db.evaluation_aggregate(&id)?;
     Ok(Json(agg))
 }
@@ -1140,7 +1160,8 @@ async fn enqueue_candidate(
     Json(input): Json<EnqueueInput>,
 ) -> Result<Json<InterviewQueue>, E> {
     auth::check_role(&auth_user, &["admin", "recruiter"])?;
-    let queue = s.db.enqueue_candidate(&input.candidate_id, input.job_id.as_deref())?;
+    let queue = s.db.enqueue_candidate(&input.candidate_id, input.job_id.as_deref())
+        .map_err(|e| E(format!("Failed to enqueue candidate: {}", e)))?;
     Ok(Json(queue))
 }
 
@@ -1150,7 +1171,8 @@ async fn call_next_candidate(
     Json(input): Json<CallNextInput>,
 ) -> Result<Json<InterviewQueue>, E> {
     auth::check_role(&auth_user, &["admin", "recruiter"])?;
-    let queue = s.db.call_next(&input.job_id)?;
+    let queue = s.db.call_next(&input.job_id)
+        .map_err(|e| E(format!("Failed to call next candidate: {}", e)))?;
     Ok(Json(queue))
 }
 
@@ -1176,8 +1198,33 @@ async fn update_queue_status(
     Ok(Json(serde_json::json!({"updated": id, "status": input.status})))
 }
 
+use axum::response::sse::Event as SseEvent;
+use std::convert::Infallible;
+
+/// SSE stream: pushes queue data every 2s. Frontend connects with EventSource.
+async fn queue_stream(
+    State(s): State<Arc<S>>,
+    Query(q): Query<std::collections::HashMap<String, String>>,
+) -> axum::response::Sse<impl futures::Stream<Item = Result<SseEvent, Infallible>>> {
+    let job_id = q.get("job_id").cloned();
+    use tokio_stream::wrappers::IntervalStream;
+    use tokio_stream::StreamExt as _;
+    let stream = IntervalStream::new(tokio::time::interval(std::time::Duration::from_secs(2)))
+        .then(move |_| {
+            let s = s.clone();
+            let job_id = job_id.clone();
+            async move {
+                let data = s.db.list_queue(job_id.as_deref(), None).unwrap_or_default();
+                // ponytail: unwrap json_data — never fails for well-defined Vec<InterviewQueue>
+                Ok(SseEvent::default().json_data(data).unwrap())
+            }
+        });
+    axum::response::Sse::new(stream).keep_alive(axum::response::sse::KeepAlive::new())
+}
+
 async fn list_candidate_skills(
     State(s): State<Arc<S>>,
+    _auth_user: AuthUser,
     Path(candidate_id): Path<String>,
 ) -> Result<Json<Vec<CandidateSkill>>, E> {
     s.db.list_candidate_skills(&candidate_id).map(Json)
@@ -1214,6 +1261,7 @@ async fn delete_candidate_skill(
 
 async fn list_candidate_certificates(
     State(s): State<Arc<S>>,
+    _auth_user: AuthUser,
     Path(candidate_id): Path<String>,
 ) -> Result<Json<Vec<CandidateCertificate>>, E> {
     s.db.list_candidate_certificates(&candidate_id).map(Json)
@@ -1254,6 +1302,7 @@ async fn delete_candidate_certificate(
 
 async fn list_candidate_addresses(
     State(s): State<Arc<S>>,
+    _auth_user: AuthUser,
     Path(candidate_id): Path<String>,
 ) -> Result<Json<Vec<CandidateAddress>>, E> {
     s.db.list_candidate_addresses(&candidate_id).map(Json)
@@ -1298,6 +1347,7 @@ async fn delete_candidate_address(
 
 async fn list_candidate_family_members(
     State(s): State<Arc<S>>,
+    _auth_user: AuthUser,
     Path(candidate_id): Path<String>,
 ) -> Result<Json<Vec<CandidateFamilyMember>>, E> {
     s.db.list_candidate_family_members(&candidate_id).map(Json)
@@ -1342,6 +1392,7 @@ async fn delete_candidate_family_member(
 
 async fn list_candidate_bank_accounts(
     State(s): State<Arc<S>>,
+    _auth_user: AuthUser,
     Path(candidate_id): Path<String>,
 ) -> Result<Json<Vec<CandidateBankAccount>>, E> {
     s.db.list_candidate_bank_accounts(&candidate_id).map(Json)
@@ -1390,6 +1441,7 @@ async fn delete_candidate_bank_account(
 
 async fn list_candidate_country_fields(
     State(s): State<Arc<S>>,
+    _auth_user: AuthUser,
     Path(candidate_id): Path<String>,
 ) -> Result<Json<Vec<CandidateCountryField>>, E> {
     s.db.list_candidate_country_fields(&candidate_id).map(Json)

@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- ====== Header with env switcher ====== -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+  <h1 style="margin:0">DocuSign Manager</h1>
+  <div>
+    <a href="/" class="btn {{ 'btn-active' if env == 'prd' else 'btn-outline' }}" style="text-decoration:none">PRD</a>
+    <a href="/dev" class="btn {{ 'btn-active' if env == 'dev' else 'btn-outline' }}" style="text-decoration:none">DEV</a>
+  </div>
+</div>
+
+{% if summary %}
+<div class="grid-4">
+  <div class="card"><h3>Total (30d)</h3><div class="value">{{ summary.total }}</div></div>
+  <div class="card"><h3>Sent</h3><div class="value" style="color:#1565c0">{{ summary.by_status.get('sent',0) }}</div></div>
+  <div class="card"><h3>Completed</h3><div class="value" style="color:#2e7d32">{{ summary.by_status.get('completed',0) }}</div></div>
+  <div class="card"><h3>Account</h3><div class="value" style="font-size:18px">{{ summary.account_name }}</div></div>
+</div>
+{% endif %}
+
+<!-- ====== Quick Actions ====== -->
+<div class="card">
+  <h3>⚡ Quick Actions</h3>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn-outline btn-sm" onclick="scrollTo('sUsage')">📤 Export Usage</button>
+    <button class="btn btn-outline btn-sm" onclick="scrollTo('sApi')">⚡ API Stats</button>
+    <button class="btn btn-outline btn-sm" onclick="scrollTo('sTpl')">📋 Copy Template</button>
+    <button class="btn btn-outline btn-sm" onclick="scrollTo('sBulk')">📨 Bulk Send</button>
+    <button class="btn btn-outline btn-sm" onclick="refreshAll()">🔄 Refresh All</button>
+  </div>
+</div>
+
+<!-- ====== 1. Usage Export ====== -->
+<div class="card" id="sUsage">
+  <h3>📤 Daily Usage Export</h3>
+  <p style="color:#666;font-size:12px;margin-bottom:12px">Export envelope data as CSV with sender, recipient, name, ID, type, status.</p>
+  <div class="form-row">
+    <div class="form-group" style="flex:1"><label>Account</label>
+  <select id="expAcct" style="width:100%">
+    <option value="">All Accounts</option></select></div>
+    <div class="form-group"><label>To</label><input type="date" id="expTo" value="{{ to_date_default }}"></div>
+    <div class="form-group" style="display:flex;align-items:flex-end">
+      <button class="btn btn-sm btn-outline" onclick="previewUsage()">Preview</button>
+      <button class="btn btn-sm" onclick="exportUsage()" style="margin-left:6px">📥 Export CSV</button>
+    </div>
+  </div>
+  <div id="usagePreview" style="font-size:12px;color:#666;margin-top:4px"></div>
+</div>
+
+<!-- ====== 2. API Usage ====== -->
+<div class="card" id="sApi">
+  <h3>⚡ API Usage</h3>
+  <div class="grid-3" style="margin-bottom:8px">
+    <div style="background:#f8f9fa;border-radius:6px;padding:12px;text-align:center">
+      <div style="color:#666;font-size:11px">Today</div>
+      <div id="apiToday" style="font-size:28px;font-weight:700;color:#1565c0">...</div>
+    </div>
+    <div style="background:#f8f9fa;border-radius:6px;padding:12px;text-align:center">
+      <div style="color:#666;font-size:11px">Last 30 Days</div>
+      <div id="apiMonth" style="font-size:28px;font-weight:700;color:#2e7d32">...</div>
+    </div>
+    <div style="background:#f8f9fa;border-radius:6px;padding:12px;text-align:center">
+      <div style="color:#666;font-size:11px">Account</div>
+      <div id="apiAcct" style="font-size:14px;font-weight:600;word-break:break-all">...</div>
+    </div>
+  </div>
+  <button class="btn btn-sm btn-outline" onclick="loadApiStats()">🔄 Refresh</button>
+</div>
+
+<!-- ====== 3. Template Copy ====== -->
+<div class="card" id="sTpl">
+  <h3>📋 Copy Template PRD → DEV</h3>
+  <div class="form-row">
+    <div class="form-group" style="flex:2"><label>PRD Template</label>
+      <select id="tplSelect" style="width:100%"><option value="">-- Loading... --</option></select></div>
+    <div class="form-group" style="flex:1"><label>New Name (optional)</label>
+      <input type="text" id="tplNewName" placeholder="Auto: Name-DEV"></div>
+    <div class="form-group" style="display:flex;align-items:flex-end">
+      <button class="btn btn-sm" onclick="copyTemplate()">📋 Copy to DEV</button>
+    </div>
+  </div>
+  <div id="tplResult" style="font-size:12px;margin-top:4px"></div>
+</div>
+
+<!-- ====== 4. Bulk Send ====== -->
+<div class="card" id="sBulk">
+  <h3>📨 Bulk Send</h3>
+  <div class="form-row">
+    <div class="form-group" style="flex:2"><label>Data File (CSV or XLSX)</label>
+      <input type="file" id="bulkFile" accept=".csv,.xlsx"></div>
+    <div class="form-group" style="flex:1"><label>Template</label>
+      <select id="bulkTpl" style="width:100%"><option value="">-- Loading... --</option></select></div>
+    <div class="form-group" style="display:flex;align-items:flex-end">
+      <button class="btn btn-sm btn-outline" onclick="previewBulk()">Preview</button>
+    </div>
+  </div>
+  <div id="bulkPreview" style="font-size:12px;margin-top:4px"></div>
+  <div id="bulkSendWrap" style="margin-top:8px;display:none">
+    <button class="btn btn-sm btn-success" onclick="doBulkSend()">📨 Send All</button>
+  </div>
+</div>
+
+<!-- ====== 5. Recent Envelopes ====== -->
+{% if summary and summary.recent %}
+<div class="card">
+  <h3>Recent Envelopes (last 20)</h3>
+  <table>
+    <thead><tr><th>Created</th><th>Subject</th><th>Sender</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for e in summary.recent[:10] %}
+      <tr>
+        <td style="white-space:nowrap;font-size:11px">{{ e.created }}</td>
+        <td style="font-size:12px">{{ e.subject }}</td>
+        <td style="font-size:12px">{{ e.sender }}</td>
+        <td><span class="badge badge-{{ e.status }}">{{ e.status }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<script>
+function scrollTo(id) { document.getElementById(id).scrollIntoView({behavior:'smooth'}); }
+
+// ====== 1. Usage ======
+function previewUsage() {
+  var el = document.getElementById('usagePreview');
+  el.innerHTML = 'Checking...';
+  fetch('/api/usage/preview',{method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:'from_date='+document.getElementById('expFrom').value+'&to_date='+document.getElementById('expTo').value+'&env={{ env }}'
+  }).then(r=>r.json()).then(d=>{
+    el.innerHTML = d.error ? '<span style="color:#c62828">'+d.error+'</span>'
+      : 'Found <strong>'+d.total+'</strong> envelope(s)';
+  });
+}
+
+function exportUsage() {
+  var f = document.createElement('form'); f.method='POST'; f.action='/api/usage/export';
+  var i1 = document.createElement('input'); i1.name='from_date'; i1.value=document.getElementById('expFrom').value; f.appendChild(i1);
+  var i2 = document.createElement('input'); i2.name='to_date'; i2.value=document.getElementById('expTo').value; f.appendChild(i2);
+  var i3 = document.createElement('input'); i3.name='env'; i3.value='{{ env }}'; f.appendChild(i3);
+  document.body.appendChild(f); f.submit(); document.body.removeChild(f);
+}
+
+// ====== 2. API Stats ======
+function loadApiStats() {
+  fetch('/api/api-usage/stats').then(r=>r.json()).then(d=>{
+    if(d.error) return;
+    document.getElementById('apiToday').textContent = d.today;
+    document.getElementById('apiMonth').textContent = d.periods && d.periods['Last 30 days'] || '?';
+    document.getElementById('apiAcct').textContent = (d.account_id||'').slice(0,20)+'...';
+  });
+}
+loadApiStats();
+
+// ====== 3. Template Copy ======
+function loadTplList() {
+  fetch('/api/templates/list?env=prd').then(r=>r.json()).then(d=>{
+    var sel = document.getElementById('tplSelect');
+    sel.innerHTML = '<option value="">-- Select PRD Template --</option>';
+    (d.templates||[]).forEach(function(t){
+      var o = document.createElement('option'); o.value=t.id; o.textContent=t.name; sel.appendChild(o);
+    });
+  });
+}
+loadTplList();
+
+function copyTemplate() {
+  var sel = document.getElementById('tplSelect');
+  if(!sel.value) { alert('Select a template'); return; }
+  document.getElementById('tplResult').innerHTML = '<span style="color:#999">Copying...</span>';
+  fetch('/api/templates/copy',{method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:'template_id='+sel.value+'&new_name='+encodeURIComponent(document.getElementById('tplNewName').value)
+  }).then(r=>r.json()).then(d=>{
+    document.getElementById('tplResult').innerHTML = d.error
+      ? '<span style="color:#c62828">'+d.error+'</span>'
+      : '<span style="color:#2e7d32">✓ Created: '+d.new_name+' ('+d.new_id.slice(0,16)+'...)</span>';
+  });
+}
+
+// ====== 4. Bulk Send ======
+function loadBulkTpl() {
+  fetch('/api/templates/for-bulk').then(r=>r.json()).then(d=>{
+    var sel = document.getElementById('bulkTpl');
+    sel.innerHTML = '<option value="">-- Select Template --</option>';
+    (d.templates||[]).forEach(function(t){
+      var o = document.createElement('option'); o.value=t.id; o.textContent=t.name; sel.appendChild(o);
+    });
+  });
+}
+loadBulkTpl();
+
+function previewBulk() {
+  var file = document.getElementById('bulkFile').files[0];
+  var tid = document.getElementById('bulkTpl').value;
+  if(!file||!tid) { alert('Select file and template'); return; }
+  var el = document.getElementById('bulkPreview');
+  el.innerHTML = '<span style="color:#999">Uploading...</span>';
+  var fd = new FormData(); fd.append('data_file',file);
+  fetch('/api/bulk-send/preview',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
+    if(d.error) { el.innerHTML = '<span style="color:#c62828">'+d.error+'</span>'; return; }
+    var h = '<strong>'+d.total_rows+' row(s)</strong>';
+    if(d.columns && d.columns.length) {
+      h += '<div style="overflow-x:auto;margin-top:4px"><table style="font-size:11px"><tr>';
+      d.columns.forEach(function(c){ h+='<th>'+c+'</th>'; });
+      h += '</tr>';
+      (d.preview||[]).forEach(function(r){ h+='<tr>';d.columns.forEach(function(c){ h+='<td>'+(r[c]||'')+'</td>'; });h+='</tr>'; });
+      h += '</table></div>';
+      if(d.total_rows > (d.preview||[]).length) h += '<span style="color:#999">Showing first '+(d.preview||[]).length+' of '+d.total_rows+'</span>';
+    }
+    el.innerHTML = h;
+    document.getElementById('bulkSendWrap').style.display = (d.total_rows > 0) ? 'block' : 'none';
+  });
+}
+
+function doBulkSend() { alert('Bulk send ready. Trigger through the full process in production.'); }
+
+// ====== 5. Refresh ======
+function refreshAll() { loadApiStats(); loadTplList(); loadBulkTpl(); }
+</script>
+
+<style>
+.btn-active { background:#1a1a2e;color:white;border:1px solid #1a1a2e; }
+</style>
+{% endblock %}

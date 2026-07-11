@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Template Management</h1>
+
+<div class="card">
+    <h3>Copy Template from PRD to DEV</h3>
+    <p style="color:#666;margin-bottom:16px;font-size:13px">
+        Select a PRD template to copy to the DEV environment. The template will be replicated
+        with all documents, recipients, and field definitions.
+    </p>
+    <form id="copyForm" onsubmit="copyTemplate(event)">
+        <div class="form-row">
+            <div class="form-group" style="flex:2">
+                <label>PRD Template</label>
+                <select name="template_id" id="templateSelect" required>
+                    <option value="">-- Select Template --</option>
+                </select>
+            </div>
+            <div class="form-group" style="flex:1">
+                <label>New Name (optional)</label>
+                <input type="text" name="new_name" placeholder="Leave blank for auto-name">
+            </div>
+            <div class="form-group" style="display:flex;align-items:flex-end">
+                <button type="submit" class="btn">📋 Copy to DEV</button>
+            </div>
+        </div>
+    </form>
+    <div id="copyResult"></div>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <h3>PRD Templates</h3>
+        <div id="prdTemplates">
+            <div class="loading">Loading...</div>
+        </div>
+    </div>
+    <div class="card">
+        <h3>DEV Templates</h3>
+        <div id="devTemplates">
+            <div class="loading">Loading...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+function loadTemplates(env, elId) {
+    fetch('/api/templates/list?env=' + env + '&search=MY_Offer')
+        .then(r => r.json())
+        .then(d => {
+            var el = document.getElementById(elId);
+            if (d.error) { el.innerHTML = '<div class="flash flash-error">' + d.error + '</div>'; return; }
+            if (!d.templates.length) { el.innerHTML = '<p style="color:#666;font-size:13px">No MY_Offer templates found.</p>'; return; }
+            var html = '<table><thead><tr><th>Name</th><th>ID</th></tr></thead><tbody>';
+            d.templates.forEach(function(t) {
+                var sel = document.getElementById('templateSelect');
+                if (env === 'prd') {
+                    var opt = document.createElement('option');
+                    opt.value = t.id; opt.textContent = t.name;
+                    sel.appendChild(opt);
+                }
+                html += '<tr><td>' + t.name + '</td><td style="font-family:monospace;font-size:11px">' + t.id.slice(0,16) + '...</td></tr>';
+            });
+            html += '</tbody></table>';
+            el.innerHTML = html;
+        });
+}
+
+function copyTemplate(e) {
+    e.preventDefault();
+    var form = document.getElementById('copyForm');
+    var data = new URLSearchParams(new FormData(form));
+    var el = document.getElementById('copyResult');
+    el.innerHTML = '<div class="loading">Copying template...</div>';
+    fetch('/api/templates/copy', { method: 'POST', body: data })
+        .then(r => r.json())
+        .then(d => {
+            if (d.error) el.innerHTML = '<div class="flash flash-error">' + d.error + '</div>';
+            else el.innerHTML = '<div class="flash flash-success">Copied! <strong>' + d.new_name + '</strong><br>PRD: ' + d.original_id.slice(0,16) + '... → DEV: ' + d.new_id.slice(0,16) + '...</div>';
+        })
+        .catch(e => el.innerHTML = '<div class="flash flash-error">' + e + '</div>');
+}
+
+loadTemplates('prd', 'prdTemplates');
+loadTemplates('dev', 'devTemplates');
+</script>
+{% endblock %}

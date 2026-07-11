@@ -1,0 +1,9 @@
+{
+  "name": "docusign-prd-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DocuSign PRD (Production) environment automation tools",
+  "dependencies": {
+    "chrome-remote-interface": "^0.33.0"
+  }
+}

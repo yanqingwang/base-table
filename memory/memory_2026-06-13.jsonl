@@ -1,0 +1,13 @@
+{"type": "milestone", "timestamp": "2026-06-13T19:00:00Z", "description": "DocGen issue resolved - created 9-page DOCX with merge fields for DEV template"}
+{"type": "config", "timestamp": "2026-06-13T19:00:00Z", "description": "DEV template updated: 2db53892, isDocGenTemplate:true, 14 DocGen fields, HR Manager generic"}
+{"type": "test", "timestamp": "2026-06-13T19:00:00Z", "description": "add-genforms page works correctly in DEV web UI - no errors"}
+{"type": "milestone", "timestamp": "2026-06-13T20:05:00Z", "description": "DOCX merge field fix completed - LibreOffice used to merge split XML runs"}
+{"type": "config", "timestamp": "2026-06-13T20:05:00Z", "description": "DEV template updated: 22ed2f15, all 14 DocGen merge fields contiguous in DOCX"}
+{"type": "test", "timestamp": "2026-06-13T20:05:00Z", "description": "API and web UI both working - DocGen fields replace tokens correctly"}
+{"type": "test", "timestamp": "2026-06-13T20:30:00Z", "description": "Bulk send via Sample-Bulk-Recipient.xlsx working - all 5 docs, 2 recipients, 14 DocGen fields"}
+{"type": "test", "timestamp": "2026-06-13T20:30:00Z", "description": "PRD simulation passes - create/verify/void without sending"}
+{"type": "milestone", "timestamp": "2026-06-13T20:30:00Z", "description": "Template migration complete - DEV matches PRD functionality"}
+{"type": "feature", "timestamp": "2026-06-13T21:00:00Z", "description": "Phone number support added - SMS delivery when no email, email priority when both present"}
+{"type": "config", "timestamp": "2026-06-13T21:00:00Z", "description": "send_laird_test.py updated: phone number parsing with country code, SMS deliveryMethod"}
+{"type": "script", "timestamp": "2026-06-13T21:30:00Z", "description": "Method 2 script created: send_esign_method2.py - two-role prefilling flow"}
+{"type": "script", "timestamp": "2026-06-13T22:00:00Z", "description": "Method 2 script (send_esign_method2.py) completed and Oracle verified", "status": "verified"}

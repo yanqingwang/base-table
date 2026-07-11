@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "chrome-remote-interface": "^0.34.0",
+    "docx": "^9.7.1"
+  }
+}

@@ -1,0 +1,313 @@
+{
+  "industries": {
+    "人工智能/大模型": {
+      "avg_salary_k": 35.6,
+      "salary_growth_5y": 0.152,
+      "talent_gap_2025": 500000,
+      "expected_growth_30y": 0.95,
+      "ai_substitution_rate": -0.15,
+      "policy_support": 0.95,
+      "barrier_entry": 0.8,
+      "skill_digital": 0.9,
+      "skill_cognitive": 0.85,
+      "skill_social": 0.55,
+      "skill_physical": 0.05,
+      "education_min": "本科+"
+    },
+    "半导体/集成电路": {
+      "avg_salary_k": 28.4,
+      "salary_growth_5y": 0.118,
+      "talent_gap_2025": 300000,
+      "expected_growth_30y": 0.88,
+      "ai_substitution_rate": -0.05,
+      "policy_support": 0.98,
+      "barrier_entry": 0.85,
+      "skill_digital": 0.75,
+      "skill_cognitive": 0.8,
+      "skill_social": 0.4,
+      "skill_physical": 0.2,
+      "education_min": "硕士+"
+    },
+    "新能源/碳中和": {
+      "avg_salary_k": 22.8,
+      "salary_growth_5y": 0.135,
+      "talent_gap_2025": 350000,
+      "expected_growth_30y": 0.92,
+      "ai_substitution_rate": -0.05,
+      "policy_support": 0.9,
+      "barrier_entry": 0.65,
+      "skill_digital": 0.55,
+      "skill_cognitive": 0.65,
+      "skill_social": 0.4,
+      "skill_physical": 0.3,
+      "education_min": "本科"
+    },
+    "生物医药/大健康": {
+      "avg_salary_k": 25.2,
+      "salary_growth_5y": 0.105,
+      "talent_gap_2025": 250000,
+      "expected_growth_30y": 0.85,
+      "ai_substitution_rate": -0.1,
+      "policy_support": 0.85,
+      "barrier_entry": 0.82,
+      "skill_digital": 0.6,
+      "skill_cognitive": 0.82,
+      "skill_social": 0.45,
+      "skill_physical": 0.15,
+      "education_min": "硕士+"
+    },
+    "高端装备/智能制造": {
+      "avg_salary_k": 18.5,
+      "salary_growth_5y": 0.098,
+      "talent_gap_2025": 450000,
+      "expected_growth_30y": 0.82,
+      "ai_substitution_rate": 0.1,
+      "policy_support": 0.88,
+      "barrier_entry": 0.7,
+      "skill_digital": 0.65,
+      "skill_cognitive": 0.6,
+      "skill_social": 0.35,
+      "skill_physical": 0.35,
+      "education_min": "本科/大专"
+    },
+    "新能源汽车": {
+      "avg_salary_k": 20.5,
+      "salary_growth_5y": 0.125,
+      "talent_gap_2025": 280000,
+      "expected_growth_30y": 0.8,
+      "ai_substitution_rate": 0.05,
+      "policy_support": 0.92,
+      "barrier_entry": 0.6,
+      "skill_digital": 0.6,
+      "skill_cognitive": 0.55,
+      "skill_social": 0.35,
+      "skill_physical": 0.25,
+      "education_min": "本科/大专"
+    },
+    "量子科技/6G": {
+      "avg_salary_k": 40.2,
+      "salary_growth_5y": 0.18,
+      "talent_gap_2025": 80000,
+      "expected_growth_30y": 0.75,
+      "ai_substitution_rate": -0.08,
+      "policy_support": 0.88,
+      "barrier_entry": 0.95,
+      "skill_digital": 0.95,
+      "skill_cognitive": 0.95,
+      "skill_social": 0.3,
+      "skill_physical": 0.02,
+      "education_min": "博士"
+    },
+    "低空经济/商业航天": {
+      "avg_salary_k": 26.5,
+      "salary_growth_5y": 0.14,
+      "talent_gap_2025": 120000,
+      "expected_growth_30y": 0.78,
+      "ai_substitution_rate": -0.03,
+      "policy_support": 0.85,
+      "barrier_entry": 0.78,
+      "skill_digital": 0.7,
+      "skill_cognitive": 0.75,
+      "skill_social": 0.35,
+      "skill_physical": 0.15,
+      "education_min": "本科+"
+    },
+    "数字经济/数据服务": {
+      "avg_salary_k": 23.8,
+      "salary_growth_5y": 0.11,
+      "talent_gap_2025": 400000,
+      "expected_growth_30y": 0.85,
+      "ai_substitution_rate": 0.2,
+      "policy_support": 0.82,
+      "barrier_entry": 0.55,
+      "skill_digital": 0.8,
+      "skill_cognitive": 0.7,
+      "skill_social": 0.5,
+      "skill_physical": 0.05,
+      "education_min": "本科"
+    },
+    "健康养老/银发经济": {
+      "avg_salary_k": 13.5,
+      "salary_growth_5y": 0.09,
+      "talent_gap_2025": 600000,
+      "expected_growth_30y": 0.9,
+      "ai_substitution_rate": 0.05,
+      "policy_support": 0.9,
+      "barrier_entry": 0.35,
+      "skill_digital": 0.3,
+      "skill_cognitive": 0.5,
+      "skill_social": 0.8,
+      "skill_physical": 0.4,
+      "education_min": "大专/中专"
+    },
+    "文化创意/数字内容": {
+      "avg_salary_k": 16.2,
+      "salary_growth_5y": 0.085,
+      "talent_gap_2025": 200000,
+      "expected_growth_30y": 0.72,
+      "ai_substitution_rate": 0.35,
+      "policy_support": 0.7,
+      "barrier_entry": 0.45,
+      "skill_digital": 0.65,
+      "skill_cognitive": 0.7,
+      "skill_social": 0.65,
+      "skill_physical": 0.08,
+      "education_min": "本科/大专"
+    },
+    "现代农业/生物育种": {
+      "avg_salary_k": 14.8,
+      "salary_growth_5y": 0.072,
+      "talent_gap_2025": 180000,
+      "expected_growth_30y": 0.68,
+      "ai_substitution_rate": 0.15,
+      "policy_support": 0.75,
+      "barrier_entry": 0.5,
+      "skill_digital": 0.45,
+      "skill_cognitive": 0.55,
+      "skill_social": 0.3,
+      "skill_physical": 0.45,
+      "education_min": "本科/大专"
+    }
+  },
+  "traditional": {
+    "房地产/建筑业": {
+      "avg_salary_k": 11.8,
+      "salary_growth_5y": 0.02,
+      "expected_growth_30y": 0.15,
+      "ai_substitution_rate": 0.5,
+      "barrier_entry": 0.4,
+      "education_min": "不限"
+    },
+    "零售/批发/贸易": {
+      "avg_salary_k": 8.7,
+      "salary_growth_5y": 0.03,
+      "expected_growth_30y": 0.25,
+      "ai_substitution_rate": 0.55,
+      "barrier_entry": 0.25,
+      "education_min": "不限"
+    },
+    "传统制造业": {
+      "avg_salary_k": 9.8,
+      "salary_growth_5y": 0.04,
+      "expected_growth_30y": 0.1,
+      "ai_substitution_rate": 0.7,
+      "barrier_entry": 0.3,
+      "education_min": "不限"
+    }
+  },
+  "regression": {
+    "skills_to_growth_r2": 0.2978406416458338,
+    "skills_to_growth_coef": {
+      "数字化技能": 0.06114039487067637,
+      "认知分析能力": 0.028220485664390758,
+      "社交管理能力": 0.05924021573555524,
+      "体力需求": 0.07102653743231033
+    },
+    "skills_to_salary_r2": 0.8805341925926427,
+    "skills_to_salary_coef": {
+      "数字化技能": 4.3925786945135625,
+      "认知分析能力": 5.563210123942108,
+      "社交管理能力": 0.19870064977986956,
+      "体力需求": 2.6703868009831337
+    },
+    "barrier_to_growth_rate_r2": 0.6004863625755188,
+    "barrier_to_growth_rate_coef": {
+      "入行门槛": 0.09394243051265948,
+      "AI替代风险": -0.036988344320726105,
+      "政策支持": 0.051170661598005256
+    }
+  },
+  "key_correlations": {
+    "薪资 vs 数字技能": 0.8663421538629027,
+    "薪资 vs 认知能力": 0.9033365888455643,
+    "增长 vs 政策支持": 0.7425851427882443,
+    "薪资增长 vs 入行门槛": 0.7444926133327592,
+    "增长 vs AI替代": -0.5570384695748001
+  },
+  "top_ranked": [
+    {
+      "行业": "量子科技/6G",
+      "avg_salary_k": 40.2,
+      "salary_growth_5y": 0.18,
+      "expected_growth_30y": 0.75,
+      "growth_score": 1.0
+    },
+    {
+      "行业": "人工智能/大模型",
+      "avg_salary_k": 35.6,
+      "salary_growth_5y": 0.152,
+      "expected_growth_30y": 0.95,
+      "growth_score": 0.7847309136420522
+    },
+    {
+      "行业": "低空经济/商业航天",
+      "avg_salary_k": 26.5,
+      "salary_growth_5y": 0.14,
+      "expected_growth_30y": 0.78,
+      "growth_score": 0.6404434114071162
+    },
+    {
+      "行业": "新能源/碳中和",
+      "avg_salary_k": 22.8,
+      "salary_growth_5y": 0.135,
+      "expected_growth_30y": 0.92,
+      "growth_score": 0.618272841051314
+    },
+    {
+      "行业": "新能源汽车",
+      "avg_salary_k": 20.5,
+      "salary_growth_5y": 0.125,
+      "expected_growth_30y": 0.8,
+      "growth_score": 0.5081351689612015
+    },
+    {
+      "行业": "半导体/集成电路",
+      "avg_salary_k": 28.4,
+      "salary_growth_5y": 0.118,
+      "expected_growth_30y": 0.88,
+      "growth_score": 0.46701233684963334
+    },
+    {
+      "行业": "数字经济/数据服务",
+      "avg_salary_k": 23.8,
+      "salary_growth_5y": 0.11,
+      "expected_growth_30y": 0.85,
+      "growth_score": 0.3624173073484714
+    },
+    {
+      "行业": "生物医药/大健康",
+      "avg_salary_k": 25.2,
+      "salary_growth_5y": 0.105,
+      "expected_growth_30y": 0.85,
+      "growth_score": 0.34131950652601467
+    },
+    {
+      "行业": "高端装备/智能制造",
+      "avg_salary_k": 18.5,
+      "salary_growth_5y": 0.098,
+      "expected_growth_30y": 0.82,
+      "growth_score": 0.2628285356695872
+    },
+    {
+      "行业": "健康养老/银发经济",
+      "avg_salary_k": 13.5,
+      "salary_growth_5y": 0.09,
+      "expected_growth_30y": 0.9,
+      "growth_score": 0.20632934024673708
+    },
+    {
+      "行业": "文化创意/数字内容",
+      "avg_salary_k": 16.2,
+      "salary_growth_5y": 0.085,
+      "expected_growth_30y": 0.72,
+      "growth_score": 0.10334346504559272
+    },
+    {
+      "行业": "现代农业/生物育种",
+      "avg_salary_k": 14.8,
+      "salary_growth_5y": 0.072,
+      "expected_growth_30y": 0.68,
+      "growth_score": 0.0
+    }
+  ]
+}

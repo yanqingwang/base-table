@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>API Usage</h1>
+
+<div class="grid-3" id="statsCards">
+    <div class="card">
+        <h3>Today</h3>
+        <div class="value" id="todayCount" style="color:#1565c0">...</div>
+    </div>
+    <div class="card">
+        <h3>This Month</h3>
+        <div class="value" id="monthCount" style="color:#2e7d32">...</div>
+    </div>
+    <div class="card">
+        <h3>Account</h3>
+        <div class="value" id="accountId" style="font-size:20px">...</div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Usage by Period</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Period</th>
+                <th>Envelope Count</th>
+                <th>Trend</th>
+            </tr>
+        </thead>
+        <tbody id="periodData">
+            <tr><td colspan="3" class="loading">Loading...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h3>API Rate Limits</h3>
+    <p style="color:#666;font-size:13px">
+        DocuSign production API rate limits apply per integration key.
+        Standard limits: <strong>1000 requests per hour</strong> for most endpoints.
+        Bulk operations may have lower limits.
+    </p>
+</div>
+
+<script>
+fetch('/api/api-usage/stats')
+    .then(r => r.json())
+    .then(d => {
+        if (d.error) {
+            document.getElementById('statsCards').innerHTML = '<div class="flash flash-error">' + d.error + '</div>';
+            return;
+        }
+        document.getElementById('todayCount').textContent = d.today;
+        document.getElementById('monthCount').textContent = d.periods['Last 30 days'] || '?';
+        document.getElementById('accountId').textContent = d.account_id;
+
+        var html = '';
+        var prev = null;
+        Object.entries(d.periods).forEach(function(kv) {
+            var period = kv[0], count = kv[1];
+            var trend = '';
+            if (prev !== null) {
+                trend = count > prev ? '📈' : count < prev ? '📉' : '➡️';
+            }
+            html += '<tr><td>' + period + '</td><td style="font-weight:600">' + count + '</td><td>' + trend + '</td></tr>';
+            prev = count;
+        });
+        document.getElementById('periodData').innerHTML = html;
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Bulk Send</h1>
+
+<div class="card">
+    <h3>Send Envelopes in Bulk</h3>
+    <p style="color:#666;margin-bottom:16px;font-size:13px">
+        Upload a CSV or XLSX file with recipient data, select a template,
+        and send envelopes in bulk. The file must contain the required columns
+        matching the template's field labels.
+    </p>
+    <form id="bulkForm" onsubmit="previewBulk(event)">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Template</label>
+                <select name="template_id" id="bulkTemplateSelect" required>
+                    <option value="">-- Select Template --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Data File (CSV or XLSX)</label>
+                <input type="file" name="data_file" id="dataFile" accept=".csv,.xlsx" required>
+            </div>
+            <div class="form-group" style="display:flex;align-items:flex-end">
+                <button type="submit" class="btn btn-outline" id="previewBtn">👁️ Preview</button>
+            </div>
+        </div>
+    </form>
+    <div id="previewResult"></div>
+</div>
+
+<div class="card">
+    <h3>Send Options</h3>
+    <p style="color:#666;font-size:13px">
+        After previewing, you can send envelopes with the following options:
+    </p>
+    <form id="sendForm" onsubmit="bulkSend(event)" style="display:none">
+        <input type="hidden" name="template_id" id="sendTemplateId">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Status</label>
+                <select name="status">
+                    <option value="sent">Sent (immediately)</option>
+                    <option value="created">Created (draft)</option>
+                </select>
+            </div>
+            <div class="form-group" style="display:flex;align-items:flex-end">
+                <button type="submit" class="btn btn-success">📨 Send All</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+// Load templates
+fetch('/api/templates/for-bulk')
+    .then(r => r.json())
+    .then(d => {
+        if (d.error) return;
+        var sel = document.getElementById('bulkTemplateSelect');
+        d.templates.forEach(function(t) {
+            var opt = document.createElement('option');
+            opt.value = t.id; opt.textContent = t.name;
+            sel.appendChild(opt);
+        });
+    });
+
+function previewBulk(e) {
+    e.preventDefault();
+    var file = document.getElementById('dataFile').files[0];
+    if (!file) { alert('Please select a file'); return; }
+    var tid = document.getElementById('bulkTemplateSelect').value;
+    if (!tid) { alert('Please select a template'); return; }
+
+    var el = document.getElementById('previewResult');
+    el.innerHTML = '<div class="loading">Uploading and parsing...</div>';
+
+    var formData = new FormData();
+    formData.append('data_file', file);
+    formData.append('template_id', tid);
+
+    fetch('/api/bulk-send/preview', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(d => {
+            if (d.error) { el.innerHTML = '<div class="flash flash-error">' + d.error + '</div>'; return; }
+            var html = '<div class="flash flash-success">' + d.total_rows + ' row(s) found</div>';
+            html += '<table><thead><tr>';
+            (d.columns || []).forEach(function(c) { html += '<th>' + c + '</th>'; });
+            html += '</tr></thead><tbody>';
+            (d.preview || []).forEach(function(r) {
+                html += '<tr>';
+                (d.columns || []).forEach(function(c) { html += '<td>' + (r[c] || '') + '</td>'; });
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            if (d.total_rows > 5) html += '<p style="color:#666;font-size:12px">Showing first 5 of ' + d.total_rows + ' rows</p>';
+            el.innerHTML = html;
+            document.getElementById('sendForm').style.display = 'block';
+            document.getElementById('sendTemplateId').value = tid;
+        })
+        .catch(e => el.innerHTML = '<div class="flash flash-error">' + e + '</div>');
+}
+
+function bulkSend(e) {
+    e.preventDefault();
+    alert('Bulk send will trigger the send process. This uses the PRD API endpoint.\n\nThis feature requires the complete send flow to be configured.');
+}
+</script>
+{% endblock %}

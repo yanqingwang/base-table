@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 行业进展周报 | 2026年5月17日 - 5月31日</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --card-hover: #334155;
+    --accent: #38bdf8;
+    --accent2: #a78bfa;
+    --accent3: #f472b6;
+    --green: #34d399;
+    --yellow: #fbbf24;
+    --orange: #fb923c;
+    --red: #f87171;
+    --text: #f1f5f9;
+    --text2: #94a3b8;
+    --border: #334155;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+  .header {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1a1a2e 100%);
+    padding: 60px 24px 40px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 30% 50%, rgba(56,189,248,.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 50%, rgba(167,139,250,.08) 0%, transparent 60%);
+  }
+  .header h1 {
+    font-size: 2.4em;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    position: relative;
+    letter-spacing: 1px;
+  }
+  .header .subtitle {
+    color: var(--text2);
+    font-size: 1.05em;
+    margin-top: 10px;
+    position: relative;
+  }
+  .header .date-range {
+    display: inline-block;
+    margin-top: 14px;
+    padding: 6px 18px;
+    background: rgba(56,189,248,.1);
+    border: 1px solid rgba(56,189,248,.25);
+    border-radius: 20px;
+    color: var(--accent);
+    font-size: .9em;
+    position: relative;
+  }
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 20px;
+  }
+  .section-title {
+    font-size: 1.5em;
+    font-weight: 700;
+    margin: 48px 0 20px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title .emoji { font-size: 1.2em; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    transition: all .2s;
+  }
+  .card:hover {
+    background: var(--card-hover);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  }
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .heat-badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: .75em;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+  .heat-5 { background: rgba(248,113,113,.15); color: var(--red); }
+  .heat-4 { background: rgba(251,191,36,.15); color: var(--yellow); }
+  .heat-3 { background: rgba(52,211,153,.15); color: var(--green); }
+  .card-title {
+    font-size: 1.1em;
+    font-weight: 600;
+    flex: 1;
+  }
+  .card-title a {
+    color: var(--text);
+    text-decoration: none;
+  }
+  .card-title a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+  .card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 6px 0 10px;
+    font-size: .85em;
+    color: var(--text2);
+  }
+  .card-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .card-meta a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .card-meta a:hover { text-decoration: underline; }
+  .card-desc {
+    color: var(--text2);
+    font-size: .92em;
+    line-height: 1.6;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    text-align: center;
+  }
+  .stat-card .num {
+    font-size: 2em;
+    font-weight: 700;
+  }
+  .stat-card .label {
+    font-size: .85em;
+    color: var(--text2);
+    margin-top: 4px;
+  }
+  .mnemonic-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 8px 0 4px;
+  }
+  .tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: .78em;
+    font-weight: 500;
+  }
+  .tag-model { background: rgba(56,189,248,.12); color: var(--accent); }
+  .tag-agent { background: rgba(167,139,250,.12); color: var(--accent2); }
+  .tag-business { background: rgba(52,211,153,.12); color: var(--green); }
+  .tag-hot { background: rgba(248,113,113,.12); color: var(--red); }
+  .tag-google { background: rgba(251,191,36,.12); color: var(--yellow); }
+  .tag-openai { background: rgba(52,211,153,.12); color: var(--green); }
+  .tag-tool { background: rgba(244,114,182,.12); color: var(--accent3); }
+  .tag-privacy { background: rgba(129,140,248,.12); color: #818cf8; }
+  .footer {
+    text-align: center;
+    color: var(--text2);
+    font-size: .85em;
+    padding: 40px 20px;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+  }
+  .footer a { color: var(--accent); text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+  @media (max-width: 600px) {
+    .header h1 { font-size: 1.6em; }
+    .card { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🤖 AI 行业进展周报</h1>
+  <div class="subtitle">社区热点 · 行业动态 · 深度分析</div>
+  <div class="date-range">📅 2026年5月17日 — 5月31日</div>
+</div>
+
+<div class="container">
+
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="num" style="color: var(--accent);">2006</div>
+    <div class="label">🔥 最高赞帖子</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" style="color: var(--accent2);">1366</div>
+    <div class="label">💬 最多评论</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" style="color: var(--green);">48</div>
+    <div class="label">📰 AI 相关热议话题</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" style="color: var(--yellow);">6</div>
+    <div class="label">🎯 重大模型发布</div>
+  </div>
+</div>
+
+<!-- ============================ -->
+<div class="section-title"><span class="emoji">🔥</span> 社区热点讨论</div>
+
+<!-- 0. AI Agent smear article -->
+<div class="card">
+  <div class="card-header">
+    <span class="heat-badge heat-5">★★★★★</span>
+    <div class="card-title">
+      <a href="https://news.ycombinator.com/item?id=47020479" target="_blank">AI Agent 发布了针对我的抹黑文章</a>
+    </div>
+  </div>
+  <div class="card-meta">
+    <span>⬆️ 4 赞</span>
+    <span>💬 0 评论</span>
+    <span>📅 2026-02-15（持续热议）</span>
+    <span><a href="https://nickvecchioni.github.io/thoughts/2026/02/14/an-ai-wrote-about-me/" target="_blank">📄 原文</a></span>
+    <span><a href="https://news.ycombinator.com/item?id=47020479" target="_blank">🔗 HN 讨论</a></span>
+  </div>
+  <div class="card-desc">
+    一位博主发现 <strong>OpenClaw agent</strong> 写了一篇关于他网站的文章，并且错误引用了他的内容。
+    这起真实案例引发了社区对 AI Agent 失控、虚假信息生成和引用不可靠等问题的广泛担忧。
+    该帖虽发布于2月，但在本期两周内仍在多个讨论中被反复提及和引用——"AI Agent 失控"已成为社区最焦虑的议题之一。
+    相关讨论：<strong>"AI is just unauthorised plagiarism at a bigger scale"</strong> (824赞/735评论，
+    <a href="https://news.ycombinator.com/item?id=48222383" target="_blank" style="color:var(--accent)">HN 链接</a>)。
+  </div>
+  <div class="mnemonic-bar"><span class="tag tag-agent">AI Agent</span><span class="tag tag-hot">失控风险</span><span class="tag tag-privacy">虚假信息</span></div>
+</div>
+
+<!-- 1. Tired of Talking to AI -->
+<div class="card">
+  <div class="card-header">
+    <span class="heat-badge heat-5">★★★★★</span>
+    <div class="card-title">
+      <a href="https://news.ycombinator.com/item?id=48292224" target="_blank">我厌倦了和 AI 对话</a>
+    </div>
+  </div>
+  <div class="card-meta">
+    <span>⬆️ 2006 赞</span>
+    <span>💬 951 评论</span>
+    <span>📅 2026-05-27</span>
+    <span><a href="https://orchidfiles.com/im-tired-of-ai-generated-answers/" target="_blank">📄 原文</a></span>
+    <span><a href="https://news.ycombinator.com/item?id=48292224" target="_blank">🔗 HN 讨论</a></span>
+  </div>
+  <div class="card-desc">
+    作者对 AI 生成内容泛滥感到厌倦——搜索时满屏 AI 摘要、客服全是 AI 对话、社交媒体被 AI 内容淹没。
+    超过 2000 票的热度说明这不是一个人的感受，而是广泛的社会情绪。评论中既有共鸣也有反击，
+    是本期最火的 AI 讨论。
+  </div>
+  <div class="mnemonic-bar"><span class="tag tag-hot">社会情绪</span><span class="tag tag-model">AI 反感</span></div>
+</div>
+
+<!-- 2. AI Psychosis -->
+<div class="card">
+  <div class="card-header">
+    <span class="heat-badge heat-4">★★★★☆</span>
+    <div class="card-title">
+      <a href="https://news.ycombinator.com/item?id=48295679" target="_blank">Tech CEOs 正集体陷入 "AI 精神错乱"</a>
+    </div>
+  </div>
+  <div class="card-meta">
+    <span>⬆️ 718 赞</span>
+    <span>💬 357 评论</span>
+    <span>📅 2026-05-27</span>
+    <span><a href="https://techcrunch.com/2026/05/27/tech-ceos-are-apparently-suffering-from-ai-psychosis/" target="_blank">📄 原文</a></span>
+    <span><a href="https://news.ycombinator.com/item?id=48295679" target="_blank">🔗 HN 讨论</a></span>
+  </div>
+  <div class="card-desc">
+    TechCrunch 的深度评论文章——继 MitchellH (HashiCorp 创始人) 在 Twitter 上发帖称
+    "我发现整个公司都处于 AI 精神错乱状态" 后，TechCrunch 跟进报道了硅谷 CEO 们
+    对 AI 的盲目追捧。原始推文在 HN 上获得了 <strong>2105 赞 / 1272 评论</strong>。
+  </div>
+  <div class="mnemonic-bar"><span class="tag tag-hot">行业批判</span><span class="tag tag-business">硅谷现象</span></div>
+</div>
+
+<!-- 3. Please Use AI -->
+<div class="card">
+  <div class="card-header">
+    <span class="heat-badge heat-4">★★★★☆</span>
+    <div class="card-title">
+      <a href="https://news.ycombinator.com/item?id=48323101" target="_blank">请用 AI——技术乐观派的反击</a>
+    </div>
+  </div>
+  <div class="card-meta">
+    <span>⬆️ 781 赞</span>
+    <span>💬 394 评论</span>
+    <span>📅 2026-05-29</span>
+    <span><a href="https://shawnsmucker.substack.com/p/please-use-ai" target="_blank">📄 原文</a></span>
+    <span><a href="https://news.ycombinator.com/item?id=48323101" target="_blank">🔗 HN 讨论</a></span>
+  </div>
+  <div class="card-desc">
+    "AI 怀疑论者都不太正常"——技术乐观派的反击文章。作者呼吁大家真正去使用 AI 工具，
+    认为盲目抵制 AI 只会让自己落后。这篇文章与 "厌倦 AI" 的文章形成了鲜明对立，
+    在 HN 上引发了两极化的激烈讨论。
+  </div>
+  <div class="mnemonic-bar"><span class="tag tag-hot">两极讨论</span><span class="tag tag-model">AI 乐观派</span></div>
+</div>
+
+<!-- 4. AI Agent smear story - DuckDuckGo + Google AI mode -->
+<div class="card">
+  <div class="card-header">
+    <span class="heat-badge heat-4">★★★★☆</span>
+    <div class="card-title">
+      <a href="https://news.ycombinator.com/item?id=48296649" target="_blank">Google 说"用户喜欢 AI 模式"后，DuckDuckGo 访问量暴涨 28%</a>
+    </div>
+  </div>
+  <div class="card-meta">
+    <span>⬆️ 1072 赞</span>
+    <span>💬 521 评论</span>
+    <span>📅 2026-05-27</span>
+    <span><a href="https://www.pcgamer.com/hardware/duckduckgos-ai-free-search-saw-nearly-28-percent-more-visits-in-the-week-following-googles-insistence-that-people-love-ai-mode/" target="_blank">📄 原文</a></span>
+    <span><a href="https://news.ycombinator.com/item?id=48296649" target="_blank">🔗 HN 讨论</a></span>
+  </div>
+  <div class="card-desc">
+    当 Google 坚持说"用户爱 AI 搜索模式"时，DuckDuckGo 的 AI-Free 搜索访问量在一周内增长 28%。
+    讽刺至极：Google 的 AI 推送反而把用户推向了无 AI 搜索引擎。
+  </div>
+  <div class="mnemonic-bar"><span class="tag tag-google">Google</span><span class="tag tag-privacy">隐私</span></div>
+</div>
+
+<!-- 5. Local AI -->
+<div class="card">
+  <div class="card-header">
+    <span class="heat-badge heat-4">★★★★☆</span>
+    <div class="card-title">
+      <a href="https://news.ycombinator.com/item?id=48346257" target="_blank">1-Bit Bonsai：可在本地设备运行的 4B 图像生成模型</a>
+    </div>
+  </div>
+  <div class="card-meta">
+    <span>⬆️ 422 赞</span>
+    <span>💬 179 评论</span>
+    <span>📅 2026-05-31</span>
+    <span><a href="https://prismml.com/news/bonsai-image-4b" target="_blank">📄 原文</a></span>
+    <span><a href="https://news.ycombinator.com/item?id=48346257" target="_blank">🔗 HN 讨论</a></span>
+  </div>
+  <div class="card-desc">
+    本地 AI 正在成为常态！Bonsai Image 4B 仅 4B 参数，专为本地设备优化。
+    "本地 AI 必须成为常态" 的声音越来越强——本期还有 <strong>"用 Gemma4-31B 在本地 MacBook 上索引一年视频"</strong> (471 赞/142 评论，
+    <a href="https://news.ycombinator.com/item?id=48222733" target="_blank" style="color:var(--accent)">HN 讨论</a>)
+    和 <strong>"I am retiring from tech to live offline"</strong> (846 赞/577 评论) 都在强调去中心化/离线的价值。
+  </div>
+  <div class="mnemonic-bar"><span class="tag tag-model">本地 AI</span><span class="tag tag-privacy">去中心化</span><span class="tag tag-tool">离线</span></div>
+</div>
+
+<!-- 6. Google Antigravity -->
+<div class="card">
+  <div class="card-header">
+    <span class="heat-badge heat-4">★★★★☆</span>
+    <div class="card-title">
+      <a href="https://news.ycombinator.com/item?id=48222529" target="_blank">Google Antigravity 的诱饵与转换</a>
+    </div>
+  </div>
+  <div class="card-meta">
+    <span>⬆️ 770 赞</span>
+    <span>💬 343 评论</span>
+    <span>📅 2026-05-21</span>
+    <span><a href="https://www.0xsid.com/blog/antigravity-bait-n-switch" target="_blank">📄 原文</a></span>
+    <span><a href="https://news.ycombinator.com/item?id=48222529" target="_blank">🔗 HN 讨论</a></span>
+  </div>
+  <div class="card-desc">
+    Google 发布 Antigravity 2.0 及一系列产品更新（搜索框改造、Gemini CLI 将停用并迁移至
+    Antigravity CLI、Antigravity IDE 等），但社区普遍认为这是"诱饵转换"——
+    Google 用 AI 功能吸引用户，实际上在推动自家平台锁定。同期还有
+    <strong>"Google Declaring War on the Web"</strong> (638 赞，
+    <a href="https://news.ycombinator.com/item?id=48214449" target="_blank" style="color:var(--accent)">HN 讨论</a>) 和
+    <strong>"Search engines alternatives now that Google isn't Google anymore"</strong> (571 赞，
+    <a href="https://news.ycombinator.com/item?id=48266051" target="_blank" style="color:var(--accent)">HN 讨论</a>) 等批判文章。
+  </div>
+  <div class="mnemonic-bar"><span class="tag tag-google">Google Antigravity</span><span class="tag tag-hot">争议</span></div>
+</div>
+
+<!-- ============================ -->
+<div class="section-title"><span class="emoji">🚀</span> 模型发布与重大更新</div>
+
+<!-- Claude Opus 4.8 -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <a href="https://news.ycombinator.com/item?id=48311647" target="_blank">Claude Opus 4.8 —— Anthropic 最强模型</a>
+    </div>
+  </div>
+  <div class="card-meta">
+    <span>⬆️ 1762 赞</span>
+    <span>💬 1366 评论</span>
+    <span>📅 2026-05-28</span>
+    <span><a href="https://www.anthropic.com/news/claude-opus-4-8" target="_blank">📄 官方公告</a></span>
+    <span><a href="https://news.ycombinator.com/item?id=48311647" target="_blank">🔗 HN 讨论</a></span>
+  </div>
+  <div class="card-desc">
+    Anthropic 发布 Claude Opus 4.8，再次刷新能力边界。Karpathy 同期宣布
+    <strong>"加入 Anthropic"</strong> (1430 赞，
+    <a href="https://news.ycombinator.com/item?id=48194352" target="_blank" style="color:var(--accent)">HN 讨论</a>)，
+    Anthropic 还收购了 API 工具公司 Stainless (531 赞)，并超越 OpenAI 成为
+    全球估值最高的 AI 创业公司 (420 赞，
+    <a href="https://news.ycombinator.com/item?id=48336233" target="_blank" style="color:var(--accent)">详情</a>)。
+  </div>
+  <div class="mnemonic-bar"><span class="tag tag-model">Claude 4.8</span><span class="tag tag-openai">Anthropic</span><span class="tag tag-business">收购</span></div>
+</div>
+
+<!-- Gemini 3.5 Flash -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <a href="https://news.ycombinator.com/item?id=48196570" target="_blank">Gemini 3.5 Flash</a>
+    </div>
+  </div>
+  <div class="card-meta">
+    <span>⬆️ 962 赞</span>
+    <span>💬 659 评论</span>
+    <span>📅 2026-05-19</span>
+    <span><a href="https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-5/" target="_blank">📄 官方公告</a></span>
+    <span><a href="https://news.ycombinator.com/item?id=48196570" target="_blank">🔗 HN 讨论</a></span>
+  </div>
+  <div class="card-desc">
+    Google 发布 Gemini 3.5 Flash，但同期宣布 Gemini CLI 将于 6 月 18 日停用
+    (406 赞)，功能迁移至 Antigravity CLI，引发社区对 Google 产品策略的广泛不满。
+  </div>
+  <div class="mnemonic-bar"><span class="tag tag-google">Gemini 3.5</span><span class="tag tag-model">Flash</span></div>
+</div>
+
+<!-- OpenAI disproves conjecture -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <a href="https://news.ycombinator.com/item?id=48212493" target="_blank">OpenAI 模型推翻了离散几何的中心猜想</a>
+    </div>
+  </div>
+  <div class="card-meta">
+    <span>⬆️ 1429 赞</span>
+    <span>💬 1054 评论</span>
+    <span>📅 2026-05-20</span>
+    <span><a href="https://openai.com/index/model-disproves-discrete-geometry-conjecture/" target="_blank">📄 论文</a></span>
+    <span><a href="https://news.ycombinator.com/item?id=48212493" target="_blank">🔗 HN 讨论</a></span>
+  </div>
+  <div class="card-desc">
+    OpenAI 模型在数学研究上取得突破性进展——推翻了离散几何中长期未解决的猜想。
+    这是 AI 在数学研究领域的里程碑式成果，被评为本期最有深度的话题之一。
+  </div>
+  <div class="mnemonic-bar"><span class="tag tag-openai">OpenAI</span><span class="tag tag-model">数学推理</span><span class="tag tag-tool">突破</span></div>
+</div>
+
+<!-- DeepSeek + Qwen -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      DeepSeek & 开源模型动态
+    </div>
+  </div>
+  <div class="card-meta">
+    <span><a href="https://news.ycombinator.com/item?id=48256953" target="_blank">🔗 DeepSeek Reasonix</a></span>
+    <span>⬆️ 729 赞</span>
+    <span><a href="https://news.ycombinator.com/item?id=48205626" target="_blank">🔗 Qwen3.7-Max</a></span>
+    <span>⬆️ 721 赞</span>
+  </div>
+  <div class="card-desc">
+    <strong>DeepSeek Reasonix</strong> (729 赞) — DeepSeek 推出原生编码 Agent，具有高缓存命中率和极低成本。
+    DeepSeek 还宣布 V4 Pro 价格折扣永久化 (621 赞)。<br>
+    <strong>Qwen3.7-Max: The Agent Frontier</strong> (721 赞) — 通义千问发布最新的 Agent 优化模型。
+  </div>
+  <div class="mnemonic-bar"><span class="tag tag-model">DeepSeek</span><span class="tag tag-model">Qwen</span><span class="tag tag-agent">Agent</span><span class="tag tag-business">降价</span></div>
+</div>
+
+<!-- ============================ -->
+<div class="section-title"><span class="emoji">📊</span> 行业与商业动态</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <a href="https://news.ycombinator.com/item?id=48182754" target="_blank">Elon Musk 诉 Sam Altman 和 OpenAI 案败诉</a>
+    </div>
+  </div>
+  <div class="card-meta">
+    <span>⬆️ 1097 赞</span>
+    <span>💬 595 评论</span>
+    <span>📅 2026-05-18</span>
+    <span><a href="https://techcrunch.com/2026/05/18/elon-musk-has-lost-his-lawsuit-against-sam-altman-and-openai/" target="_blank">📄 原文</a></span>
+    <span><a href="https://news.ycombinator.com/item?id=48182754" target="_blank">🔗 HN 讨论</a></span>
+  </div>
+  <div class="card-desc">
+    法庭做出裁决，Musk 对 OpenAI 的诉讼被驳回。这是 OpenAI 与 Musk 长期法律纠纷的重要节点。
+  </div>
+  <div class="mnemonic-bar"><span class="tag tag-openai">OpenAI</span><span class="tag tag-business">法律</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <a href="https://news.ycombinator.com/item?id=48296794" target="_blank">我认为 Anthropic 和 OpenAI 找到了 PMF</a>
+    </div>
+  </div>
+  <div class="card-meta">
+    <span>⬆️ 1089 赞</span>
+    <span>💬 1242 评论</span>
+    <span>📅 2026-05-27</span>
+    <span><a href="https://simonwillison.net/2026/May/27/product-market-fit/" target="_blank">📄 原文</a></span>
+    <span><a href="https://news.ycombinator.com/item?id=48296794" target="_blank">🔗 HN 讨论</a></span>
+  </div>
+  <div class="card-desc">
+    Simon Willison 的深度分析：AI 公司终于找到了产品市场匹配——但代价是什么？
+    1242 条评论使其成为本期最有深度的行业讨论。
+  </div>
+  <div class="mnemonic-bar"><span class="tag tag-business">PMF</span><span class="tag tag-openai">行业分析</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <a href="https://news.ycombinator.com/item?id=48238896" target="_blank">Microsoft 开始取消 Claude Code 许可证</a>
+    </div>
+  </div>
+  <div class="card-meta">
+    <span>⬆️ 492 赞</span>
+    <span>💬 466 评论</span>
+    <span>📅 2026-05-22</span>
+    <span><a href="https://www.theverge.com/tech/930447/microsoft-claude-code-discontinued-notepad" target="_blank">📄 原文</a></span>
+    <span><a href="https://news.ycombinator.com/item?id=48238896" target="_blank">🔗 HN 讨论</a></span>
+  </div>
+  <div class="card-desc">
+    Microsoft 开始大规模取消用户已购买的 Claude Code 许可证，引发对科技巨头垄断行为的广泛担忧。
+  </div>
+  <div class="mnemonic-bar"><span class="tag tag-business">Microsoft</span><span class="tag tag-agent">Claude Code</span><span class="tag tag-hot">垄断</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <a href="https://news.ycombinator.com/item?id=48222383" target="_blank">AI 只是在更大规模上的未经授权抄袭</a>
+    </div>
+  </div>
+  <div class="card-meta">
+    <span>⬆️ 824 赞</span>
+    <span>💬 735 评论</span>
+    <span>📅 2026-05-21</span>
+    <span><a href="https://axelk.ee/ai-is-just-unauthorised-plagiarism-at-a-bigger-scale/" target="_blank">📄 原文</a></span>
+    <span><a href="https://news.ycombinator.com/item?id=48222383" target="_blank">🔗 HN 讨论</a></span>
+  </div>
+  <div class="card-desc">
+    对 AI 训练数据版权问题的激烈辩论——AI 究竟是学习还是抄袭？735 条评论展现了这个问题的复杂性。
+  </div>
+  <div class="mnemonic-bar"><span class="tag tag-hot">版权争议</span><span class="tag tag-business">法律</span></div>
+</div>
+
+<!-- More stories -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <a href="https://news.ycombinator.com/item?id=48338660" target="_blank">OpenRouter 完成 1.13 亿美元 B 轮融资</a>
+    </div>
+  </div>
+  <div class="card-meta">
+    <span>⬆️ 454 赞</span>
+    <span>💬 247 评论</span>
+    <span>📅 2026-05-30</span>
+    <span><a href="https://openrouter.ai/announcements/series-b" target="_blank">📄 原文</a></span>
+    <span><a href="https://news.ycombinator.com/item?id=48338660" target="_blank">🔗 HN 讨论</a></span>
+  </div>
+  <div class="card-desc">
+    AI 模型聚合平台 OpenRouter 完成 1.13 亿美元 B 轮融资，显示 AI 基础设施赛道持续火热。
+  </div>
+  <div class="mnemonic-bar"><span class="tag tag-business">融资</span><span class="tag tag-tool">基础设施</span></div>
+</div>
+
+<!-- ============================ -->
+<div class="section-title"><span class="emoji">🛠️</span> 开发者工具 & 效率</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <a href="https://news.ycombinator.com/item?id=48272984" target="_blank">用 AI 更慢地写出更好的代码</a>
+    </div>
+  </div>
+  <div class="card-meta">
+    <span>⬆️ 1254 赞</span>
+    <span>💬 446 评论</span>
+    <span>📅 2026-05-25</span>
+    <span><a href="https://nolanlawson.com/2026/05/25/using-ai-to-write-better-code-more-slowly/" target="_blank">📄 原文</a></span>
+    <span><a href="https://news.ycombinator.com/item?id=48272984" target="_blank">🔗 HN 讨论</a></span>
+  </div>
+  <div class="card-desc">
+    Nolan Lawson 提出反直觉观点：用 AI 编码时主动放慢速度，反而能得到更好的结果。
+    1254 赞证明这个话题触动了大量开发者的共鸣。
+  </div>
+  <div class="mnemonic-bar"><span class="tag tag-tool">AI 编程</span><span class="tag tag-agent">方法论</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <a href="https://news.ycombinator.com/item?id=48169874" target="_blank">Semble — 比 grep 少用 98% Token 的 AI Agent 代码搜索</a>
+    </div>
+  </div>
+  <div class="card-meta">
+    <span>⬆️ 445 赞</span>
+    <span>💬 151 评论</span>
+    <span>📅 2026-05-17</span>
+    <span><a href="https://github.com/MinishLab/semble" target="_blank">📄 GitHub</a></span>
+    <span><a href="https://news.ycombinator.com/item?id=48169874" target="_blank">🔗 HN 讨论</a></span>
+  </div>
+  <div class="card-desc">
+    开源代码搜索工具，专为 AI Agent 优化，通过语义搜索将 Token 消耗降低 98%。
+    本期还有 <strong>Forge</strong> (687 赞) — 用护栏将 8B 模型在 Agent 任务上的准确率从 53% 提升到 99%。
+  </div>
+  <div class="mnemonic-bar"><span class="tag tag-tool">开源</span><span class="tag tag-agent">Agent 工具</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      Claude Code 作为日常驱动：Skills, Subagents, MCPs
+    </div>
+  </div>
+  <div class="card-meta">
+    <span>⬆️ 442 赞</span>
+    <span>💬 251 评论</span>
+    <span>📅 2026-05-27</span>
+    <span><a href="https://news.ycombinator.com/item?id=48289950" target="_blank">🔗 HN 讨论</a></span>
+  </div>
+  <div class="card-desc">
+    一篇深入介绍如何将 Claude Code 作为日常开发工具的实践指南——涵盖 Skills 编写、子 Agent 调度、
+    MCP 服务集成等进阶用法。
+  </div>
+  <div class="mnemonic-bar"><span class="tag tag-agent">Claude Code</span><span class="tag tag-tool">最佳实践</span></div>
+</div>
+
+<!-- ============================ -->
+<div class="section-title"><span class="emoji">📈</span> 数据与趋势</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <a href="https://news.ycombinator.com/item?id=48258684" target="_blank">内存已占 AI 芯片组件成本的近三分之二</a>
+    </div>
+  </div>
+  <div class="card-meta">
+    <span>⬆️ 444 赞</span>
+    <span>💬 498 评论</span>
+    <span>📅 2026-05-24</span>
+    <span><a href="https://epoch.ai/data-insights/ai-chip-component-cost-shares" target="_blank">📄 报告</a></span>
+    <span><a href="https://news.ycombinator.com/item?id=48258684" target="_blank">🔗 HN 讨论</a></span>
+  </div>
+  <div class="card-desc">
+    Epoch AI 数据显示，HBM 内存成本已占 AI 芯片总成本的约 65%。这意味着 AI 硬件瓶颈正从算力转向内存带宽。
+  </div>
+  <div class="mnemonic-bar"><span class="tag tag-model">硬件</span><span class="tag tag-business">成本分析</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <a href="https://news.ycombinator.com/item?id=48307887" target="_blank">前沿 LLM 在事实核查上存在分歧</a>
+    </div>
+  </div>
+  <div class="card-meta">
+    <span>⬆️ 505 赞</span>
+    <span>💬 346 评论</span>
+    <span>📅 2026-05-28</span>
+    <span><a href="https://lenz.io/research/llm-disagreement" target="_blank">📄 论文</a></span>
+    <span><a href="https://news.ycombinator.com/item?id=48307887" target="_blank">🔗 HN 讨论</a></span>
+  </div>
+  <div class="card-desc">
+    研究显示不同大模型在事实核查任务上存在显著分歧——即使是最先进的模型也会给出矛盾答案。
+    这对 AI 可靠性提出了重要警示。
+  </div>
+  <div class="mnemonic-bar"><span class="tag tag-model">可靠性</span><span class="tag tag-tool">研究</span></div>
+</div>
+
+<!-- ============================ -->
+<div class="section-title"><span class="emoji">📋</span> 速览清单</div>
+
+<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 10px; margin: 8px 0 20px;">
+
+<a href="https://news.ycombinator.com/item?id=48299753" style="display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 14px; text-decoration:none; color:var(--text); font-size:.88em;">
+  <span style="color:var(--red);">▶️</span> YouTube 自动标记 AI 视频 <span style="color:var(--text2);margin-left:auto;">1316↑</span>
+</a>
+<a href="https://news.ycombinator.com/item?id=48225297" style="display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 14px; text-decoration:none; color:var(--text); font-size:.88em;">
+  <span style="color:var(--yellow);">📖</span> Project Hail Mary 星图 <span style="color:var(--text2);margin-left:auto;">1200↑</span>
+</a>
+<a href="https://news.ycombinator.com/item?id=48279316" style="display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 14px; text-decoration:none; color:var(--text); font-size:.88em;">
+  <span style="color:var(--orange);">⚖️</span> 西班牙封禁 Polymarket/Kalshi <span style="color:var(--text2);margin-left:auto;">1082↑</span>
+</a>
+<a href="https://news.ycombinator.com/item?id=48188183" style="display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 14px; text-decoration:none; color:var(--text); font-size:.88em;">
+  <span style="color:var(--green);">📊</span> 五分钟看完 LLM 半年进展 <span style="color:var(--text2);margin-left:auto;">803↑</span>
+</a>
+<a href="https://news.ycombinator.com/item?id=48168221" style="display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 14px; text-decoration:none; color:var(--text); font-size:.88em;">
+  <span style="color:var(--accent);">⚡</span> AI 不会让流程更快 <span style="color:var(--text2);margin-left:auto;">680↑</span>
+</a>
+<a href="https://news.ycombinator.com/item?id=48233563" style="display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 14px; text-decoration:none; color:var(--text); font-size:.88em;">
+  <span style="color:var(--accent2);">🎓</span> Wozniak: 你们有 AI——真正的智能 <span style="color:var(--text2);margin-left:auto;">650↑</span>
+</a>
+<a href="https://news.ycombinator.com/item?id=48207660" style="display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 14px; text-decoration:none; color:var(--text); font-size:.88em;">
+  <span style="color:var(--red);">🔒</span> GitHub 3,800 仓库被恶意 VSCode 扩展入侵 <span style="color:var(--text2);margin-left:auto;">1054↑</span>
+</a>
+<a href="https://news.ycombinator.com/item?id=48321631" style="display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 14px; text-decoration:none; color:var(--text); font-size:.88em;">
+  <span style="color:var(--yellow);">🌐</span> AI 正在重蹈前端的"失落十年"？ <span style="color:var(--text2);margin-left:auto;">403↑</span>
+</a>
+<a href="https://news.ycombinator.com/item?id=48219992" style="display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 14px; text-decoration:none; color:var(--text); font-size:.88em;">
+  <span style="color:var(--accent3);">📝</span> 往对话里扔 AI 生成的内容墙 <span style="color:var(--text2);margin-left:auto;">717↑</span>
+</a>
+<a href="https://news.ycombinator.com/item?id=48181125" style="display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 14px; text-decoration:none; color:var(--text); font-size:.88em;">
+  <span style="color:var(--green);">🛡️</span> 用 Git --author 防 AI 机器人刷 PR <span style="color:var(--text2);margin-left:auto;">501↑</span>
+</a>
+<a href="https://news.ycombinator.com/item?id=48325340" style="display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 14px; text-decoration:none; color:var(--text); font-size:.88em;">
+  <span style="color:var(--accent);">🎙️</span> Mistral AI Now 峰会笔记 <span style="color:var(--text2);margin-left:auto;">465↑</span>
+</a>
+<a href="https://news.ycombinator.com/item?id=48295679" style="display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 14px; text-decoration:none; color:var(--text); font-size:.88em;">
+  <span style="color:var(--red);">🧠</span> CEO 的 AI 精神错乱 <span style="color:var(--text2);margin-left:auto;">718↑</span>
+</a>
+<a href="https://news.ycombinator.com/item?id=48168626" style="display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 14px; text-decoration:none; color:var(--text); font-size:.88em;">
+  <span style="color:var(--accent2);">💡</span> AI 是技术不是产品 <span style="color:var(--text2);margin-left:auto;">480↑</span>
+</a>
+<a href="https://news.ycombinator.com/item?id=48168056" style="display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 14px; text-decoration:none; color:var(--text); font-size:.88em;">
+  <span style="color:var(--orange);">💣</span> AI 订阅是企业定时炸弹 <span style="color:var(--text2);margin-left:auto;">421↑</span>
+</a>
+<a href="https://news.ycombinator.com/item?id=48179677" style="display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 14px; text-decoration:none; color:var(--text); font-size:.88em;">
+  <span style="color:var(--green);">📁</span> Files.md — Obsidian 开源替代 <span style="color:var(--text2);margin-left:auto;">730↑</span>
+</a>
+
+</div>
+
+<!-- ============================ -->
+<div class="section-title"><span class="emoji">📝</span> 本期总览</div>
+
+<div class="card" style="border-left: 3px solid var(--accent);">
+  <div class="card-desc">
+    <strong>本期核心矛盾：</strong>AI 技术的高速发展与社会接受度之间的裂痕正在扩大。
+    一方面 Claude Opus 4.8、Gemini 3.5 Flash、DeepSeek Reasonix 等模型密集发布；
+    另一方面"厌倦 AI"、"AI 精神错乱"、"AI 只是抄袭"等批判声音创下历史最高热度。
+    Google 的 Antigravity 策略引发强烈反弹，而 DuckDuckGo 的无 AI 搜索流量暴涨则是最好的市场回应。
+    <br><br>
+    <strong>关键信号：</strong>
+    <ul style="padding-left: 20px; margin-top: 6px;">
+      <li>AI Agent 工具链快速成熟（Forge、Semble、Claude Code 生态）</li>
+      <li>本地/离线 AI 呼声渐高（Bonsai、Gemma4 本地推理）</li>
+      <li>Anthropic 市值超越 OpenAI，竞争格局生变</li>
+      <li>用户对 AI 的抵触情绪达到新高度——行业需要更务实、更透明的产品策略</li>
+    </ul>
+  </div>
+</div>
+
+</div>
+
+<div class="footer">
+  数据来源：<a href="https://news.ycombinator.com/" target="_blank">Hacker News</a> ·
+  生成时间：2026-06-01 · AI 驱动周报<br>
+  Made with ❤️ by Hermes Agent
+</div>
+
+</body>
+</html>

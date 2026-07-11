@@ -2,11 +2,11 @@ import React, { useLayoutEffect, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Card, Descriptions, Tag, Spin, Button, Space, Typography, Table, message, Select,
-  Input, Form, DatePicker, InputNumber, Collapse, Popconfirm, Modal,
+  Input, Form, DatePicker, InputNumber, Collapse, Popconfirm, Modal, Checkbox,
 } from 'antd';
 import { ArrowLeftOutlined, SaveOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import api, { Candidate, Interview, CandidateEducation, CandidateWorkExperience } from '../../api/client';
+import api, { Candidate, Interview, CandidateEducation, CandidateWorkExperience, CandidateAddress, CandidateFamilyMember, CandidateBankAccount } from '../../api/client';
 import StatusTag from '../../components/StatusTag';
 
 const { TextArea } = Input;
@@ -63,6 +63,9 @@ const CandidateDetail: React.FC = () => {
   const [workModalOpen, setWorkModalOpen] = useState(false);
   const [eduForm] = Form.useForm();
   const [workForm] = Form.useForm();
+  const [addresses, setAddresses] = useState<CandidateAddress[]>([]);
+  const [familyMembers, setFamilyMembers] = useState<CandidateFamilyMember[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<CandidateBankAccount[]>([]);
 
   const fetchData = async () => {
     if (!id) return;
@@ -78,6 +81,14 @@ const CandidateDetail: React.FC = () => {
       setTimeline(tl || []);
       loadEducations();
       loadWorkExperiences();
+      const [addrRes, familyRes, bankRes] = await Promise.all([
+        api.candidates.addresses.list(id),
+        api.candidates.familyMembers.list(id),
+        api.candidates.bankAccounts.list(id),
+      ]);
+      setAddresses(addrRes);
+      setFamilyMembers(familyRes);
+      setBankAccounts(bankRes);
     } catch {
       message.error('Failed to load candidate');
     } finally {
@@ -183,6 +194,64 @@ const CandidateDetail: React.FC = () => {
     } catch {
       message.error('Failed to add work experience');
     }
+  };
+
+  const handleAddAddress = async (values: any) => {
+    if (!id) return;
+    try {
+      await api.candidates.addresses.create(id, values);
+      message.success('Address added');
+      const res = await api.candidates.addresses.list(id);
+      setAddresses(res);
+    } catch { message.error('Failed to add address'); }
+  };
+
+  const handleDeleteAddress = async (aid: string) => {
+    if (!id) return;
+    try {
+      await api.candidates.addresses.delete(id, aid);
+      message.success('Address deleted');
+      setAddresses(prev => prev.filter(a => a.id !== aid));
+    } catch { message.error('Failed to delete address'); }
+  };
+
+  const handleAddFamilyMember = async (values: any) => {
+    if (!id) return;
+    try {
+      const payload = { ...values, is_emergency_contact: values.is_emergency_contact ? 1 : 0 };
+      await api.candidates.familyMembers.create(id, payload);
+      message.success('Family member added');
+      const res = await api.candidates.familyMembers.list(id);
+      setFamilyMembers(res);
+    } catch { message.error('Failed to add family member'); }
+  };
+
+  const handleDeleteFamilyMember = async (fid: string) => {
+    if (!id) return;
+    try {
+      await api.candidates.familyMembers.delete(id, fid);
+      message.success('Family member deleted');
+      setFamilyMembers(prev => prev.filter(f => f.id !== fid));
+    } catch { message.error('Failed to delete family member'); }
+  };
+
+  const handleAddBankAccount = async (values: any) => {
+    if (!id) return;
+    try {
+      await api.candidates.bankAccounts.create(id, values);
+      message.success('Bank account added');
+      const res = await api.candidates.bankAccounts.list(id);
+      setBankAccounts(res);
+    } catch { message.error('Failed to add bank account'); }
+  };
+
+  const handleDeleteBankAccount = async (bid: string) => {
+    if (!id) return;
+    try {
+      await api.candidates.bankAccounts.delete(id, bid);
+      message.success('Bank account deleted');
+      setBankAccounts(prev => prev.filter(b => b.id !== bid));
+    } catch { message.error('Failed to delete bank account'); }
   };
 
   if (loading) return <Spin size="large" style={{ display: 'block', margin: '100px auto' }} />;
@@ -437,6 +506,80 @@ const CandidateDetail: React.FC = () => {
             { title: 'Time', dataIndex: 'created_at', key: 'created_at', render: (d: string) => new Date(d).toLocaleString() },
           ]}
         />
+      </Card>
+
+      <Card title="Pre-onboarding Data" style={{ marginTop: 16 }}>
+        <Collapse>
+          <Collapse.Panel header={`Addresses (${addresses.length})`} key="addresses">
+            {addresses.map(addr => (
+              <div key={addr.id} style={{ marginBottom: 12, padding: 8, background: '#fafafa', borderRadius: 4 }}>
+                <Space>
+                  <Tag>{addr.address_type}</Tag>
+                  {addr.is_primary ? <Tag color="blue">Primary</Tag> : null}
+                  <span>{[addr.street, addr.city, addr.state, addr.country].filter(Boolean).join(', ')}</span>
+                  <Popconfirm title="Delete?" onConfirm={() => handleDeleteAddress(addr.id)}>
+                    <Button danger size="small" type="text">Delete</Button>
+                  </Popconfirm>
+                </Space>
+              </div>
+            ))}
+            <Form layout="inline" onFinish={handleAddAddress} style={{ marginTop: 8 }}>
+              <Form.Item name="address_type" initialValue="home">
+                <Select style={{ width: 100 }} options={[{value:'home',label:'Home'},{value:'current',label:'Current'},{value:'mailing',label:'Mailing'}]} />
+              </Form.Item>
+              <Form.Item name="street"><Input placeholder="Street" /></Form.Item>
+              <Form.Item name="city"><Input placeholder="City" /></Form.Item>
+              <Form.Item name="country"><Input placeholder="Country" /></Form.Item>
+              <Form.Item><Button type="primary" htmlType="submit">Add</Button></Form.Item>
+            </Form>
+          </Collapse.Panel>
+
+          <Collapse.Panel header={`Family Members (${familyMembers.length})`} key="family">
+            {familyMembers.map(fm => (
+              <div key={fm.id} style={{ marginBottom: 12, padding: 8, background: '#fafafa', borderRadius: 4 }}>
+                <Space>
+                  <span>{fm.name}</span>
+                  {fm.relationship && <Tag>{fm.relationship}</Tag>}
+                  {fm.is_emergency_contact ? <Tag color="red">Emergency</Tag> : null}
+                  {fm.phone && <span>{fm.phone}</span>}
+                  <Popconfirm title="Delete?" onConfirm={() => handleDeleteFamilyMember(fm.id)}>
+                    <Button danger size="small" type="text">Delete</Button>
+                  </Popconfirm>
+                </Space>
+              </div>
+            ))}
+            <Form layout="inline" onFinish={handleAddFamilyMember} style={{ marginTop: 8 }}>
+              <Form.Item name="name" rules={[{required:true}]}><Input placeholder="Name" /></Form.Item>
+              <Form.Item name="relationship"><Input placeholder="Relationship" /></Form.Item>
+              <Form.Item name="phone"><Input placeholder="Phone" /></Form.Item>
+              <Form.Item name="is_emergency_contact" valuePropName="checked"><Checkbox>Emergency</Checkbox></Form.Item>
+              <Form.Item><Button type="primary" htmlType="submit">Add</Button></Form.Item>
+            </Form>
+          </Collapse.Panel>
+
+          <Collapse.Panel header={`Bank Accounts (${bankAccounts.length})`} key="bank">
+            {bankAccounts.map(bank => (
+              <div key={bank.id} style={{ marginBottom: 12, padding: 8, background: '#fafafa', borderRadius: 4 }}>
+                <Space>
+                  <span>{bank.bank_name}</span>
+                  <span>••••{bank.account_number.slice(-4)}</span>
+                  {bank.currency && <Tag>{bank.currency}</Tag>}
+                  {bank.is_primary ? <Tag color="green">Primary</Tag> : null}
+                  <Popconfirm title="Delete?" onConfirm={() => handleDeleteBankAccount(bank.id)}>
+                    <Button danger size="small" type="text">Delete</Button>
+                  </Popconfirm>
+                </Space>
+              </div>
+            ))}
+            <Form layout="inline" onFinish={handleAddBankAccount} style={{ marginTop: 8 }}>
+              <Form.Item name="bank_name" rules={[{required:true}]}><Input placeholder="Bank Name" /></Form.Item>
+              <Form.Item name="account_number" rules={[{required:true}]}><Input placeholder="Account Number" /></Form.Item>
+              <Form.Item name="account_holder"><Input placeholder="Account Holder" /></Form.Item>
+              <Form.Item name="currency"><Input placeholder="Currency" /></Form.Item>
+              <Form.Item><Button type="primary" htmlType="submit">Add</Button></Form.Item>
+            </Form>
+          </Collapse.Panel>
+        </Collapse>
       </Card>
     </div>
   );

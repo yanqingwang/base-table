@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>探寻工作的意义 — 从农业文明到AI时代</title>
+<style>
+:root {
+  --bg: #faf7f2;
+  --text: #2d2a24;
+  --text-light: #6b6558;
+  --accent: #c0392b;
+  --accent-soft: #e8d5c8;
+  --gold: #b8860b;
+  --gold-light: #f0e6d3;
+  --blue: #2c6e91;
+  --blue-light: #d6e5ed;
+  --green: #4a7c59;
+  --green-light: #d4e3d8;
+  --purple: #7d5a8c;
+  --purple-light: #e0d4e6;
+  --orange: #c0702a;
+  --orange-light: #f0dbc4;
+  --card-bg: #ffffff;
+  --border: #e5ddd4;
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --radius: 12px;
+  --font: 'Georgia', 'Noto Serif SC', 'Source Han Serif SC', 'STSong', serif;
+  --font-sans: -apple-system, 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  line-height: 1.8;
+  font-size: 17px;
+}
+/* scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* ===== NAV ===== */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(250,247,242,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 48px;
+}
+nav .logo { font-weight: 600; color: var(--accent); letter-spacing: 0.5px; }
+nav .nav-links { display: flex; gap: 4px; flex-wrap: wrap; }
+nav .nav-links a {
+  text-decoration: none; color: var(--text-light);
+  padding: 4px 10px; border-radius: 6px;
+  transition: all 0.2s;
+}
+nav .nav-links a:hover { background: var(--accent-soft); color: var(--accent); }
+
+/* ===== COVER ===== */
+.cover {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  padding: 80px 24px 40px;
+  position: relative;
+  overflow: hidden;
+}
+.cover::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 30%, var(--gold-light) 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 70%, var(--blue-light) 0%, transparent 50%);
+  opacity: 0.5;
+}
+.cover h1 {
+  font-size: clamp(2.4rem, 6vw, 4.2rem);
+  font-weight: 700;
+  letter-spacing: 4px;
+  position: relative;
+  color: var(--text);
+}
+.cover h1 .highlight { color: var(--accent); }
+.cover .subtitle {
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  color: var(--text-light);
+  margin-top: 20px;
+  max-width: 600px;
+  position: relative;
+  font-family: var(--font-sans);
+  line-height: 1.6;
+}
+.cover .scroll-hint {
+  position: absolute; bottom: 40px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--text-light);
+  animation: bob 2s ease-in-out infinite;
+}
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(8px); }
+}
+
+/* ===== SECTIONS ===== */
+section { max-width: 800px; margin: 0 auto; padding: 80px 24px; }
+section.full { max-width: 100%; padding: 80px 0; }
+.section-inner { max-width: 800px; margin: 0 auto; padding: 0 24px; }
+
+h2 {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+h2 .era-badge {
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 2px 10px;
+  border-radius: 4px;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 32px 0 12px;
+  color: var(--text);
+}
+h4 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 24px 0 8px;
+  color: var(--text);
+}
+p { margin-bottom: 16px; color: var(--text); }
+.lead {
+  font-size: 1.1rem;
+  color: var(--text-light);
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+
+/* ===== TIMELINE ===== */
+.timeline-container {
+  position: relative;
+  margin: 60px auto;
+  max-width: 700px;
+}
+.timeline-line {
+  position: absolute;
+  left: 50%; top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(to bottom, var(--gold), var(--blue), var(--green), var(--purple), var(--accent));
+  transform: translateX(-50%);
+  border-radius: 2px;
+}
+.timeline-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 48px;
+  position: relative;
+}
+.timeline-item:nth-child(odd) { flex-direction: row; }
+.timeline-item:nth-child(even) { flex-direction: row-reverse; }
+.timeline-item .tl-content {
+  width: calc(50% - 30px);
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  transition: transform 0.3s;
+}
+.timeline-item .tl-content:hover { transform: translateY(-2px); }
+.timeline-item .tl-dot {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  position: absolute;
+  left: 50%; transform: translateX(-50%);
+  border: 3px solid var(--card-bg);
+  z-index: 2;
+}
+.tl-year {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-light);
+}
+.tl-title { font-weight: 700; font-size: 1.1rem; margin: 4px 0; }
+.tl-desc { font-size: 0.9rem; color: var(--text-light); line-height: 1.5; }
+
+/* ===== SVG ILLUSTRATIONS ===== */
+.era-illustration {
+  text-align: center;
+  margin: 40px auto;
+  max-width: 600px;
+}
+.era-illustration svg {
+  max-width: 100%;
+  height: auto;
+}
+.fig-caption {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--text-light);
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* ===== STORY CARDS ===== */
+.story-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 32px;
+  margin: 40px 0;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  position: relative;
+}
+.story-card::before {
+  content: '📖';
+  position: absolute;
+  top: -14px; left: 24px;
+  font-size: 24px;
+  background: var(--bg);
+  padding: 0 8px;
+}
+.story-card .story-title {
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+.story-card .story-text {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--text);
+}
+.story-card .story-moral {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: var(--gold-light);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 6px 6px 0;
+  font-style: italic;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+/* ===== QUOTE ===== */
+blockquote {
+  margin: 32px 0;
+  padding: 20px 24px;
+  border-left: 3px solid var(--accent);
+  background: var(--card-bg);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-style: italic;
+  color: var(--text-light);
+  font-size: 1.05rem;
+}
+blockquote cite {
+  display: block;
+  margin-top: 8px;
+  font-style: normal;
+  font-size: 0.85rem;
+  color: var(--text-light);
+  font-family: var(--font-sans);
+}
+
+/* ===== COMPARISON ===== */
+.comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin: 32px 0;
+}
+.comp-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 28px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.comp-card.work { border-top: 3px solid var(--blue); }
+.comp-card.life { border-top: 3px solid var(--gold); }
+.comp-card h4 { margin-top: 0; }
+.comp-card ul { list-style: none; padding: 0; }
+.comp-card ul li {
+  padding: 6px 0;
+  padding-left: 20px;
+  position: relative;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+.comp-card ul li::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 13px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+.comp-card.work ul li::before { background: var(--blue); }
+.comp-card.life ul li::before { background: var(--gold); }
+
+/* ===== COMPASS / GUIDANCE ===== */
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  margin: 40px 0;
+}
+.guide-item {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 24px;
+  text-align: center;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  transition: transform 0.3s;
+}
+.guide-item:hover { transform: translateY(-3px); }
+.guide-item .guide-icon { font-size: 2rem; margin-bottom: 12px; }
+.guide-item h4 { margin: 0 0 8px; font-size: 1rem; }
+.guide-item p { font-size: 0.88rem; color: var(--text-light); margin: 0; line-height: 1.5; }
+
+/* ===== ERA BANDS ===== */
+.era-band {
+  padding: 60px 0;
+}
+.era-band:nth-child(even) { background: var(--card-bg); }
+.era-agri { --band: var(--gold-light); }
+.era-industry { --band: var(--blue-light); }
+.era-knowledge { --band: var(--green-light); }
+.era-internet { --band: var(--purple-light); }
+.era-ai { --band: var(--orange-light); }
+.era-band:nth-child(odd) { background: var(--band); }
+
+.band-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+.band-header h2 { margin-bottom: 12px; }
+.band-header .era-period {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--text-light);
+  letter-spacing: 2px;
+}
+
+/* ===== TABLE ===== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 32px 0;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+}
+th, td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+th {
+  background: var(--text);
+  color: var(--card-bg);
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(0,0,0,0.02); }
+
+/* ===== INTRO SECTION ===== */
+#intro {
+  text-align: center;
+  padding-top: 40px;
+}
+#intro .intro-svg { margin: 32px auto; max-width: 500px; }
+
+/* ===== CONCLUSION ===== */
+.conclusion {
+  text-align: center;
+  padding: 80px 24px;
+  background: linear-gradient(135deg, var(--text) 0%, #1a1814 100%);
+  color: #f0ede8;
+}
+.conclusion h2 { color: #f0ede8; }
+.conclusion p { color: #bbb5ab; max-width: 600px; margin: 16px auto; }
+.conclusion .final-words {
+  font-size: 1.3rem;
+  color: var(--gold-light);
+  font-style: italic;
+  max-width: 500px;
+  margin: 32px auto;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  body { font-size: 15px; }
+  section { padding: 60px 16px; }
+  .timeline-item,
+  .timeline-item:nth-child(even) { flex-direction: column; align-items: flex-start; }
+  .timeline-item .tl-content { width: calc(100% - 20px); margin-left: 30px; }
+  .timeline-item .tl-dot { left: 0; }
+  .timeline-line { left: 0; }
+  .comparison-grid { grid-template-columns: 1fr; }
+  .guide-grid { grid-template-columns: 1fr; }
+  nav .nav-links { display: none; }
+  .story-card { padding: 24px 20px; }
+}
+@media (max-width: 480px) {
+  .cover h1 { font-size: 1.8rem; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="logo">✦ 工作的意义</span>
+  <div class="nav-links">
+    <a href="#intro">引言</a>
+    <a href="#agriculture">农业</a>
+    <a href="#industry">工业</a>
+    <a href="#knowledge">知识</a>
+    <a href="#internet">互联网</a>
+    <a href="#ai">AI</a>
+    <a href="#comparison">工作 vs 生活</a>
+    <a href="#guidance">方向</a>
+  </div>
+</nav>
+
+<!-- ===== COVER ===== -->
+<section class="cover">
+  <svg width="120" height="120" viewBox="0 0 120 120" style="margin-bottom:24px;position:relative">
+    <circle cx="60" cy="60" r="55" fill="none" stroke="#e5ddd4" stroke-width="1"/>
+    <circle cx="60" cy="60" r="40" fill="none" stroke="#d4c5b0" stroke-width="0.5" stroke-dasharray="3 3"/>
+    <path d="M60 15 L60 30" stroke="#c0392b" stroke-width="2" stroke-linecap="round"/>
+    <path d="M60 90 L60 105" stroke="#c0392b" stroke-width="2" stroke-linecap="round"/>
+    <path d="M15 60 L30 60" stroke="#c0392b" stroke-width="2" stroke-linecap="round"/>
+    <path d="M90 60 L105 60" stroke="#c0392b" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="60" cy="60" r="6" fill="#c0392b"/>
+    <!-- 四个方向的符号 -->
+    <text x="60" y="10" text-anchor="middle" font-size="9" fill="#6b6558" font-family="sans-serif">生存</text>
+    <text x="60" y="118" text-anchor="middle" font-size="9" fill="#6b6558" font-family="sans-serif">自我</text>
+    <text x="5" y="64" text-anchor="middle" font-size="9" fill="#6b6558" font-family="sans-serif">群体</text>
+    <text x="115" y="64" text-anchor="middle" font-size="9" fill="#6b6558" font-family="sans-serif">创造</text>
+    <!-- 旋转的箭头 -->
+    <path d="M60 20 A40 40 0 1 1 59.9 20" fill="none" stroke="#b8860b" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.5"/>
+  </svg>
+  <h1>探寻<span class="highlight">工作的意义</span></h1>
+  <p class="subtitle">
+    从农业文明的日出而作，到AI时代的身份焦虑——<br>
+    我们花掉人生三分之一的时间工作，<br>
+    却很少停下来问：<strong>这一切，是为了什么？</strong>
+  </p>
+  <div class="scroll-hint">↓ 向下探索</div>
+</section>
+
+<!-- ===== INTRO ===== -->
+<section id="intro">
+  <div class="intro-svg">
+    <svg width="500" height="200" viewBox="0 0 500 200" style="max-width:100%">
+      <!-- 人生时间轴 -->
+      <text x="250" y="30" text-anchor="middle" font-size="13" fill="#6b6558" font-family="sans-serif">人生时间分配</text>
+      <!-- 学习期 -->
+      <rect x="30" y="55" width="100" height="30" rx="6" fill="#f0e6d3" stroke="#b8860b" stroke-width="1"/>
+      <text x="80" y="74" text-anchor="middle" font-size="10" fill="#8b7355" font-family="sans-serif">学习 15-20年</text>
+      <!-- 工作期 -->
+      <rect x="140" y="55" width="200" height="30" rx="6" fill="#d4e3d8" stroke="#4a7c59" stroke-width="1"/>
+      <text x="240" y="74" text-anchor="middle" font-size="10" fill="#3a5c49" font-family="sans-serif">工作 30-40年</text>
+      <!-- 退休期 -->
+      <rect x="350" y="55" width="120" height="30" rx="6" fill="#d6e5ed" stroke="#2c6e91" stroke-width="1"/>
+      <text x="410" y="74" text-anchor="middle" font-size="10" fill="#2c5a75" font-family="sans-serif">生活 20-30年</text>
+      <!-- 箭头标注 -->
+      <path d="M250 100 L250 130" stroke="#aaa" stroke-width="1" stroke-dasharray="3 3"/>
+      <text x="250" y="150" text-anchor="middle" font-size="10" fill="#6b6558" font-family="sans-serif">工作占据了人生最黄金的30-40年</text>
+      <!-- 问题 -->
+      <text x="250" y="175" text-anchor="middle" font-size="11" fill="#c0392b" font-family="sans-serif" font-weight="bold">当工作本身的寿命越来越短，意义在哪里？</text>
+    </svg>
+  </div>
+  <p class="lead">
+    上学花了15-20年，工作30-40年，退休之后还有几十年——人生的绝大多数时间都和工作绑定在一起。
+    工业时代，一份工作可以做一辈子；互联网时代，一个岗位的平均生命周期缩短到3-5年；AI时代，技能的半衰期还在加速缩短。
+    当工作本身变得不稳定、不可预测，"工作的意义"不再是一个哲学问题，它成了一个每天都要面对的生存问题。
+  </p>
+  <p>
+    这份报告不是答案——它是一张地图。我们从农业文明出发，一路走到AI时代，在每个历史阶段停下来，
+    看看人们如何看待工作，听听那些困在时代缝隙里的普通人的故事，然后在路的尽头，试着画一张属于自己的指南针。
+  </p>
+</section>
+
+<!-- ===== TIMELINE ===== -->
+<section style="padding-top:20px;padding-bottom:20px">
+  <h3 style="text-align:center;margin-bottom:40px;font-family:var(--font-sans);color:var(--text-light);letter-spacing:2px">一 条 时 间 线</h3>
+  <div class="timeline-container">
+    <div class="timeline-line"></div>
+
+    <div class="timeline-item">
+      <div class="tl-content">
+        <div class="tl-year">约公元前10000年 — 18世纪</div>
+        <div class="tl-title">🌾 农业时代</div>
+        <div class="tl-desc">工作 = 生存。日出而作，日落而息。人与自然共生。</div>
+      </div>
+      <div class="tl-dot" style="background:var(--gold);"></div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="tl-content">
+        <div class="tl-year">1760 — 1900</div>
+        <div class="tl-title">🏭 工业时代</div>
+        <div class="tl-desc">工作 = 机器。时间被分割，人被异化，但效率前所未有。</div>
+      </div>
+      <div class="tl-dot" style="background:var(--blue);"></div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="tl-content">
+        <div class="tl-year">1900 — 2000</div>
+        <div class="tl-title">📚 知识时代</div>
+        <div class="tl-desc">工作 = 职业。专业分工，公司人，职业生涯规划。</div>
+      </div>
+      <div class="tl-dot" style="background:var(--green);"></div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="tl-content">
+        <div class="tl-year">2000 — 2020</div>
+        <div class="tl-title">🌐 互联网时代</div>
+        <div class="tl-desc">工作 = 项目。自由职业，零工经济，个人品牌崛起。</div>
+      </div>
+      <div class="tl-dot" style="background:var(--purple);"></div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="tl-content">
+        <div class="tl-year">2020 — 至今</div>
+        <div class="tl-title">🤖 AI时代</div>
+        <div class="tl-desc">工作 = ？身份焦虑，人与机器的边界重新定义。</div>
+      </div>
+      <div class="tl-dot" style="background:var(--accent);"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 1. AGRICULTURE ===== -->
+<div class="era-band era-agri" id="agriculture">
+  <div class="section-inner">
+    <div class="band-header">
+      <h2><span class="era-badge" style="background:var(--gold);color:var(--card-bg);">农业文明</span>日出而作，日落而息</h2>
+      <p class="era-period">约公元前10000年 — 18世纪</p>
+    </div>
+
+    <div class="era-illustration">
+      <svg width="500" height="280" viewBox="0 0 500 280">
+        <!-- 天空 -->
+        <rect width="500" height="280" fill="#f5f0e8"/>
+        <!-- 太阳 -->
+        <circle cx="400" cy="50" r="35" fill="#e8c84a" opacity="0.8"/>
+        <circle cx="400" cy="50" r="28" fill="#f0d860"/>
+        <!-- 光芒 -->
+        <g stroke="#f0d860" stroke-width="2" opacity="0.4">
+          <line x1="400" y1="5" x2="400" y2="0"/>
+          <line x1="450" y1="30" x2="480" y2="15"/>
+          <line x1="460" y1="50" x2="490" y2="50"/>
+          <line x1="350" y1="30" x2="320" y2="15"/>
+          <line x1="340" y1="50" x2="310" y2="50"/>
+        </g>
+        <!-- 远山 -->
+        <path d="M0 200 Q80 140 160 200 Q250 130 340 200 Q420 150 500 200 L500 280 L0 280 Z" fill="#c4b89a"/>
+        <path d="M0 220 Q100 170 200 220 Q280 160 380 220 Q450 180 500 220 L500 280 L0 280 Z" fill="#a8946a"/>
+        <!-- 田地 -->
+        <rect x="0" y="240" width="500" height="40" fill="#8b7d5e"/>
+        <g stroke="#7a6c4e" stroke-width="1" opacity="0.5">
+          <line x1="50" y1="240" x2="50" y2="280"/>
+          <line x1="150" y1="240" x2="150" y2="280"/>
+          <line x1="250" y1="240" x2="250" y2="280"/>
+          <line x1="350" y1="240" x2="350" y2="280"/>
+          <line x1="450" y1="240" x2="450" y2="280"/>
+        </g>
+        <!-- 农夫 -->
+        <g transform="translate(200,195)">
+          <circle cx="0" cy="-25" r="8" fill="#c68642"/>
+          <rect x="-6" y="-18" width="12" height="18" rx="3" fill="#d4a76a"/>
+          <rect x="-10" y="-5" width="20" height="25" rx="2" fill="#8b6b3d"/>
+          <line x1="0" y1="20" x2="0" y2="35" stroke="#8b6b3d" stroke-width="4"/>
+          <!-- 锄头 -->
+          <line x1="12" y1="5" x2="35" y2="30" stroke="#6b4a2a" stroke-width="2.5"/>
+          <rect x="30" y="26" width="10" height="6" rx="2" fill="#888" transform="rotate(30,35,29)"/>
+        </g>
+        <!-- 房子 -->
+        <rect x="60" y="180" width="50" height="40" fill="#c4a67a" rx="2"/>
+        <polygon points="55,180 85,155 115,180" fill="#8b3a2a"/>
+        <rect x="80" y="198" width="12" height="22" fill="#6b4a2a" rx="1"/>
+        <!-- 动物 -->
+        <g transform="translate(130,215)">
+          <ellipse cx="0" cy="0" rx="12" ry="7" fill="#d4c4a0"/>
+          <circle cx="-6" cy="-6" r="4" fill="#d4c4a0"/>
+          <line x1="12" y1="5" x2="18" y2="12" stroke="#d4c4a0" stroke-width="2"/>
+          <line x1="12" y1="5" x2="18" y2="10" stroke="#d4c4a0" stroke-width="2"/>
+        </g>
+        <text x="250" y="270" text-anchor="middle" font-size="11" fill="#5a4c2e" font-family="sans-serif">工作即生存，人与自然的契约</text>
+      </svg>
+    </div>
+
+    <p>
+      在农业文明的漫长岁月里，"工作"不是一个独立的概念。它和"生活"浑然一体——播种、除草、收割、祭祀、建房、
+      织布……每一项活动都是生存本身，不需要被单独拎出来叫做"工作"。
+    </p>
+    <p>
+      农民的工作由自然节律驱动：春天播种，夏天耕耘，秋天收获，冬天休养。没有人问你"你的五年规划是什么"，
+      因为五年后的收成取决于未来的雨水，而非你的雄心。太阳是钟表，四季是日历，土地是银行。
+    </p>
+    <p>
+      在这样的世界里，工作的意义是<strong>直接的</strong>：春种一粒粟，秋收万颗子。你劳动，你吃饱，你活着。
+      劳动本身的反馈周期就是一年。你看到种子变成秧苗，秧苗变成稻穗，稻穗变成碗里的饭——意义就在这个过程中自然浮现。
+    </p>
+
+    <div class="story-card">
+      <div class="story-title">故事一 · 老周和他的田</div>
+      <div class="story-text">
+        <p>老周今年六十三了，在江西的一个村子里种了一辈子的田。</p>
+        <p>有人问他："种田累吗？"<br>
+        他说："累。但现在机器多了，比以前好多了。"</p>
+        <p>"想过不种吗？"<br>
+        "不种干嘛？田荒着心疼。再说——"他指了指远处的山，"你看那山，我二十岁的时候在上面砍柴，四十岁的时候在上面种橘子树，现在树还在，每年都结果。我知道哪块地种什么长得最好，知道什么时候该撒种，什么时候该追肥。这些东西没人教我，都是田告诉我的。"</p>
+        <p>老周的儿子在深圳打工，一年回来一次。儿子说在城里"搞钱"，老周听不懂，但他知道儿子每个月还完房租所剩无几。他劝儿子回来，儿子不肯。</p>
+        <p>"他觉得种田没出息，"老周笑了笑，低头搓着手上的泥土，"但我跟他说，你吃的每一粒米，都是像我这样的人种的。你们城里人那么厉害，总不能喝西北风活着吧？"</p>
+      </div>
+      <div class="story-moral">
+        在农业文明中，工作的意义是<strong>可触摸的</strong>——你种下的每一粒种子，都对应着未来的收成。意义不是来自外在的认可，而是来自劳动本身和土地的回馈。
+      </div>
+    </div>
+
+    <blockquote>
+      "人误地一时，地误人一年。"
+      <cite>—— 中国农谚</cite>
+    </blockquote>
+  </div>
+</div>
+
+<!-- ===== 2. INDUSTRY ===== -->
+<div class="era-band era-industry" id="industry">
+  <div class="section-inner">
+    <div class="band-header">
+      <h2><span class="era-badge" style="background:var(--blue);color:var(--card-bg);">工业时代</span>从日出到打卡</h2>
+      <p class="era-period">1760 — 1900</p>
+    </div>
+
+    <div class="era-illustration">
+      <svg width="500" height="300" viewBox="0 0 500 300">
+        <!-- 灰色天空 -->
+        <rect width="500" height="300" fill="#d4cbc0"/>
+        <!-- 工厂 -->
+        <rect x="100" y="120" width="250" height="160" fill="#8b7d72" rx="3"/>
+        <rect x="130" y="100" width="40" height="30" fill="#7a6c62" rx="2"/>
+        <rect x="220" y="100" width="40" height="30" fill="#7a6c62" rx="2"/>
+        <!-- 烟囱 -->
+        <rect x="140" y="40" width="16" height="60" fill="#6b5a50"/>
+        <rect x="230" y="50" width="16" height="50" fill="#6b5a50"/>
+        <rect x="310" y="60" width="16" height="60" fill="#6b5a50"/>
+        <!-- 烟雾 -->
+        <g opacity="0.3">
+          <circle cx="148" cy="35" r="12" fill="#6b5a50"/>
+          <circle cx="155" cy="22" r="16" fill="#6b5a50"/>
+          <circle cx="165" cy="12" r="20" fill="#6b5a50" opacity="0.2"/>
+          <circle cx="238" cy="45" r="12" fill="#6b5a50"/>
+          <circle cx="245" cy="32" r="16" fill="#6b5a50" opacity="0.2"/>
+          <circle cx="318" cy="55" r="12" fill="#6b5a50" opacity="0.2"/>
+        </g>
+        <!-- 窗户 -->
+        <g fill="#c4b8a0" opacity="0.6">
+          <rect x="110" y="150" width="25" height="30" rx="1"/>
+          <rect x="145" y="150" width="25" height="30" rx="1"/>
+          <rect x="180" y="150" width="25" height="30" rx="1"/>
+          <rect x="250" y="150" width="25" height="30" rx="1"/>
+          <rect x="285" y="150" width="25" height="30" rx="1"/>
+          <rect x="110" y="200" width="25" height="30" rx="1"/>
+          <rect x="145" y="200" width="25" height="30" rx="1"/>
+          <rect x="180" y="200" width="25" height="30" rx="1"/>
+          <rect x="250" y="200" width="25" height="30" rx="1"/>
+          <rect x="285" y="200" width="25" height="30" rx="1"/>
+        </g>
+        <!-- 门 -->
+        <rect x="200" y="230" width="40" height="50" fill="#5a4a3a" rx="2"/>
+        <circle cx="230" cy="258" r="2" fill="#c4b8a0"/>
+        <!-- 工人（小） -->
+        <g transform="translate(50,260)">
+          <circle cx="0" cy="-8" r="4" fill="#8b7d72"/>
+          <rect x="-4" y="-4" width="8" height="12" fill="#6b5a50"/>
+          <rect x="-4" y="8" width="8" height="14" fill="#5a4a3a"/>
+        </g>
+        <g transform="translate(370,255)">
+          <circle cx="0" cy="-8" r="4" fill="#8b7d72"/>
+          <rect x="-4" y="-4" width="8" height="12" fill="#6b5a50"/>
+          <rect x="-4" y="8" width="8" height="14" fill="#5a4a3a"/>
+        </g>
+        <g transform="translate(355,260)">
+          <circle cx="0" cy="-8" r="4" fill="#8b7d72"/>
+          <rect x="-4" y="-4" width="8" height="12" fill="#6b5a50"/>
+          <rect x="-4" y="8" width="8" height="14" fill="#5a4a3a"/>
+        </g>
+        <!-- 时钟 -->
+        <circle cx="420" cy="60" r="25" fill="#f0e8d8" stroke="#6b5a50" stroke-width="2"/>
+        <text x="420" y="52" text-anchor="middle" font-size="7" fill="#6b5a50" font-family="sans-serif">12</text>
+        <text x="442" y="64" text-anchor="middle" font-size="7" fill="#6b5a50" font-family="sans-serif">3</text>
+        <text x="420" y="78" text-anchor="middle" font-size="7" fill="#6b5a50" font-family="sans-serif">6</text>
+        <text x="398" y="64" text-anchor="middle" font-size="7" fill="#6b5a50" font-family="sans-serif">9</text>
+        <line x1="420" y1="60" x2="420" y2="45" stroke="#c0392b" stroke-width="1.5"/>
+        <line x1="420" y1="60" x2="432" y2="60" stroke="#333" stroke-width="1.2"/>
+        <circle cx="420" cy="60" r="1.5" fill="#333"/>
+        <text x="420" y="96" text-anchor="middle" font-size="9" fill="#6b5a50" font-family="sans-serif">TIME IS MONEY</text>
+        <text x="250" y="290" text-anchor="middle" font-size="11" fill="#5a4a3a" font-family="sans-serif">工作被时钟分割，人被异化为机器</text>
+      </svg>
+    </div>
+
+    <p>
+      工业革命改变了人和工作的关系。蒸汽机、流水线、标准化生产——这些技术把"工作"从田野搬进了工厂，
+      也把人和劳动成果之间那层直接的联系切断了。
+    </p>
+    <p>
+      农业时代，一个农民知道自己种的是小麦还是水稻，知道这些粮食最终进了谁的碗。工业时代，一个女工每天拧几百个螺丝，
+      但她永远不知道这些螺丝装在了哪辆车上、去了哪个城市。她的劳动是<strong>碎片化</strong>的，她的成果是<strong>不可见</strong>的。
+    </p>
+    <p>
+      更根本的变化是<strong>时间</strong>。农业时代的时间是循环的（日出日落、四季轮回），工业时代的时间变成了线性的、
+      可测量的、可买卖的。"八小时工作制"不是自然规律——它是工人和资本家博弈出来的结果。时间就是金钱，这句话只能是工业时代的产物。
+    </p>
+    <p>
+      马克思把这种现象叫做"异化"：工人和自己的劳动产品异化、和生产过程异化、和人的本质异化、和他人异化。
+      翻译成大白话就是：你干了一天的活，但你觉得这一天不属于你。
+    </p>
+
+    <div class="story-card">
+      <div class="story-title">故事二 · 汤姆的星期六下午</div>
+      <div class="story-text">
+        <p>1820年，曼彻斯特。汤姆十一岁，在棉纺厂做工。</p>
+        <p>他每天早上五点半起床，六点进工厂，晚上八点出来。中间有半小时吃饭。他的工作是站在机器旁边，看到断了的线头就接上。每天站十三个半小时。他个子太小，够不到机器上方的线轴，工厂主给他脚下垫了一个木箱子。</p>
+        <p>有一天星期六，下午两点工厂提前关门。汤姆走出厂门，阳光刺得他睁不开眼。他已经很久没见过白天的太阳了——冬天的时候，他进厂时天还没亮，出厂时天已经黑了。</p>
+        <p>他站在街上，突然不知道该干什么。没有机器要他照看，没有线头要他接上。他就那么站在那儿，站了十分钟，直到一个工友拍他的肩膀："喂，小子，下班了，回家去吧。"</p>
+        <p>汤姆愣了一下说："回家……做什么？"</p>
+        <p>他六岁就开始做工。他的人生就是工作。当工作暂停了，人生也跟着暂停了。</p>
+      </div>
+      <div class="story-moral">
+        当工作被简化为重复劳动，人被简化为一双手，<strong>停工就等同于虚无</strong>。工业革命创造了物质财富，却制造了一个更深层的空洞：工作之外，你是谁？
+      </div>
+    </div>
+
+    <blockquote>
+      "由于机器成了一种手段，时间成了一种商品，人和人之间的关系也变成了物和物之间的关系。"
+      <cite>—— C.P.斯诺，《两种文化》</cite>
+    </blockquote>
+  </div>
+</div>
+
+<!-- ===== 3. KNOWLEDGE ===== -->
+<div class="era-band era-knowledge" id="knowledge">
+  <div class="section-inner">
+    <div class="band-header">
+      <h2><span class="era-badge" style="background:var(--green);color:var(--card-bg);">知识时代</span>职业，身份，阶梯</h2>
+      <p class="era-period">1900 — 2000</p>
+    </div>
+
+    <div class="era-illustration">
+      <svg width="500" height="280" viewBox="0 0 500 280">
+        <!-- 背景 -->
+        <rect width="500" height="280" fill="#eef3ec"/>
+        <!-- 办公大楼 -->
+        <rect x="120" y="40" width="260" height="220" fill="#d4dcd0" rx="4" stroke="#b0bca4" stroke-width="1"/>
+        <!-- 楼层 -->
+        <g stroke="#b0bca4" stroke-width="0.5" opacity="0.5">
+          <line x1="120" y1="75" x2="380" y2="75"/>
+          <line x1="120" y1="110" x2="380" y2="110"/>
+          <line x1="120" y1="145" x2="380" y2="145"/>
+          <line x1="120" y1="180" x2="380" y2="180"/>
+          <line x1="120" y1="215" x2="380" y2="215"/>
+        </g>
+        <!-- 窗户 -->
+        <g fill="#a0b8a0" opacity="0.4">
+          <rect x="140" y="55" width="20" height="18" rx="1"/>
+          <rect x="175" y="55" width="20" height="18" rx="1"/>
+          <rect x="210" y="55" width="20" height="18" rx="1"/>
+          <rect x="245" y="55" width="20" height="18" rx="1"/>
+          <rect x="280" y="55" width="20" height="18" rx="1"/>
+          <rect x="315" y="55" width="20" height="18" rx="1"/>
+          <rect x="350" y="55" width="20" height="18" rx="1"/>
+          <rect x="140" y="90" width="20" height="18" rx="1"/>
+          <rect x="175" y="90" width="20" height="18" rx="1"/>
+          <rect x="210" y="90" width="20" height="18" rx="1"/>
+          <rect x="245" y="90" width="20" height="18" rx="1"/>
+          <rect x="280" y="90" width="20" height="18" rx="1"/>
+          <rect x="140" y="125" width="20" height="18" rx="1"/>
+          <rect x="175" y="125" width="20" height="18" rx="1"/>
+          <rect x="210" y="125" width="20" height="18" rx="1"/>
+          <rect x="245" y="125" width="20" height="18" rx="1"/>
+          <rect x="280" y="125" width="20" height="18" rx="1"/>
+        </g>
+        <!-- 门 -->
+        <rect x="230" y="210" width="40" height="50" rx="20" fill="#7a8a70"/>
+        <!-- 阶梯 -->
+        <g transform="translate(400,50)">
+          <rect x="0" y="0" width="60" height="15" fill="#b0bca4" rx="1"/>
+          <rect x="10" y="18" width="50" height="15" fill="#b0bca4" rx="1"/>
+          <rect x="20" y="36" width="40" height="15" fill="#b0bca4" rx="1"/>
+          <rect x="30" y="54" width="30" height="15" fill="#b0bca4" rx="1"/>
+          <!-- 小人往上爬 -->
+          <g transform="translate(45,5)">
+            <circle cx="0" cy="-6" r="4" fill="#4a6a4a"/>
+            <rect x="-3" y="-2" width="6" height="8" fill="#4a6a4a"/>
+            <rect x="-3" y="6" width="6" height="10" fill="#4a6a4a"/>
+          </g>
+        </g>
+        <!-- 标签 -->
+        <text x="250" y="260" text-anchor="middle" font-size="11" fill="#4a6a4a" font-family="sans-serif">职业、晋升、身份标签——"我是一名……"</text>
+      </svg>
+    </div>
+
+    <p>
+      二十世纪是"职业"的黄金时代。管理学诞生、企业崛起、中产阶级壮大——工作不再只是谋生手段，
+      它成了一个人<strong>定义自己</strong>的核心方式。
+    </p>
+    <p>
+      "你做什么工作？"成了陌生人之间第一个用来定位彼此的问题。做律师的、做医生的、做会计的、做工程师的……
+      职业前缀变成了一种社会身份。名片上的title，比你的名字更能说明"你是谁"。
+    </p>
+    <p>
+      这个时代诞生了一个重要的承诺：<strong>只要你努力工作，公司会照顾你</strong>。从入职到退休，在一家公司服务三十年，
+      拿到一块金表——这是"组织人"时代的理想人生。工作提供了稳定、身份、社交圈、甚至人生的意义。
+    </p>
+    <p>
+      但这也是一个充满<strong>隐性代价</strong>的时代。当工作等同于自我价值，裁员就不再只是失去收入——它变成了一场身份危机。
+      "我被解雇了"意味着"我这个人不够好"。工作意义的获取成本，是把自己的全部自尊都压在一份雇佣关系上。
+    </p>
+
+    <div class="story-card">
+      <div class="story-title">故事三 · 张工的名片</div>
+      <div class="story-text">
+        <p>张建国，1985年进入国营机械厂，从技术员做起，二十年后当上了总工程师。</p>
+        <p>他的名片永远放在西装左上口袋。上面印着："XX机械制造厂 · 总工程师 · 张建国"。每次递名片的时候，他都会习惯性地用拇指抚平一下边角，双手递过去。这是他最自豪的东西。</p>
+        <p>2005年，厂子改制，被一家民营企业收购。新老板找他谈话，说："张工，您经验丰富，但管理上我们需要新鲜血液。您可以留下来做技术顾问，薪水不变。"</p>
+        <p>张建国听懂了。他不再是总工程师了。没有宣布仪式，没有降薪通知——只是他的新名片上，title变成了"技术顾问"四个字。</p>
+        <p>他老婆说："工资没少就行呗。"<br>
+        他说："你不懂。"<br>
+        老婆说："我是不懂。我就知道你还是那个早出晚归的人，还是拿那么多钱。有什么区别？"</p>
+        <p>张建国有口难言。对他来说，"总工程师"不是职位——它是他熬了二十年换来的身份标签。没了它，名片薄了，人也矮了。</p>
+        <p>他把没发完的旧名片锁在抽屉里。偶尔打开看看。</p>
+      </div>
+      <div class="story-moral">
+        当一个人的自我价值完全绑定在职业身份上，<strong>Title的失去就变成了自我的消解</strong>。意义的来源如果只有一
+        个，它就永远是脆弱的。
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 4. INTERNET ===== -->
+<div class="era-band era-internet" id="internet">
+  <div class="section-inner">
+    <div class="band-header">
+      <h2><span class="era-badge" style="background:var(--purple);color:var(--card-bg);">互联网时代</span>项目，作品，个人品牌</h2>
+      <p class="era-period">2000 — 2020</p>
+    </div>
+
+    <div class="era-illustration">
+      <svg width="500" height="300" viewBox="0 0 500 300">
+        <!-- 背景 -->
+        <rect width="500" height="300" fill="#f2edf0"/>
+        <!-- 网络节点 -->
+        <g>
+          <circle cx="100" cy="80" r="30" fill="#d4c4d8" stroke="#b098b8" stroke-width="1"/>
+          <text x="100" y="84" text-anchor="middle" font-size="8" fill="#5a4a6a" font-family="sans-serif">自由职业</text>
+        </g>
+        <g>
+          <circle cx="250" cy="50" r="30" fill="#d4c4d8" stroke="#b098b8" stroke-width="1"/>
+          <text x="250" y="54" text-anchor="middle" font-size="8" fill="#5a4a6a" font-family="sans-serif">远程办公</text>
+        </g>
+        <g>
+          <circle cx="400" cy="80" r="30" fill="#d4c4d8" stroke="#b098b8" stroke-width="1"/>
+          <text x="400" y="84" text-anchor="middle" font-size="8" fill="#5a4a6a" font-family="sans-serif">个人品牌</text>
+        </g>
+        <g>
+          <circle cx="160" cy="180" r="30" fill="#d4c4d8" stroke="#b098b8" stroke-width="1"/>
+          <text x="160" y="184" text-anchor="middle" font-size="8" fill="#5a4a6a" font-family="sans-serif">零工经济</text>
+        </g>
+        <g>
+          <circle cx="340" cy="180" r="30" fill="#d4c4d8" stroke="#b098b8" stroke-width="1"/>
+          <text x="340" y="184" text-anchor="middle" font-size="8" fill="#5a4a6a" font-family="sans-serif">创业</text>
+        </g>
+        <g>
+          <circle cx="250" cy="240" r="30" fill="#d4c4d8" stroke="#b098b8" stroke-width="1"/>
+          <text x="250" y="244" text-anchor="middle" font-size="8" fill="#5a4a6a" font-family="sans-serif">斜杠青年</text>
+        </g>
+        <!-- 连线 -->
+        <g stroke="#b098b8" stroke-width="1" opacity="0.4">
+          <line x1="120" y1="105" x2="145" y2="155"/>
+          <line x1="220" y1="70" x2="160" y2="155"/>
+          <line x1="280" y1="70" x2="340" y2="155"/>
+          <line x1="420" y1="105" x2="355" y2="155"/>
+          <line x1="145" y1="210" x2="220" y2="235"/>
+          <line x1="355" y1="210" x2="280" y2="235"/>
+          <line x1="100" y1="110" x2="100" y2="140"/>
+          <line x1="400" y1="110" x2="400" y2="140"/>
+        </g>
+        <!-- 浮动小标签 -->
+        <text x="250" y="280" text-anchor="middle" font-size="11" fill="#5a4a6a" font-family="sans-serif">工作变成了一张网——连接、项目、个人品牌</text>
+      </svg>
+    </div>
+
+    <p>
+      互联网撕碎了"一份工作做一辈子"的脚本。公司不再是终身归宿，它变成了一个一个的<strong>项目</strong>。
+      你加入一个项目，做完，走人，下一个。
+    </p>
+    <p>
+      这带来了前所未有的自由——你可以给自己打工、可以同时做三份兼职、可以坐在巴厘岛的咖啡馆里给硅谷的公司写代码。
+      工作的边界模糊了：早上两点还在回邮件，下午却在看电影——这是你把"效率"发挥到了极致，还是你<strong>从来没有真正下班</strong>？
+    </p>
+    <p>
+      这个时代最大的谎言是"做你喜欢的事，钱就会来"。它把寻找工作意义的责任完全推给了个人。
+      如果你对工作感到迷茫，那一定是你还没有找到"真正的热情"。这种压力比工业时代的异化更隐蔽——明明是系统性的问题，
+      却成了个人的失败。
+    </p>
+    <p>
+      另一个核心变化是<strong>作品 vs 职位</strong>。互联网让个人的产出可以被大规模分发。一个独立开发者写的一个App可以服务
+      几百万人，一个自媒体人的一篇文章可以影响千万读者。你不再需要公司这个中间人来证明你的价值。
+      但代价是：没有公司这个缓冲带之后，市场的波动直接作用在每个人身上。
+    </p>
+
+    <div class="story-card">
+      <div class="story-title">故事四 · 凌晨三点的自由</div>
+      <div class="story-text">
+        <p>小林在2019年辞掉了大厂的工作，成为一名"数字游民"。</p>
+        <p>辞职那天，她在朋友圈发了一张在清迈 hostel 写代码的照片，配文："我的办公室今天长这样。"收获了上百个赞。</p>
+        <p>第三个月，她开始失眠。不是因为工作压力，而是因为没有"工作压力"。她发现自己需要不停的接单才能维持收入。Upwork上一个项目接一个项目，每个项目结束都有一种"下一顿在哪里"的焦虑。</p>
+        <p>"以前在大厂，每个月的15号工资准时到账，那种安全感是没有声音的——你根本注意不到它的存在，直到它消失。"</p>
+        <p>一天晚上，她给妈妈打电话。妈妈说："你那个自由职业，到底自由在哪里？我看你比以前还忙。"</p>
+        <p>小林说："你不懂。时间自由。"<br>
+        妈妈说："你都忙到凌晨三点了，哪里自由？"</p>
+        <p>"自由不是什么都不做——"小林停了一下，"自由是可以选择做什么。虽然我忙到凌晨三点，但这是我自己选的。"</p>
+        <p>她挂了电话，看着屏幕上的代码，想了一会儿，不确定刚才那句话是说给妈妈听的，还是说给自己听的。</p>
+      </div>
+      <div class="story-moral">
+        互联网时代的"自由"是一枚硬币的两面：一面是<strong>对自己时间的掌控权</strong>，另一面是<strong>没有尽头的自我剥削</strong>。
+        失去组织庇护的自由，有时比被组织束缚更令人不安。
+      </div>
+    </div>
+
+    <blockquote>
+      "零工经济的核心悖论：它承诺了灵活和自由，却把风险从组织转移到了个人。自由职业者不是老板——他们是只有一个人的小企业主。"
+      <cite>—— 盖伊·斯坦丁，《不稳定无产阶级》</cite>
+    </blockquote>
+  </div>
+</div>
+
+<!-- ===== 5. AI ERA ===== -->
+<div class="era-band era-ai" id="ai">
+  <div class="section-inner">
+    <div class="band-header">
+      <h2><span class="era-badge" style="background:var(--orange);color:var(--card-bg);">AI时代</span>意义的终结，还是新生？</h2>
+      <p class="era-period">2020 — 至今</p>
+    </div>
+
+    <div class="era-illustration">
+      <svg width="500" height="300" viewBox="0 0 500 300">
+        <!-- 背景 -->
+        <rect width="500" height="300" fill="#f5ede4"/>
+        <!-- 人类形象 -->
+        <g transform="translate(160,140)">
+          <circle cx="0" cy="-40" r="25" fill="#d4b898" stroke="#b09070" stroke-width="1"/>
+          <!-- 面部 -->
+          <circle cx="-8" cy="-44" r="3" fill="#6b5a4a"/>
+          <circle cx="8" cy="-44" r="3" fill="#6b5a4a"/>
+          <path d="M-8 -35 Q0 -28 8 -35" fill="none" stroke="#6b5a4a" stroke-width="1.5"/>
+          <!-- 身体 -->
+          <rect x="-20" y="-15" width="40" height="50" rx="5" fill="#d4b898"/>
+          <!-- 手臂伸出 -->
+          <line x1="-20" y1="0" x2="-60" y2="-20" stroke="#d4b898" stroke-width="10" stroke-linecap="round"/>
+          <line x1="20" y1="0" x2="60" y2="-20" stroke="#d4b898" stroke-width="10" stroke-linecap="round"/>
+        </g>
+        <!-- AI 形象 -->
+        <g transform="translate(340,130)">
+          <!-- 发光头部 -->
+          <rect x="-30" y="-40" width="60" height="60" rx="10" fill="#2c6e91" opacity="0.85"/>
+          <rect x="-25" y="-35" width="50" height="50" rx="8" fill="#3a8ab0" opacity="0.6"/>
+          <text x="0" y="-10" text-anchor="middle" font-size="20" fill="#fff" opacity="0.8" font-family="sans-serif">&lt;/&gt;</text>
+          <!-- 光晕 -->
+          <circle cx="0" cy="-10" r="50" fill="none" stroke="#3a8ab0" stroke-width="1" opacity="0.3"/>
+          <circle cx="0" cy="-10" r="65" fill="none" stroke="#3a8ab0" stroke-width="0.5" opacity="0.15"/>
+        </g>
+        <!-- 握手（两者之间） -->
+        <g transform="translate(250,135)">
+          <ellipse cx="0" cy="0" rx="18" ry="12" fill="#d4b898" stroke="#b09070" stroke-width="1"/>
+          <ellipse cx="15" cy="-3" rx="12" ry="10" fill="#3a8ab0" opacity="0.6"/>
+        </g>
+        <!-- 问号 -->
+        <g opacity="0.3">
+          <text x="50" y="60" font-size="40" fill="#c0392b" font-family="serif">?</text>
+          <text x="420" y="200" font-size="40" fill="#2c6e91" font-family="serif">?</text>
+        </g>
+        <text x="250" y="280" text-anchor="middle" font-size="11" fill="#6b5a4a" font-family="sans-serif">人与AI的边界正在模糊——工作还是人的专属吗？</text>
+      </svg>
+    </div>
+
+    <p>
+      ChatGPT发布后，一切都不一样了。不是"将要不一样"，是已经在根本上改变了。
+    </p>
+    <p>
+      历史上每一次技术革命，机器替代的都是<strong>体力</strong>——蒸汽替代了肌肉，电力替代了耐力，计算机替代了重复计算。
+      但这一次，AI替代的是<strong>认知</strong>。写文章、画图、写代码、做分析、做策略——这些曾经被我们当作"人类的独特价值"的事情，
+      机器也能做了，而且做得很快。
+    </p>
+    <p>
+      这带来了一个前所未有尖锐的问题：<strong>如果工作不再需要人类，人类还需要工作吗？</strong>
+    </p>
+    <p>
+      这个问题不是科幻小说里的遥远设定。它正在发生：翻译行业被颠覆，初级设计岗位急剧减少，程序员在担心自己的未来，
+      文案写作不再值钱——每一个以"脑力劳动"来定义自我价值的人，都在2023年之后的某一天半夜醒来，盯着天花板想：<em>我做的这些事，AI是不是也能做？</em>
+    </p>
+    <p>
+      但也许，这个危机也是一个契机——AI迫使我们把"工作"和"人的价值"彻底脱钩。如果工作不再是定义"我是谁"的唯一方式，
+      也许我们终于可以回到那个更古老的问题：<strong>活着的意义是什么？这是工作应该回答的问题吗？</strong>
+    </p>
+
+    <div class="story-card">
+      <div class="story-title">故事五 · 一个程序员的夜</div>
+      <div class="story-text">
+        <p>凌晨两点，陈晨还在调试代码。他已经在这家创业公司做了四年后端开发。这次是一个很普通的bug——某个API在边缘情况下返回了错误的状态码。平常他花二十分钟就能搞定。</p>
+        <p>但今天，他没有动手。他打开了Cursor（一个AI编程助手），用自然语言描述了一下问题。三秒钟，AI给出了修复方案。陈晨看了一眼，是对的。他点击了"接受"。</p>
+        <p>然后他靠在椅背上，盯着天花板发了很久的呆。</p>
+        <p>他想起十年前刚学编程的时候，用C语言写了一个"求最大公约数"的小程序，编译通过的那一刻，他激动得从椅子上跳了起来。那是他第一次感受到"创造"的快感——一行指令，计算机就照做了。那是权力、是魔法、是他成为一个程序员的初心。</p>
+        <p>而现在，魔法变味了。不是AI太强——是他开始怀疑：<em>如果编程这件事可以被简化成"用自然语言描述一个需求，然后机器自动实现"，那这么多年积累的技能，到底算什么？</em></p>
+        <p>他想起师父（带他入行的高级工程师）说过的一句话："我们这行，最核心的能力不是写代码，是理解和拆解问题。代码只是表达的最终形式。"</p>
+        <p>陈晨坐起来，打开了一个新文档。他写了一段prompt给AI——这次不是代码，是对一个新功能的需求描述。AI给出了三个方案，各自有详细的权衡分析。他选的不是最好的技术方案——他选的，是那个最符合产品方向、最容易让非技术团队理解的方案。</p>
+        <p>"原来这就是师父说的'理解问题'。"他自言自语地说。</p>
+        <p>那天晚上他没再写代码。他写了一份产品设计文档。</p>
+      </div>
+      <div class="story-moral">
+        AI不是夺走了工作的意义——它正在<strong>把"执行"和"创造"这对被工业时代强行捆绑的双胞胎拆开</strong>。
+        当机器能做执行，人类的独特价值正在从"做得更快"转向<strong>"决定做什么"</strong>。
+      </div>
+    </div>
+
+    <blockquote>
+      "AI不会取代你的工作。使用AI的人会。但更深层的真相是：AI正在重新定义'工作'的本质——从'如何做'到'为什么做'，从'执行'到'决策'。"
+      <cite>—— Ethan Mollick，《Co-Intelligence》</cite>
+    </blockquote>
+  </div>
+</div>
+
+<!-- ===== COMPARISON ===== -->
+<section id="comparison">
+  <h2 style="text-align:center;margin-bottom:8px">工作的意义 vs 生活的意义</h2>
+  <p class="lead" style="text-align:center;max-width:600px;margin:0 auto 32px">
+    它们不是一件事情的两个侧面——它们是两件不同的事情。把它们搞清楚，也许是这个时代最重要的自我教育。
+  </p>
+
+  <div class="comparison-grid">
+    <div class="comp-card work">
+      <h4>💼 工作的意义</h4>
+      <ul>
+        <li>提供生存资源——养活自己和家人</li>
+        <li>创造社会价值——对他人有用</li>
+        <li>建立身份认同——"我是谁"的一部分</li>
+        <li>满足成就感——把事情做成</li>
+        <li>提供社交结构——同事、行业圈子</li>
+        <li>结构时间——一周五天有了框架</li>
+        <li>定义成长轨迹——从新手到专家</li>
+      </ul>
+    </div>
+    <div class="comp-card life">
+      <h4>🌸 生活的意义</h4>
+      <ul>
+        <li>体验和感受——爱、美、喜悦、悲伤</li>
+        <li>关系和连接——家人、朋友、爱人</li>
+        <li>成长和自我实现——成为更好的自己</li>
+        <li>意义的主动建构——不是"找到"而是"创造"</li>
+        <li>自由和自主——决定如何度过自己的时间</li>
+        <li>好奇心与探索——学习不为了变现的知识</li>
+        <li>留白和休息——不是为了效率的"什么都不做"</li>
+      </ul>
+    </div>
+  </div>
+
+  <table>
+    <tr>
+      <th>维度</th>
+      <th>工作的意义</th>
+      <th>生活的意义</th>
+    </tr>
+    <tr>
+      <td><strong>来源</strong></td>
+      <td>外部赋予（社会需求、组织目标）</td>
+      <td>内部生成（个人体验、价值选择）</td>
+    </tr>
+    <tr>
+      <td><strong>评价标准</strong></td>
+      <td>效率、产出、结果</td>
+      <td>体验、深度、连接</td>
+    </tr>
+    <tr>
+      <td><strong>失败形式</strong></td>
+      <td>失业、绩效差、被替代</td>
+      <td>虚无、麻木、和自我的断裂</td>
+    </tr>
+    <tr>
+      <td><strong>时间感</strong></td>
+      <td>线性、紧迫、截止日期</td>
+      <td>循环、绵延、"当下"</td>
+    </tr>
+    <tr>
+      <td><strong>风险</strong></td>
+      <td>过度认同工作→burnout</td>
+      <td>过度追求意义→存在焦虑</td>
+    </tr>
+    <tr>
+      <td><strong>最佳关系</strong></td>
+      <td>工作支持生活，但不定义生活</td>
+      <td>生活包容工作，但不逃避工作</td>
+    </tr>
+  </table>
+
+  <!-- 交集 -->
+  <div style="text-align:center;margin:40px auto;max-width:500px">
+    <svg width="400" height="220" viewBox="0 0 400 220">
+      <!-- 工作圆圈 -->
+      <circle cx="150" cy="110" r="90" fill="none" stroke="#2c6e91" stroke-width="2" opacity="0.3"/>
+      <circle cx="150" cy="110" r="90" fill="#2c6e91" opacity="0.08"/>
+      <text x="150" y="50" text-anchor="middle" font-size="14" fill="#2c6e91" font-weight="bold" font-family="sans-serif">工作</text>
+      <!-- 生活圆圈 -->
+      <circle cx="250" cy="110" r="90" fill="none" stroke="#b8860b" stroke-width="2" opacity="0.3"/>
+      <circle cx="250" cy="110" r="90" fill="#b8860b" opacity="0.08"/>
+      <text x="250" y="170" text-anchor="middle" font-size="14" fill="#b8860b" font-weight="bold" font-family="sans-serif">生活</text>
+      <!-- 交集区域 -->
+      <text x="200" y="105" text-anchor="middle" font-size="11" fill="#5a4a3a" font-family="sans-serif">心流</text>
+      <text x="200" y="120" text-anchor="middle" font-size="10" fill="#6b6558" font-family="sans-serif">创造</text>
+      <text x="200" y="135" text-anchor="middle" font-size="10" fill="#6b6558" font-family="sans-serif">价值</text>
+    </svg>
+  </div>
+
+  <p>
+    意义的天平有一个反直觉的规律：<strong>越是直接追求意义，越容易失去它</strong>。
+    一个人如果不停地思考"我的工作到底有什么意义"，往往比一个只是埋头把事情做好的人更痛苦。
+    意义更像是一种副产品——当你深度投入到一件有价值的事情中时，它自己就会浮现。
+  </p>
+  <p>
+    Viktor Frankl在他的《活出生命的意义》中写道："不要追求成功——你越是追求它、把它作为一个目标来追求，就越容易错过它。
+    成功，就像幸福一样，不是被追求到的；它是随缘而来的——当一个人把自己奉献给比自己更伟大的事业时，它就会不期而至。"
+  </p>
+  <p>
+    工作之于生活，最好的关系不是"相辅相成"，也不是"互相平衡"——而是<strong>工作成为生活的一个子集</strong>。
+    不是工作和生活平衡（work-life balance），而是工作包含在生活中（work < life）。当工作占据了生活的全部，
+    你就失去了退路；当生活足够丰富，工作中的挫折就不会动摇你存在的根基。
+  </p>
+</section>
+
+<!-- ===== GUIDANCE ===== -->
+<section id="guidance" style="padding-bottom:40px">
+  <h2 style="text-align:center;margin-bottom:8px">🧭 方向指南针</h2>
+  <p class="lead" style="text-align:center;max-width:600px;margin:0 auto 32px">
+    没有一劳永逸的答案。但有一些永恒的坐标，可以帮助你在变化中找到方向。
+  </p>
+
+  <div class="guide-grid">
+    <div class="guide-item">
+      <div class="guide-icon">🎯</div>
+      <h4>投入大于热爱</h4>
+      <p>不要找"热爱的工作"——找你可以全身心投入的事情。热爱是投入的结果，不是前提。深度投入任何一件事情六个月，你都会从中找到意义。</p>
+    </div>
+    <div class="guide-item">
+      <div class="guide-icon">🔗</div>
+      <h4>建立连接感</h4>
+      <p>知道自己的工作对谁有用。任何工作都服务于某个真实的需求——找到那些被你的工作帮助的人。连接感是意义最可靠的来源。</p>
+    </div>
+    <div class="guide-item">
+      <div class="guide-icon">🌱</div>
+      <h4>保持积木思维</h4>
+      <p>不要规划"职业生涯"，而是积累"能力积木"。每一份工作都是你的一块积木——技能、关系、认知、作品。未来的路不是规划出来的，是用积木搭出来的。</p>
+    </div>
+    <div class="guide-item">
+      <div class="guide-icon">🎭</div>
+      <h4>多维身份</h4>
+      <p>永远不要只有一个身份。你不仅是工程师，还是父母/子女/朋友/爱好者/学习者/创作者。当工作这个身份动摇了，其他身份还在。</p>
+    </div>
+    <div class="guide-item">
+      <div class="guide-icon">⏳</div>
+      <h4>意义有保质期</h4>
+      <p>没有人一劳永逸地"找到"意义。意义需要持续更新和再发现。每隔几年，你需要重新问自己这个问题——答案变了，说明你在成长。</p>
+    </div>
+    <div class="guide-item">
+      <div class="guide-icon">🔄</div>
+      <h4>循环优于线性</h4>
+      <p>不要认为"有意义的工作"一定是一份高大上的全职工作。生活是循环的——种地、做饭、照顾家人、创作、分享——这些循环性活动充满了意义。不要被"事业"这个词绑架。</p>
+    </div>
+    <div class="guide-item">
+      <div class="guide-icon">🧩</div>
+      <h4>接受不一致</h4>
+      <p>你不需要从工作中获得所有的意义。工作可以只是为了赚钱，意义从别处来。这是一种完全正当的人生选择。"热爱你的工作"不是道德义务。</p>
+    </div>
+    <div class="guide-item">
+      <div class="guide-icon">🌊</div>
+      <h4>顺应周期</h4>
+      <p>有些阶段你需要在工作中寻找意义，有些阶段你只需要扛过去。就像农业时代的人知道有丰年就有荒年一样，接受工作意义的潮汐起伏。</p>
+    </div>
+  </div>
+
+  <!-- 人生状态四象限 -->
+  <h3 style="text-align:center;margin:48px 0 24px">人生状态四象限</h3>
+  <p style="text-align:center;color:var(--text-light);max-width:600px;margin:0 auto 24px">
+    工作意义和生活意义的关系，决定了四种不同的人生状态。你目前在哪个象限？
+  </p>
+  <div style="text-align:center;margin:32px auto;max-width:550px">
+    <svg width="500" height="340" viewBox="0 0 500 340" style="max-width:100%">
+      <!-- 坐标轴 -->
+      <line x1="40" y1="170" x2="460" y2="170" stroke="#aaa" stroke-width="1"/>
+      <line x1="250" y1="30" x2="250" y2="310" stroke="#aaa" stroke-width="1"/>
+      <text x="250" y="325" text-anchor="middle" font-size="11" fill="#6b6558" font-family="sans-serif">工作意义 →</text>
+      <text x="250" y="24" text-anchor="middle" font-size="11" fill="#6b6558" font-family="sans-serif">生活意义 ↑</text>
+      <!-- 象限背景 -->
+      <rect x="250" y="30" width="210" height="140" fill="#2c6e91" opacity="0.08" rx="4"/>
+      <rect x="40" y="30" width="210" height="140" fill="#b8860b" opacity="0.08" rx="4"/>
+      <rect x="250" y="170" width="210" height="140" fill="#c0392b" opacity="0.06" rx="4"/>
+      <rect x="40" y="170" width="210" height="140" fill="#5a4a3a" opacity="0.05" rx="4"/>
+      <!-- 象限标签 -->
+      <text x="360" y="105" text-anchor="middle" font-size="13" fill="#2c6e91" font-weight="bold" font-family="sans-serif">丰盛</text>
+      <text x="360" y="125" text-anchor="middle" font-size="10" fill="#2c6e91" font-family="sans-serif">工作有意义，生活也丰盈</text>
+      <text x="150" y="105" text-anchor="middle" font-size="13" fill="#b8860b" font-weight="bold" font-family="sans-serif">修行</text>
+      <text x="150" y="125" text-anchor="middle" font-size="10" fill="#b8860b" font-family="sans-serif">工作本身即是生活</text>
+      <text x="360" y="255" text-anchor="middle" font-size="13" fill="#c0392b" font-weight="bold" font-family="sans-serif">燃烧</text>
+      <text x="360" y="275" text-anchor="middle" font-size="10" fill="#c0392b" font-family="sans-serif">工作热情高，生活空白</text>
+      <text x="150" y="255" text-anchor="middle" font-size="13" fill="#5a4a3a" font-weight="bold" font-family="sans-serif">流浪</text>
+      <text x="150" y="275" text-anchor="middle" font-size="10" fill="#5a4a3a" font-family="sans-serif">两边都找不到意义</text>
+      <!-- 箭头 -->
+      <polygon points="460,170 450,165 450,175" fill="#aaa"/>
+      <polygon points="250,30 245,40 255,40" fill="#aaa"/>
+    </svg>
+  </div>
+</section>
+
+<!-- ===== CONCLUSION ===== -->
+<section class="conclusion">
+  <h2>最后的话</h2>
+  <div class="final-words">
+    工作不是人生的主线任务。<br>
+    它是你用来建构生活的一块材料。<br>
+    仅此而已。
+  </div>
+  <p>
+    从农业时代到AI时代，工作的形态变了无数次，但有一个事实从未改变：
+    <strong>工作是为人服务的，不是人为工作服务的。</strong>
+  </p>
+  <p>
+    如果你现在的工作让你感到迷茫，那不是你的错。这是一个时代的困境，也是每一个在这个时代清醒地活着的人
+    都会经历的思考。不要急着找到答案，先让自己成为一个更适合容纳答案的人。
+  </p>
+  <p>
+    农业时代的农民知道：好的收成需要好的土壤、好的种子、好的雨水——以及等待。
+    意义的收获也一样。
+  </p>
+
+  <svg width="60" height="60" viewBox="0 0 60 60" style="margin:32px auto;display:block">
+    <circle cx="30" cy="30" r="28" fill="none" stroke="#b8860b" stroke-width="1.5" opacity="0.5"/>
+    <path d="M30 8 L30 52" stroke="#b8860b" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+    <path d="M8 30 L52 30" stroke="#b8860b" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+    <circle cx="30" cy="30" r="5" fill="#b8860b" opacity="0.6"/>
+    <path d="M30 18 A12 12 0 1 1 29.9 18" fill="none" stroke="#b8860b" stroke-width="1" stroke-dasharray="2 2" opacity="0.4"/>
+  </svg>
+
+  <p style="font-size:0.85rem;color:#888;margin-top:24px">
+    — 完 —<br>
+    <span style="font-family:var(--font-sans)">2026年6月 · 关于工作意义的探索</span>
+  </p>
+</section>
+
+</body>
+</html>

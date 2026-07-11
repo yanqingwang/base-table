@@ -2,19 +2,13 @@ import React from 'react';
 import { Tag } from 'antd';
 
 const statusColors: Record<string, string> = {
-  new: 'blue',
-  screening: 'cyan',
-  queue_waiting: 'orange',
-  interviewing: 'orange',
-  evaluated: 'purple',
+  applied: 'blue',
+  screened: 'cyan',
+  interviewed: 'orange',
   offered: 'gold',
-  document_signing: 'geekblue',
-  signed: 'green',
-  pre_onboarding: 'lime',
-  ready_to_sync: 'cyan',
-  synced: 'green',
   hired: 'green',
   rejected: 'red',
+  withdrawn: 'default',
   pending: 'orange',
   approved: 'green',
   transferred: 'purple',

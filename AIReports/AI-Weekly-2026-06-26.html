@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 行业双周报 | 2026-06-13 → 2026-06-26</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto; }
+  h1 { color: #58a6ff; font-size: 28px; margin-bottom: 5px; }
+  h2 { color: #f0883e; font-size: 20px; margin: 30px 0 15px; border-bottom: 1px solid #30363d; padding-bottom: 8px; }
+  h3 { color: #d2a8ff; font-size: 16px; margin: 25px 0 10px; }
+  .subtitle { color: #8b949e; font-size: 14px; margin-bottom: 20px; }
+  
+  .stats { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; }
+  .stat-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 12px 18px; text-align: center; min-width: 100px; }
+  .stat-box .num { font-size: 24px; font-weight: bold; color: #58a6ff; }
+  .stat-box .label { font-size: 12px; color: #8b949e; margin-top: 3px; }
+  .stat-box.warn .num { color: #f0883e; }
+  .stat-box.danger .num { color: #f85149; }
+  .stat-box.success .num { color: #3fb950; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { background: #161b22; color: #8b949e; text-align: left; padding: 10px 8px; border-bottom: 1px solid #30363d; font-weight: 600; }
+  td { padding: 10px 8px; border-bottom: 1px solid #21262d; vertical-align: middle; }
+  tr:hover { background: #161b22; }
+  .ai-row { background: #1a1f2e; }
+  .crisis-row { background: #2d1a1a; }
+
+  .rank { width: 35px; color: #8b949e; text-align: center; font-weight: bold; }
+  .pts { width: 80px; color: #f0883e; font-weight: bold; text-align: center; }
+  .title { min-width: 300px; }
+  .title a { color: #58a6ff; text-decoration: none; }
+  .title a:hover { text-decoration: underline; }
+  .comments { width: 80px; text-align: center; }
+  .comments a { color: #8b949e; text-decoration: none; }
+  .comments a:hover { color: #58a6ff; }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+  .tag.ai { background: #1f3a5f; color: #58a6ff; }
+  .tag.policy { background: #3d1f1f; color: #f85149; }
+  .tag.cn { background: #1f3d1f; color: #3fb950; }
+  .tag:not(.ai):not(.policy):not(.cn) { background: #2d333b; color: #8b949e; }
+  .hot { font-size: 12px; }
+
+  .gh-stars { width: 90px; color: #f0883e; font-weight: bold; }
+  .gh-name { min-width: 250px; }
+  .gh-name a { color: #58a6ff; text-decoration: none; font-weight: 600; }
+  .gh-name a:hover { text-decoration: underline; }
+  .gh-desc { color: #8b949e; font-size: 13px; }
+  .lang { display: inline-block; background: #1f3a5f; color: #58a6ff; padding: 1px 6px; border-radius: 8px; font-size: 11px; margin-left: 6px; }
+
+  .key-take { background: #161b22; border-left: 3px solid #f0883e; padding: 15px 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+  .key-take h4 { color: #f0883e; margin-bottom: 8px; }
+  .key-take ul { margin-left: 20px; line-height: 1.8; }
+  .key-take li { margin-bottom: 6px; }
+
+  .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #30363d; color: #484f58; font-size: 12px; text-align: center; }
+
+  .trend-block { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 15px 20px; margin: 12px 0; }
+  .trend-block .trend-title { color: #d2a8ff; font-weight: bold; }
+  .trend-block p { color: #c9d1d9; margin-top: 8px; line-height: 1.6; }
+  .trend-block .badge { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: 10px; margin-left: 6px; vertical-align: middle; }
+  .badge.breaking { background: #f85149; color: #fff; }
+  .badge.trending { background: #d29922; color: #fff; }
+  .badge.deep { background: #58a6ff; color: #fff; }
+
+  .timeline { list-style: none; padding: 0; margin: 12px 0; }
+  .timeline li { padding: 6px 0 6px 24px; border-left: 2px solid #30363d; position: relative; }
+  .timeline li::before { content: ''; position: absolute; left: -7px; top: 12px; width: 12px; height: 12px; border-radius: 50%; background: #58a6ff; }
+  .timeline li .date { color: #8b949e; font-size: 12px; font-family: monospace; }
+  .timeline li.crisis::before { background: #f85149; }
+  .timeline li.cn::before { background: #3fb950; }
+
+  .event-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; margin: 8px 0; }
+  .event-card .ev-date { color: #8b949e; font-size: 12px; font-family: monospace; }
+  .event-card .ev-title { color: #58a6ff; font-weight: 600; margin: 4px 0; }
+  .event-card .ev-desc { color: #c9d1d9; font-size: 13px; line-height: 1.5; }
+
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+  .compare-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; }
+  .compare-card h4 { color: #d2a8ff; font-size: 14px; margin-bottom: 6px; }
+  .compare-card p { color: #c9d1d9; font-size: 13px; line-height: 1.5; }
+  .compare-card .stat-line { margin-top: 8px; font-size: 12px; color: #8b949e; }
+
+  @media (max-width: 768px) {
+    table { font-size: 12px; }
+    .pts { width: 60px; }
+    .comments { width: 60px; }
+    .rank { width: 25px; }
+    body { padding: 10px; }
+    .compare-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🤖 AI 行业双周报</h1>
+<div class="subtitle">📅 覆盖周期: 2026-06-13 → 2026-06-26 ｜ 生成日期: 2026-06-26 ｜ 本期焦点: Fable 5 政府强拆令 · GPT-5.6 Pro 发布 · 中国开源模型逆势崛起</div>
+
+<div class="stats">
+  <div class="stat-box danger"><div class="num">🔴 史无前例</div><div class="label">政府强拆前沿模型</div></div>
+  <div class="stat-box success"><div class="num">🚀 5.0M</div><div class="label">Codex 周活用户</div></div>
+  <div class="stat-box warn"><div class="num">📊 $44B</div><div class="label">Anthropic 年化收入</div></div>
+  <div class="stat-box"><div class="num">🌏 1B</div><div class="label">ChatGPT 月活用户</div></div>
+  <div class="stat-box"><div class="num">🇨🇳 1M ctx</div><div class="label">GLM 5.2 / DeepSeek V4 上下文</div></div>
+  <div class="stat-box danger"><div class="num">⚖️ 首次</div><div class="label">AI 模型出口管制执行</div></div>
+</div>
+
+<div class="key-take">
+  <h4>📌 本期三大核心信号</h4>
+  <ul>
+    <li><strong>🚨 AI 模型的"切尔诺贝利时刻"：Fable 5 被美国政府强拆</strong> — 6月12日，Anthropic 的 Claude Fable 5 和 Mythos 5 在上线仅3天后被美国商务部以出口管制为由强制下线。这是历史上首次政府强制召回商用前沿AI模型。Anthropic 公开质疑政府依据，白宫要求"彻底免疫越狱"方可重新上线。此事件将深刻重塑全球AI部署规则。</li>
+    <li><strong>⚡ OpenAI 双线出击：GPT-5.6-Cyber + GPT-5.6 Pro 连续发布</strong> — OpenAI 在6月23日发布 GPT-5.6-Cyber（网络安全专用），6月25日 GPT-5.6 Pro 泄露发布，推理预算提升25%（768→960），集成 Playwright 网页自动化。Codex 周活突破500万，ChatGPT MAU 突破10亿。OpenAI 用产品和用户规模巩固领先地位。</li>
+    <li><strong>🇨🇳 中国 AI 开源生态逆势爆发</strong> — Fable 5 禁令后，全球开发者加速转向中国开源模型。GLM 5.2 发布（1M上下文，MIT许可），DeepSeek V4 稳居开源榜首（1M上下文，价格仅为西方1/10-1/50）。Fortune 报道称"美国出口管制正在为中国开源 AI 打开大门"。</li>
+  </ul>
+</div>
+
+<h2>📰 本期重大事件时间线</h2>
+
+<ul class="timeline">
+  <li class="crisis"><span class="date">2026-06-12</span> <strong>🔴 历史性事件：美国政府下令 Anthropic 禁用 Fable 5 和 Mythos 5</strong> — 商务部5:21PM ET发出出口管制指令，要求切断所有外国国民（含Anthropic外籍员工）的访问权限。Anthropic 因无法实时过滤国籍，全球禁用两款模型。</li>
+  <li class="crisis"><span class="date">2026-06-13</span> <strong>争议升级：Anthropic 公开抗辩</strong> — Anthropic 发布声明称政府行动基于"对越狱报告的误读"，指出同样的能力在 GPT-5.5 等公开模型中均可复现。白宫要求 Fable 5 必须"免疫所有越狱"方可重新上线，安全专家认为这技术上不可能实现。</li>
+  <li><span class="date">2026-06-13</span> <strong>GLM 5.2 发布</strong> — 智谱AI 发布 GLM 5.2，1M 上下文窗口，MIT 开源许可，中国开源模型能力再上台阶。</li>
+  <li><span class="date">2026-06-14</span> <strong>Anthropic 韩国扩张</strong> — 首尔办事处开幕，合作方包括 Samsung SDS、NAVER、LG CNS、Nexon、Hanwha 等五大韩国科技巨头。</li>
+  <li><span class="date">2026-06-15</span> <strong>Anthropic 计费改革生效</strong> — Agent SDK / claude -p 等从订阅费打包转为独立计量信用额度（Pro $20/Max 5x $100/Max 20x $200），按 API 费率计费。同日 Opus 4 / Sonnet 4 退役。</li>
+  <li><span class="date">2026-06-16</span> <strong>ChatGPT 月活突破10亿</strong> — Sensor Tower 确认 ChatGPT 成为史上最快达到10亿 MAU 的消费级 App。</li>
+  <li><span class="date">2026-06-16</span> <strong>Fortune 报道：美国禁令反而助推中国开源 AI</strong> — Fable 5 下线后，中国 AI 股票（如科大讯飞）单日涨30%，DeepSeek 成本仅为 Fable 5 的1/14。</li>
+  <li><span class="date">2026-06-17</span> <strong>G7 AI 博弈</strong> — Anthropic CEO Amodei 和 DeepMind CEO Hassabis 在 G7 呼吁建立排除中国的美国-led AI 联盟。Amodei 接受 Business Insider 专访谈为什么离开 OpenAI。</li>
+  <li><span class="date">2026-06-22</span> <strong>Codex 周活突破500万</strong> — OpenAI 宣布 Codex 达到500万周活用户，推出 Record & Replay 功能。</li>
+  <li><span class="date">2026-06-23</span> <strong>GPT-5.6-Cyber 发布</strong> — OpenAI 发布 GPT-5.6-Cyber（CyberGym 85.6%），同时启动 "Patch the Planet" 网络安全开源倡议，包含30+开源项目，直接对标 Anthropic 的 Project Glasswing。</li>
+  <li><span class="date">2026-06-25</span> <strong>GPT-5.6 Pro 泄露发布</strong> — 推理预算提升至960（+25%），1.5M上下文窗口泄露，Playwright 集成网页自动化，Codex UltraFast 模式提效2-5倍。</li>
+</ul>
+
+<h2>📰 头条深度解读</h2>
+
+<h3>🚨 1. Fable 5 禁令：全球 AI 治理的分水岭</h3>
+
+<div class="trend-block">
+  <div class="trend-title">事件全貌：从发布到下线仅72小时 <span class="badge breaking">BREAKING</span></div>
+  <p><strong>6月9日</strong>：Anthropic 发布 Claude Fable 5（Mythos-class 公开版）和 Claude Mythos 5（安全加固版），定价 $10/$50 per MTok，1M上下文窗口，被誉为"地表最强商用模型"。</p>
+  <p><strong>6月12日 5:21PM ET</strong>：商务部长 Howard Lutnick 致函 CEO Dario Amodei，以《出口管制条例》为依据，要求切断所有外国国民访问。由于技术层面无法实时识别用户国籍，Anthropic 选择全球禁用。</p>
+  <p><strong>6月12日 6:59PM PT</strong>：API 调用 `claude-fable-5` 开始返回 404 — "Claude Fable 5 is not available. Please use Opus 4.8."</p>
+</div>
+
+<div class="compare-grid">
+  <div class="compare-card">
+    <h4>🏛️ 政府立场</h4>
+    <p>商务部援引国家安全权力，依据是一家第三方公司报告发现了 Mythos 5 的越狱路径。白宫随后要求 Fable 5 必须"免疫所有越狱"才可重新上线。</p>
+    <div class="stat-line">🔑 核心担忧：AI 越狱导致的大规模漏洞发现能力被恶意利用</div>
+  </div>
+  <div class="compare-card">
+    <h4>🏢 Anthropic 抗辩</h4>
+    <p>Anthropic 审查了所谓的越狱演示，结论是：发现的仅是一些已知的微小漏洞，且完全可以在其他公开模型（如 GPT-5.5）上通过正常交互复现，无需任何越狱。</p>
+    <div class="stat-line">🔑 核心论点：这是对 AI 能力的误读和过度反应</div>
+  </div>
+</div>
+
+<div class="trend-block">
+  <div class="trend-title">💥 深远影响</div>
+  <p><strong>这不是孤立事件——这是 AI 监管的"斯普特尼克时刻"。</strong> 政府用出口管制工具直接关停商用模型，在所有主要经济体中均属首次。核心矛盾暴露无遗：<strong>前沿 AI 能力越强，它同时是经济资产和国家安全隐患</strong>。一位开发者评论：<em>"他们只上线了3天，却可能改变整个行业未来10年的部署方式。"</em></p>
+  <p>社区情绪：38%认为是政府过度干预，24%认为风险被夸大，20%关注建设者和安全被中断，仅10%支持国家安全立场（MarkTechPost 编辑估算）。</p>
+  <p>美国出口管制从"芯片/硬件"扩展到"模型权重/访问权限"，<strong>意味着任何部署前沿 AI 模型的公司都可能面临类似的突然下线风险</strong>。多模型/多云策略从"最佳实践"变成"生存必需"。</p>
+</div>
+
+<h3>⚡ 2. OpenAI 双线作战：GPT-5.6 + Codex 里程碑</h3>
+
+<div class="trend-block">
+  <div class="trend-title">GPT-5.6 Pro：更强推理 + 网页自动化 <span class="badge trending">TRENDING</span></div>
+  <p><strong>GPT-5.6-Cyber（6月23日）</strong>：网络安全专用版本，CyberGym 基准 85.6%，集成 Trail of Bits 审计能力，启动"Patch the Planet"开源安全倡议（30+开源项目），直接对标 Anthropic 的 Project Glasswing。</p>
+  <p><strong>GPT-5.6 Pro（6月25日预计）</strong>：推理预算从768提升至960（+25%），泄露上下文窗口从1M扩展至1.5M，集成 Playwright 浏览器自动化框架，支持网页测试和数据抓取。Codex UltraFast 模式目标提速2-5倍，与 Claude Code 正面竞争。</p>
+  <p><strong>Codex 里程碑</strong>：周活用户突破500万（6月22日），新增 Record & Replay 功能（录制 GUI 操作流程回放）、Claude Code / Claude Cowork 迁移工具、Codex Mobile 支持分支创建和工作树。</p>
+  <p>OpenAI S-1 已于6月8日秘密提交，目标估值 $8300亿-$1万亿。分析师预计 GPT-5.6 系列是为支撑 IPO 估值的关键产品线。</p>
+</div>
+
+<div class="trend-block">
+  <div class="trend-title">ChatGPT 10亿 MAU：消费级 AI 进入"寡头竞争"时代</div>
+  <p>Sensor Tower 确认 ChatGPT MAU 突破10亿，成为史上最快达到该里程碑的消费级应用（相比 TikTok 用时4年，ChatGPT 仅用3年半）。但其 DAU 份额已从2025年1月的69%降至约38.7%，Gemini 升至25%，Claude 升至10%。用户正在从"只用一家"转向"多助手并行"——ChatGPT 写作、Claude 编程、Gemini 搜索。</p>
+</div>
+
+<h3>🇨🇳 3. 中国 AI 开源：禁令催生的"意外受益者"</h3>
+
+<div class="trend-block">
+  <div class="trend-title">GLM 5.2 发布 + DeepSeek V4 领跑开源 <span class="badge deep">DEEP</span></div>
+  <p><strong>GLM 5.2（6月13日）</strong>：智谱 AI 发布，1M上下文窗口，MIT 开源许可。在 SWE-bench Pro 等编码基准上与国际前沿接近，成为继 DeepSeek V4 之后第二个达到百万上下文的中国开源模型。主打「超长程任务」和编程能力，提供 Turbo/标准两档速度选择。</p>
+  <p><strong>DeepSeek V4 系列</strong>：V4 Flash 输入仅 $0.14/MTok（约¥1），V4 Pro 定价永久调整为 $0.435/$0.87（5月22日起），1M上下文。在 BenchLM 中国模型排行中以87分稳居第一，全球排名仅落后 Gemini 3.1 Pro（93）、GPT-5.4 Pro（92）、Claude Opus 4.6（88）。</p>
+  <p><strong>Fortune 报道（6月16日）</strong>："美国 Anthropic 出口禁令为中国开源 AI 打开大门"——Fable 5 下线后中国 AI 相关股票大涨30%，DeepSeek 成本仅为 Fable 5 的1/14。美国公司面临两难：遵守出口管制意味着失去全球竞争力。</p>
+  <p><strong>国产编程模型路由策略成熟</strong>：简单任务用 DeepSeek V4 Flash（$0.14/MTok），中等复杂度用 V3.2/MiniMax M2.5，长上下文用 Kimi K2.5/K2.6（262K上下文），结构化输出用 GLM-5.1。中国 AI 生态已从"单一模型比拼"进入"按任务路由"的成熟阶段。</p>
+</div>
+
+<h3>📊 4. 企业格局：Anthropic 的"至暗时刻"与"商业韧性"</h3>
+
+<div class="trend-block">
+  <div class="trend-title">Fable 5 被禁，但 Anthropic 商业基本面仍然强劲</div>
+  <p>尽管遭遇 Fable 5 禁令，Anthropic 的企业扩张步伐未停：</p>
+  <ul style="margin-left: 20px; line-height: 1.8; margin-top: 8px;">
+    <li><strong>年化收入 $44B</strong>（截至2026年5月），较2025年底的 $9B 翻了近5倍</li>
+    <li><strong>首尔办事处开幕</strong>（6月17日），第三座亚太办公室，合作方涵盖韩国科技半壁江山</li>
+    <li><strong>Agent 编码研究发布</strong>（6月17日）：400K 会话的大规模研究发现<strong>领域专业知识比编码背景更重要</strong>——非工程师在 Agent 编程任务上成功率达到与 SWE 工程师相近的水平</li>
+    <li><strong>Claude Tag 上线</strong>：替代 Claude in Slack，支持通道级权限隔离、Token 消费上限、操作日志审计</li>
+    <li><strong>Claude Code 2.1.187</strong>：沙箱凭证拦截、组织模型限制、远程 MCP 改进</li>
+    <li><strong>计费改革（6月15日）</strong>：将 Agent SDK / claude -p 等从订阅打包转为独立计量，虽引发部分开发者不满，但有利于精细化成本管控</li>
+  </ul>
+  <p style="margin-top: 8px;">估值预期：完成 $65B H轮后，公开市场估值接近 $9650亿，距万亿俱乐部仅一步之遥。IPO S-1 已密交，但禁令事件可能影响定价时间窗口。</p>
+</div>
+
+<h3>🌍 5. 全球 AI 治理新格局</h3>
+
+<div class="trend-block">
+  <div class="trend-title">从"芯片管制"到"模型管制"——出口管制工具的范式转移</div>
+  <p>Fable 5 禁令标志着 AI 出口管制从硬件层（NVIDIA 芯片禁售）升级到模型层（模型权重和访问权限）。关键信号：</p>
+  <ul style="margin-left: 20px; line-height: 1.8; margin-top: 8px;">
+    <li><strong>美国</strong>：商务部使用 EAR（出口管制条例）直接关停商用模型——工具存在但无明确法律框架，引发法律挑战预期</li>
+    <li><strong>Anthropic CEO 联合 DeepMind CEO 在 G7 呼吁</strong>：建立排除中国的美国-led AI 联盟和芯片贸易体系</li>
+    <li><strong>白宫分歧</strong>：Bessent 倾向通过"特朗普账户"获取政府 AI 股权，Lutnick 倾向主权财富基金模式</li>
+    <li><strong>中国受益</strong>：美国每收紧一步，中国开源生态就获得一批新用户。Fortune：禁令正在加速中国 AI 自主创新的"意料之外后果"</li>
+  </ul>
+</div>
+
+<div class="trend-block">
+  <div class="trend-title">AI 基础设施风险维度扩展：算力 → 能源 → 水资源</div>
+  <p>SpaceX 在 IPO 文件中首次将 <strong>水资源短缺</strong>列为 AI 基础设施风险因素。单个大型数据中心年用水量可达数百万加仑。加州、伊利诺伊州等开始辩论数据中心监管法案。全球数据中心水消耗预计2028年将达2800亿升/年。</p>
+</div>
+
+<h2>⭐ GitHub — 本期 AI 热门项目</h2>
+
+<table>
+<thead>
+<tr><th>Stars</th><th>项目</th><th>描述</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td class="gh-stars">⭐ 39K+</td>
+  <td class="gh-name"><a href="https://github.com/DietrichGebert/ponytail" target="_blank">DietrichGebert/ponytail</a> <span class="lang">JavaScript</span></td>
+  <td class="gh-desc">Makes your AI agent think like the laziest senior dev — still viral, still #1</td>
+</tr>
+<tr>
+  <td class="gh-stars">⭐ 9.9K+</td>
+  <td class="gh-name"><a href="https://github.com/XiaomiMiMo/MiMo-Code" target="_blank">XiaomiMiMo/MiMo-Code</a> <span class="lang">TypeScript</span></td>
+  <td class="gh-desc">小米开源 AI 编程助手，"模型与 Agent 协同进化"理念</td>
+</tr>
+<tr>
+  <td class="gh-stars">⭐ 3.9K+</td>
+  <td class="gh-name"><a href="https://github.com/omnigent-ai/omnigent" target="_blank">omnigent-ai/omnigent</a> <span class="lang">Python</span></td>
+  <td class="gh-desc">开源 AI Agent 元框架：编排 Claude Code / Codex / Cursor 等</td>
+</tr>
+<tr>
+  <td class="gh-stars">⭐ 1.6K+</td>
+  <td class="gh-name"><a href="https://github.com/JimLiu/baoyu-design" target="_blank">JimLiu/baoyu-design</a> <span class="lang">JavaScript</span></td>
+  <td class="gh-desc">Claude Design 本地化为 Agent Skill，生成 UI Mockup/原型/PPT</td>
+</tr>
+<tr>
+  <td class="gh-stars">⭐ 1.4K+</td>
+  <td class="gh-name"><a href="https://github.com/SkyBlue997/enableMacosAI" target="_blank">SkyBlue997/enableMacosAI</a> <span class="lang">Shell</span></td>
+  <td class="gh-desc">国行 Mac 一键开启完整 Apple 智能（端侧+Private Cloud Compute）</td>
+</tr>
+<tr>
+  <td class="gh-stars">⭐ 1.1K+</td>
+  <td class="gh-name"><a href="https://github.com/apple/coreai-models" target="_blank">apple/coreai-models</a> <span class="lang">Swift</span></td>
+  <td class="gh-desc">Apple 端侧 AI 模型导出工具链和 Swift 运行时</td>
+</tr>
+<tr>
+  <td class="gh-stars">⭐ 1.1K+</td>
+  <td class="gh-name"><a href="https://github.com/GordenSun/GordenSuperPPTSkills" target="_blank">GordenSun/GordenSuperPPTSkills</a> <span class="lang">Python</span></td>
+  <td class="gh-desc">AI PPT 赛道终结者：GPT 生成豪华图片格式 PPT → 可编辑 PPTX</td>
+</tr>
+<tr>
+  <td class="gh-stars">⭐ NEW</td>
+  <td class="gh-name"><a href="https://github.com/THUDM/GLM-5" target="_blank">THUDM/GLM-5</a> <span class="lang">Python</span></td>
+  <td class="gh-desc">GLM 5.2 智谱 AI 开源：1M上下文，MIT许可，国产最强开源多模态</td>
+</tr>
+<tr>
+  <td class="gh-stars">⭐ 824+</td>
+  <td class="gh-name"><a href="https://github.com/orange2ai/renwei-writing" target="_blank">orange2ai/renwei-writing</a> <span class="lang">Skill</span></td>
+  <td class="gh-desc">人味儿写作：AI 编辑保留"人的痕迹"，响应 LLM 文本去味需求</td>
+</tr>
+<tr>
+  <td class="gh-stars">⭐ 731+</td>
+  <td class="gh-name"><a href="https://github.com/duckbugio/flock" target="_blank">duckbugio/flock</a> <span class="lang">Go</span></td>
+  <td class="gh-desc">自主 AI 开发团队机器人，多 Agent 协作编码</td>
+</tr>
+</tbody>
+</table>
+
+<h2>🔎 本期深度趋势解读</h2>
+
+<div class="trend-block">
+  <div class="trend-title">1. 🚨 "模型出口管制"时代开启 —— Fable 5 禁令的范式意义</div>
+  <p>Fable 5 是全球首例政府强制召回商用前沿 AI 模型。其核心矛盾在于：<strong>当 AI 能力成为国家安全隐患时，企业如何平衡全球化部署与合规风险？</strong> Anthropic 的"全球一刀切"策略暴露了技术层面的根本困境——国籍识别在 API 层面是不可能完成的任务。这预示着未来前沿模型可能天然分裂为"美国版"和"国际版"，类似于 Apple 的 iCloud 区域隔离。所有部署前沿模型的企业都需要重新评估<strong>"单模型全球部署"的风险敞口</strong>。</p>
+</div>
+
+<div class="trend-block">
+  <div class="trend-title">2. ⚡ AI 编程工具进入"白刃战"——月活/周活成为新战场</div>
+  <p>本期最清晰的产品竞争信号来自<strong>AI 编程助手</strong>。Codex 突破500万周活（6月22日）、Claude Code 不断迭代（2.1.187版）、Cursor 4、Windsurf、Devin 2.0 同期混战。GPT-5.6 Pro 泄露的 UltraFast Codex 模式和 Playwright 集成表明 OpenAI 试图在开发者工具端建立全栈优势。一个关键变化：<strong>编程 Agent 从"辅助工具"进化为"开发流程基础设施"</strong>——Codex 的 Record & Replay 功能意味着 AI 不仅能写代码，还能录制和回放完整的 GUI 操作流程。AI 编程正在吃掉整个 SDLC（软件开发生命周期）。</p>
+</div>
+
+<div class="trend-block">
+  <div class="trend-title">3. 🇨🇳 中国开源模型生态的"历史性机遇"——禁令红利正在兑现</div>
+  <p>Fortune 的报道不是孤例。Fable 5 禁令后一周内，中国 AI 开源项目（GLM 5.2、DeepSeek V4、Kimi K2.6）的 GitHub Star 增速和国际 API 调用量均出现显著跃升。核心逻辑：<strong>当美国的前沿模型随时可能"断供"时，全球开发者和企业开始认真考虑中国开源模型作为替代方案</strong>。DeepSeek V4 Flash 的 $0.14/MTok 价格仅为 Fable 5（$10/MTok）的 1/70——即使能力差距存在，成本差和"不会被禁"的可获得性正在改变采购决策。</p>
+  <p>关键转折点：GLM 5.2 用 MIT 许可 + 1M 上下文证明了中国模型不再只是"便宜替代品"。中国 AI 生态已完成从"追赶者"到"竞争者"的身份转换。下一步的关键是：<strong>中国模型能否在 Fable 5 下线后的"能力真空期"证明自己有能力处理真正的前沿任务。</strong></p>
+</div>
+
+<div class="trend-block">
+  <div class="trend-title">4. 📱 Apple AI 架构落地——端侧 AI 的生态战争</div>
+  <p>WWDC 2026 上 Apple 正式公布了基于 Google Gemini 的 AI 架构。新 Siri AI 将运行在 NVIDIA Blackwell 芯片上，CoreAI Models 已开源。关键意义：<strong>Apple 用"付费租用"Google AI 的方式（年费约$10亿）避免了自研落后，同时保持端侧处理+Private Cloud Compute 的隐私差异化。</strong> 这让 Apple Intelligence 能够在短短一个 WWDC 周期内从"严重落后"跳到"可竞争"水平。但分析师评价为"打了个勾，但不令人兴奋"——真正的考验在消费者实际体验。端侧 AI 芯片出货量预计2027年Q1突破10亿颗。</p>
+</div>
+
+<div class="trend-block">
+  <div class="trend-title">5. ⚖️ AI Agent 的责任归属——从"工具"到"数字员工"的法律身份困境</div>
+  <p>本期多个事件共同指向同一个深层问题：<strong>AI Agent 出错时谁负责？</strong></p>
+  <ul style="margin-left: 20px; line-height: 1.8; margin-top: 8px;">
+    <li><strong>Fable 5 禁令</strong>：美国政府认为模型能力本身是国家安全风险——企业要对模型能力的"潜在误用"负责</li>
+    <li><strong>Anthropic 计费改革</strong>：Agent SDK / claude -p 按 API 费率独立计量——Agent 被视为独立"生产力单元"而非订阅附属品</li>
+    <li><strong>Anthropic 400K Agent 研究</strong>：领域专家比程序员更擅长编程 Agent——Agent 正在模糊"谁在写代码"的边界</li>
+    <li><strong>德国 AI Overviews 判决</strong>（6月初）：AI 生成内容被视为平台自身言论</li>
+  </ul>
+  <p style="margin-top: 8px;">这些信号叠加：<strong>AI Agent 正在从"辅助工具"获得某种"准法律主体"特征</strong>——可以承担责任、被单独计量、被专业使用者操作。这一趋势将在未来12-18个月内催生 AI Agent 保险、Agent SLA 标准、Agent 审计框架等新业态。</p>
+</div>
+
+<h2>📊 中美 AI 产业双周对比</h2>
+
+<table>
+<thead>
+<tr><th>维度</th><th>🇺🇸 美国</th><th>🇨🇳 中国</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>模型发布</strong></td>
+  <td>GPT-5.6 Pro（泄漏6/25）、GPT-5.6-Cyber（6/23）、Fable 5 封禁</td>
+  <td>GLM 5.2（6/13，1M ctx）、DeepSeek V4 持续领先、Kimi K2.6 紧追</td>
+</tr>
+<tr>
+  <td><strong>监管动态</strong></td>
+  <td>政府首次强制下线前沿模型（Fable 5）；出口管制从芯片扩展到模型层</td>
+  <td>AI+国策持续推进；标准化考试 AI 试点；国产替代政策窗口加速</td>
+</tr>
+<tr>
+  <td><strong>资本市场</strong></td>
+  <td>OpenAI S-1 密交（目标$830B-$1T）；Anthropic 年化$44B；Cerebras IPO+68%</td>
+  <td>智谱AI 港交所上市；中国 AI 股票因 Fable 5 禁令单日暴涨</td>
+</tr>
+<tr>
+  <td><strong>开源生态</strong></td>
+  <td>Apple CoreAI Models 开源；Meta Llama 生态扩展</td>
+  <td>GLM 5.2 MIT 开源 + DeepSeek V4 领跑 → 禁令后国际关注度跃升</td>
+</tr>
+<tr>
+  <td><strong>Agent 商业化</strong></td>
+  <td>Codex 500万周活 + Claude Tag；Agent 按使用计量</td>
+  <td>国产 Model Routing 策略成熟；深度研究 Agent 广泛应用</td>
+</tr>
+<tr>
+  <td><strong>关键变量</strong></td>
+  <td>Fable 5 能否/何时重新上线？OpenAI IPO 时间窗口</td>
+  <td>DeepSeek V4 能否利用禁令窗口获取国际市场？芯片管制升级</td>
+</tr>
+</tbody>
+</table>
+
+<h2>🔮 下期关键变量（6月27日 — 7月10日）</h2>
+
+<div class="event-card">
+  <div class="ev-date">📅 未来两周</div>
+  <div class="ev-title">关注点</div>
+  <div class="ev-desc">
+    <strong>1. Fable 5 是否重新上线？</strong> 白宫"免疫所有越狱"的要求可能技术上无法满足。如果禁令持续，Anthropic 的 IPO 时间表和 $9650亿估值面临重大不确定。<br>
+    <strong>2. GPT-5.6 Pro 正式版发布？</strong> 预测市场 Polymarket 对6月底前发布的定价为83-89%。S-1 静默期限制可能推迟到7月。<br>
+    <strong>3. DeepSeek V4 正式版能否如期发布？</strong> 备受期待的 V4 完整版本被视为中国 AI 的下一个里程碑。<br>
+    <strong>4. Apple Siri AI 开发者 Beta 反馈</strong>：搭载 Gemini 的新 Siri 首次亮相，用户体验将决定 Apple AI 战略的成败。<br>
+    <strong>5. EU AI Act 透明度义务倒计时</strong>：2026年8月2日生效，未标识 AI 生成内容可被罚全球营收4%，企业合规准备进入冲刺期。
+  </div>
+</div>
+
+<div class="footer">
+  <p>数据来源: 公开报道（TechCrunch, CNBC, Reuters, Fortune, Wired, The Verge, MarkTechPost, aiweekly.co）· Anthropic/OpenAI/Google 官方公告 · Hacker News · GitHub Trending</p>
+  <p>报告生成于 2026-06-26 · Sisyphus Agent · 本期覆盖周期 2026-06-13 → 2026-06-26</p>
+  <p style="margin-top: 8px; color: #8b949e;">🔄 下一期预计：2026-07-10 · 覆盖周期 2026-06-27 → 2026-07-10</p>
+</div>
+
+</body>
+</html>

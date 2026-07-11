@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>伊朗冲突综合分析报告 | 全维度整合版（2026.3-6）</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto; }
+  h1 { color: #58a6ff; font-size: 28px; margin-bottom: 5px; }
+  h2 { color: #f0883e; font-size: 20px; margin: 35px 0 15px; border-bottom: 1px solid #30363d; padding-bottom: 8px; }
+  h3 { color: #d2a8ff; font-size: 16px; margin: 25px 0 10px; }
+  h4 { color: #8b949e; font-size: 14px; margin: 20px 0 8px; text-transform: uppercase; letter-spacing: 1px; }
+  .subtitle { color: #8b949e; font-size: 14px; margin-bottom: 5px; }
+  .meta { color: #6e7681; font-size: 13px; margin-bottom: 30px; }
+
+  .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin: 20px 0; }
+  .stat { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px 18px; text-align: center; min-width: 100px; flex: 1; }
+  .stat .num { font-size: 26px; font-weight: bold; color: #58a6ff; }
+  .stat .num.neg { color: #f85149; }
+  .stat .num.pos { color: #3fb950; }
+  .stat .num.warn { color: #f0883e; }
+  .stat .label { font-size: 12px; color: #8b949e; margin-top: 4px; }
+  .stat .sub { font-size: 11px; color: #484f58; margin-top: 2px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+  th { background: #161b22; color: #8b949e; text-align: left; padding: 10px 8px; border-bottom: 1px solid #30363d; font-weight: 600; }
+  td { padding: 10px 8px; border-bottom: 1px solid #21262d; vertical-align: middle; }
+  tr:hover { background: #161b22; }
+
+  .box { background: #161b22; border-left: 3px solid #f0883e; padding: 16px 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+  .box strong { color: #f0883e; }
+  .box.blue { border-left-color: #58a6ff; }
+  .box.red { border-left-color: #f85149; }
+  .box.green { border-left-color: #3fb950; }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-right: 4px; }
+  .tag.green { background: #1b3a1f; color: #3fb950; }
+  .tag.red { background: #3a1b1b; color: #f85149; }
+  .tag.yellow { background: #3a2f1b; color: #d29922; }
+  .tag.gray { background: #1b1f24; color: #8b949e; }
+  .tag.blue { background: #1b2d3a; color: #58a6ff; }
+
+  .tl { position: relative; padding-left: 30px; margin: 20px 0; }
+  .tl::before { content: ''; position: absolute; left: 12px; top: 0; bottom: 0; width: 2px; background: #30363d; }
+  .tl-i { position: relative; margin-bottom: 16px; }
+  .tl-i::before { content: ''; position: absolute; left: -24px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: #58a6ff; border: 2px solid #0d1117; }
+  .tl-i.major::before { background: #f85149; width: 16px; height: 16px; left: -26px; top: 4px; }
+  .tl-i.done::before { background: #3fb950; }
+  .tl-i.diplo::before { background: #f0883e; }
+  .tl-date { color: #8b949e; font-size: 12px; font-weight: 600; }
+  .tl-title { color: #c9d1d9; font-weight: 600; font-size: 14px; }
+  .tl-desc { color: #8b949e; font-size: 13px; margin-top: 2px; }
+
+  .ph { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin: 16px 0; }
+  .ph-c { border-radius: 8px; padding: 12px 14px; border: 1px solid #30363d; }
+  .ph-c.p1 { background: #2d1a1a; border-color: #f85149; }
+  .ph-c.p2 { background: #2d2a1a; border-color: #d29922; }
+  .ph-c.p3 { background: #1a2d1a; border-color: #3fb950; }
+  .ph-c.p4 { background: #1b2d3a; border-color: #58a6ff; }
+  .ph-c h4 { margin-bottom: 4px; color: #c9d1d9; }
+  .ph-c p { font-size: 12px; line-height: 1.5; margin-top: 4px; color: #8b949e; }
+
+  .callout { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px 18px; margin: 14px 0; }
+  .callout .src { font-size: 11px; color: #484f58; margin-top: 6px; }
+
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 12px 0; }
+  .gc { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; }
+  .gc h4 { color: #d2a8ff; font-size: 14px; margin-bottom: 6px; text-transform: none; letter-spacing: 0; }
+  .gc p { color: #c9d1d9; font-size: 13px; line-height: 1.5; }
+
+  .bp { display: flex; align-items: center; margin: 5px 0; }
+  .bp-l { width: 110px; font-size: 13px; color: #c9d1d9; }
+  .bp-t { flex: 1; height: 20px; background: #21262d; border-radius: 4px; overflow: hidden; }
+  .bp-f { height: 100%; border-radius: 4px; }
+  .bp-v { width: 60px; text-align: right; font-size: 13px; font-weight: 600; }
+
+  .ft { margin-top: 50px; padding-top: 20px; border-top: 1px solid #30363d; color: #484f58; font-size: 12px; text-align: center; }
+
+  @media (max-width: 768px) {
+    .ph { grid-template-columns: 1fr 1fr; }
+    .grid3 { grid-template-columns: 1fr; }
+    .stat-row { flex-direction: column; }
+    table { font-size: 12px; }
+    body { padding: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>伊朗冲突综合分析报告 — 全维度整合版</h1>
+<div class="subtitle">基于 29 份前期报告 · 覆盖 2026.3 → 2026.6 四个月演变</div>
+<div class="meta">整合来源：伊朗局势系列(3.29) · Iran Analyze系列 · 冲突分析系列(4.16) · 地缘政治系列(5.14/5.29/6.1) · 媒体态度系列(4.3/4.26/5.14/5.29/6.1) · 民调系列(4.3/4.26/5.14/5.29) · 趋势图表系列(4.3/5.14/5.29) · 证据台账(4.3) · 综合分析(6.21)</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="num warn">113</div><div class="label">冲突持续天数</div><div class="sub">至6.21</div></div>
+  <div class="stat"><div class="num warn">~$70→$107</div><div class="label">布伦特原油轨迹</div><div class="sub">战前→峰值→$95</div></div>
+  <div class="stat"><div class="num neg">-22.8%</div><div class="label">美净支持率(5.28)</div><div class="sub">Silver Bulletin</div></div>
+  <div class="stat"><div class="num neg">59%</div><div class="label">美民众：动武错误</div><div class="sub">Pew 3月</div></div>
+  <div class="stat"><div class="num neg">60%</div><div class="label">美民众：走太远了</div><div class="sub">AP-NORC 3月</div></div>
+  <div class="stat"><div class="num warn">$4.20</div><div class="label">美汽油/加仑</div><div class="sub">峰值$4.60 · 战前$2.98</div></div>
+  <div class="stat"><div class="num">81%</div><div class="label">全球：应避免卷入</div><div class="sub">Ipsos 5月</div></div>
+  <div class="stat"><div class="num">80%</div><div class="label">全球：归咎美以</div><div class="sub">Gallup 4月</div></div>
+</div>
+
+<!-- 目录导航 -->
+<div class="box blue">
+  <strong>📑 目录</strong><br>
+  <span style="color:#8b949e;">
+  <a href="#s1" style="color:#58a6ff;">一、冲突全景时间线</a> ·
+  <a href="#s2" style="color:#58a6ff;">二、全球媒体态度4阶段演变</a> ·
+  <a href="#s3" style="color:#58a6ff;">三、全球民意演变</a> ·
+  <a href="#s4" style="color:#58a6ff;">四、外交博弈演变</a> ·
+  <a href="#s5" style="color:#58a6ff;">五、地缘格局演变</a> ·
+  <a href="#s6" style="color:#58a6ff;">六、经济影响</a> ·
+  <a href="#s7" style="color:#58a6ff;">七、军事态势</a> ·
+  <a href="#s8" style="color:#58a6ff;">八、未来情景</a>
+  </span>
+</div>
+
+<!-- ========== 一、时间线 ========== -->
+<h2 id="s1">一、冲突全景时间线</h2>
+
+<div class="ph">
+  <div class="ph-c p1"><h4>🔴 第一阶段</h4><p style="color:#f85149;">全面爆发期</p><p>2025.4 → 2026.3.29<br>核谈破裂→军事打击→全球震荡</p></div>
+  <div class="ph-c p2"><h4>🟡 第二阶段</h4><p style="color:#d29922;">消耗僵持期</p><p>2026.3.29→5.10<br>停火谈判·海峡封锁·中美介入</p></div>
+  <div class="ph-c p3"><h4>🟢 第三阶段</h4><p style="color:#3fb950;">外交突破期</p><p>2026.5.10→5.28<br>14点方案·北京峰会·MOU达成</p></div>
+  <div class="ph-c p4"><h4>🔵 第四阶段</h4><p style="color:#58a6ff;">协议拉锯期</p><p>2026.5.28→6.21<br>特朗普推回·硬派抵制·悬而未决</p></div>
+</div>
+
+<div class="tl">
+  <div class="tl-i major"><div class="tl-date">2025.04-06</div><div class="tl-title">🔴 冲突源头</div><div class="tl-desc">阿曼5轮核谈破裂。6.13 以色列"升旗之狮"(200+战机/100+目标)。6.21 美国"午夜锤"行动。6.24 卡塔尔斡旋停火。</div></div>
+  <div class="tl-i major"><div class="tl-date">2026.02.28</div><div class="tl-title">🔴 冲突全面爆发 — "咆哮雄狮"+"Epic Fury"</div><div class="tl-desc">美以联合大规模空袭。哈梅内伊遇害。伊朗宣布关闭霍尔木兹海峡。</div></div>
+  <div class="tl-i"><div class="tl-date">2026.02.28-03.01</div><div class="tl-title">伊朗报复打击</div><div class="tl-desc">IRGC袭击27个美军基地，弹道导弹袭击"林肯"号航母。至少9国被卷入。</div></div>
+  <div class="tl-i"><div class="tl-date">2026.03.01</div><div class="tl-title">霍尔木兹海峡关闭</div><div class="tl-desc">全球石油供应冲击。布伦特原油从$70飙升。</div></div>
+  <div class="tl-i"><div class="tl-date">2026.03.03</div><div class="tl-title">上海合作组织声明"严重关切"</div><div class="tl-desc">多国谴责美以军事行动。</div></div>
+  <div class="tl-i"><div class="tl-date">2026.03.25-31</div><div class="tl-title">美国民调触底</div><div class="tl-desc">Pew: 59%说动武错误。Ipsos: 66%希望尽快结束。美净支持率-9%→-15%。</div></div>
+  <div class="tl-i"><div class="tl-date">2026.04.03</div><div class="tl-title">📄 证据台账+趋势图表首版</div><div class="tl-desc">建立19项媒体证据+6项民调证据的完整追溯体系。</div></div>
+  <div class="tl-i"><div class="tl-date">2026.04.08</div><div class="tl-title">巴基斯坦调解停火</div><div class="tl-desc">首次停火协议达成（巴基斯坦斡旋）。4.22到期。</div></div>
+  <div class="tl-i"><div class="tl-date">2026.04.11-12</div><div class="tl-title">美伊首轮谈判（巴基斯坦）</div><div class="tl-desc">失败。核心分歧：铀浓缩20年vs5年；战争赔偿$2700亿。</div></div>
+  <div class="tl-i"><div class="tl-date">2026.04.19</div><div class="tl-title">停火延期</div><div class="tl-desc">中国在联合国安理会否决涉伊决议。冲突第48天：伊朗3000+/黎2100+/以23/美13人阵亡。</div></div>
+  <div class="tl-i diplomatic"><div class="tl-date">2026.05.06</div><div class="tl-title">🔵 伊朗外长访华</div><div class="tl-desc">中国《阻断办法》首次激活。伊朗明确接受中国为协议担保方。</div></div>
+  <div class="tl-i"><div class="tl-date">2026.05.10</div><div class="tl-title">特朗普拒绝伊朗14点方案</div><div class="tl-desc">国防部军事选项压力增大。布伦特原油$107峰值。</div></div>
+  <div class="tl-i diplomatic"><div class="tl-date">2026.05.14-15</div><div class="tl-title">📍 中美北京峰会</div><div class="tl-desc">核心成果：霍尔木兹海峡自由航行原则共识。但中国未成为伊朗"担保人"，低于伊朗预期。</div></div>
+  <div class="tl-i"><div class="tl-date">2026.05.25</div><div class="tl-title">美\"自卫打击\"南部伊朗</div><div class="tl-desc">指控伊朗在海峡布设水雷。同日MOU谈判仍在继续。</div></div>
+  <div class="tl-i major"><div class="tl-date">2026.05.28</div><div class="tl-title">✅ 美伊达成60天停火MOU</div><div class="tl-desc">伊朗通过巴基斯坦穿梭外交+马斯喀特渠道达成。布伦特原油暴跌至~$90（2008来最大单日跌幅）。但同日美伊仍交火。</div></div>
+  <div class="tl-i major"><div class="tl-date">2026.05.29</div><div class="tl-title">⚠️ 特朗普未签署</div><div class="tl-desc">万斯称"非常接近"。伊朗称文本未定稿。Polymarket"本周签"概率28%。</div></div>
+  <div class="tl-i major"><div class="tl-date">2026.05.30</div><div class="tl-title">⚠️ 特朗普战情室要求修改</div><div class="tl-desc">加强核承诺措辞+修正海峡重启条款。同日晚美打击伊雷达/C2设施。</div></div>
+  <div class="tl-i"><div class="tl-date">2026.05.30-31</div><div class="tl-title">美伊继续交火</div><div class="tl-desc">IRGC打击美军基地报复。科威特拦截无人机/导弹。Polymarket概率28%→14%。</div></div>
+  <div class="tl-i"><div class="tl-date">2026.06.01</div><div class="tl-title">伊朗强硬派公开抵制</div><div class="tl-desc">Sunday Guardian报道。中国产导弹击落F-15传闻引发全球军事辩论。俄Yolka反无人机系统入场。</div></div>
+  <div class="tl-i"><div class="tl-date">2026.06.21</div><div class="tl-title">📄 综合分析HTML报告</div><div class="tl-desc">MOU执行进展：停火已生效/禁飞区已生效/海峡逐步恢复。核问题和制裁解除待谈判。</div></div>
+</div>
+
+<!-- ========== 二、媒体态度 ========== -->
+<h2 id="s2">二、全球媒体态度 4 阶段演变</h2>
+
+<div class="box">
+  <strong>核心发现</strong>（来自Evidence Ledger + 趋势矩阵交叉验证）：全球未形成统一"亲/反伊"阵营，而是三条主线。<br>
+  🇨🇳 中文：主权+反单边动武 | 🇺🇸：安全威胁+升级成本+政策困境混合 | 🌍 阿拉伯：海湾安全焦虑压缩伊朗同情空间
+</div>
+
+<h3>2.1 各语言区立场编码演变</h3>
+
+<table>
+<thead><tr><th>舆论场</th><th>Phase 1 (2-3月)<br>全面爆发</th><th>Phase 2 (4月)<br>消耗僵持</th><th>Phase 3 (5月上)<br>外交突破前</th><th>Phase 4 (5.15-6月)<br>MOU拉锯</th><th>趋势</th></tr></thead>
+<tbody>
+<tr><td>🇨🇳 中文</td><td><span class="tag green">+1</span></td><td><span class="tag green">+1</span></td><td><span class="tag green">+1</span></td><td><span class="tag green">+1→+0.5</span></td><td>稳定支持→审慎观望</td></tr>
+<tr><td>🇺🇸 美英文</td><td><span class="tag gray">0</span></td><td><span class="tag gray">0</span></td><td><span class="tag yellow">-1</span></td><td><span class="tag gray">0</span></td><td>剧烈摆动：批评→突破希望→回摆</td></tr>
+<tr><td>🇬🇧 英英文</td><td><span class="tag gray">0</span></td><td><span class="tag gray">0</span></td><td><span class="tag gray">0</span></td><td><span class="tag gray">0</span></td><td>谨慎参与，关注外溢风险</td></tr>
+<tr><td>🇫🇷 法语</td><td><span class="tag gray">0</span></td><td><span class="tag gray">0</span></td><td><span class="tag yellow">-1</span></td><td><span class="tag yellow">-1</span></td><td>批评固化的战略焦虑</td></tr>
+<tr><td>🇩🇪 德语</td><td><span class="tag gray">0</span></td><td><span class="tag gray">0</span></td><td><span class="tag gray">0</span></td><td><span class="tag yellow">-0.5</span></td><td>渐趋批评</td></tr>
+<tr><td>🇪🇸 西班牙语</td><td><span class="tag yellow">-1</span></td><td><span class="tag yellow">-1</span></td><td><span class="tag yellow">-1</span></td><td><span class="tag yellow">-1</span></td><td>持续反对</td></tr>
+<tr><td>🌍 阿拉伯语</td><td><span class="tag yellow">-1</span></td><td><span class="tag yellow">-1</span></td><td><span class="tag yellow">-1</span></td><td><span class="tag yellow">-1</span></td><td>两边批评：反伊朗+反美干涉</td></tr>
+<tr><td>🇮🇱 以色列</td><td><span class="tag yellow">-1</span></td><td><span class="tag yellow">-1</span></td><td><span class="tag red">-1.5</span></td><td><span class="tag red">-1.5</span></td><td>进一步硬化，反对任何松绑</td></tr>
+<tr><td>🇷🇺 俄语</td><td><span class="tag green">+1</span></td><td><span class="tag green">+1</span></td><td><span class="tag green">+1</span></td><td><span class="tag green">+1</span></td><td>稳定但趋于安静</td></tr>
+</tbody>
+</table>
+<div class="callout"><strong>最剧烈摆动</strong>：美国媒体 Phase 3→4 从 -1（批评）急转至 0（谨慎希望），因5.28 MOU——但同日交火使叙事无法稳定。<div class="src">📊 Iran-Analyze-Trend-Charts-2026-05-29</div></div>
+
+<h3>2.2 中文媒体叙事演变</h3>
+<table>
+<thead><tr><th>时间段</th><th>主导叙事</th><th>编码</th></tr></thead>
+<tbody>
+<tr><td>2月底-3月</td><td>"穷兵黩武的霸权行径"（新华社）"侵略战争"（观察者网）</td><td><span class="tag green">+1/+2</span></td></tr>
+<tr><td>3月中</td><td>王毅："公然击杀主权国家领导人不可接受"；上合组织"严重关切"</td><td><span class="tag green">+1</span></td></tr>
+<tr><td>4月</td><td>关注人道危机，支持和谈；中国否决安理会涉伊决议</td><td><span class="tag green">+1</span></td></tr>
+<tr><td>5月</td><td>中国斡旋叙事；阻断办法激活；北京峰会</td><td><span class="tag green">+1</span></td></tr>
+<tr><td>5.28-6月</td><td>"协议悬而未决，美伊再交火"——从"和平曙光"回归审慎</td><td><span class="tag yellow">+1→+0.5</span></td></tr>
+</tbody>
+</table>
+
+<h3>2.3 全球关键民调指标趋势</h3>
+<table>
+<thead><tr><th>指标</th><th>3月</th><th>4月</th><th>5月</th><th>来源</th></tr></thead>
+<tbody>
+<tr><td>全球：国家应避免卷入</td><td>—</td><td>—</td><td><strong>81%</strong></td><td>Ipsos 5.5</td></tr>
+<tr><td>全球：归咎美以挑起战争</td><td>—</td><td><strong>80%</strong></td><td>—</td><td>Gallup Intl 4.7</td></tr>
+<tr><td>全球：美国将产生正面影响</td><td>—</td><td>—</td><td><strong>39%</strong></td><td>Ipsos 5.5</td></tr>
+<tr><td>全球：中国将产生正面影响</td><td>—</td><td>—</td><td><strong>50%</strong></td><td>Ipsos 5.5</td></tr>
+<tr><td>全球：高油价"不值得"</td><td>—</td><td>—</td><td><strong>70%</strong></td><td>Ipsos 5.5</td></tr>
+</tbody>
+</table>
+<div class="callout"><strong>中国 vs 美国全球形象差距 11pp</strong>：50% vs 39%。美国全球正面形象即使在 MOU 后也未反弹。<div class="src">📊 Iran-Analyze-Trend-Charts-2026-05-29</div></div>
+
+<!-- ========== 三、民意 ========== -->
+<h2 id="s3">三、全球民意演变</h2>
+
+<div class="box blue">
+  <strong>核心轨迹</strong>：美国民意经历了"初始反对→持续恶化→固化"的过程。最关键的发现是——<strong>即使5.28 MOU也未能产生民调反弹</strong>。净支持率持续恶化表明美国公众的怀疑已固化为结构性负基线。
+</div>
+
+<h3>3.1 美国：五轮民调交叉验证</h3>
+
+<table>
+<thead><tr><th>机构</th><th>问题</th><th>结果</th><th>日期</th></tr></thead>
+<tbody>
+<tr><td>YouGov/Economist</td><td>是否支持对伊军事行动</td><td>仅<strong>25-34%</strong>支持</td><td>2.28后</td></tr>
+<tr><td>Reuters/Ipsos</td><td>是否支持对伊袭击</td><td>仅<strong>1/4</strong>支持</td><td>2.28后</td></tr>
+<tr><td>CNN</td><td>不赞成/认为会长期战争</td><td><strong>59%不赞成 / 60%长期战争</strong></td><td>3月初</td></tr>
+<tr><td>Pew Research</td><td>动武正确性+总统处理</td><td><strong>59%错误决定 / 61%不赞成</strong></td><td>3.16-22</td></tr>
+<tr><td>AP-NORC</td><td>"走太远了/正好/不够"</td><td><strong>60%走太远了 / 26%正好 / 13%不够</strong></td><td>3.19-23</td></tr>
+<tr><td>Ipsos</td><td>应尽快结束 vs 达成所有目标</td><td><strong>66%尽快结束</strong> / 76%反对部署地面部队</td><td>3.27-29</td></tr>
+</tbody>
+</table>
+<div class="callout"><strong>证据溯源</strong>：以上数据来自 Iran-Analyze-Evidence-Ledger-2026-04-03，每条对应特定证据编号（P-001至P-006），置信度为 H/M。<div class="src">📊 Iran-Analyze-Evidence-Ledger-2026-04-03</div></div>
+
+<h3>3.2 美国净支持率持续恶化轨迹</h3>
+
+<table>
+<thead><tr><th>日期</th><th>净支持率 (Silver Bulletin)</th><th>关键事件</th></tr></thead>
+<tbody>
+<tr><td>3.1</td><td><strong>-9%</strong></td><td>冲突爆发</td></tr>
+<tr><td>3.15</td><td><strong>-12%</strong></td><td>美持续打击</td></tr>
+<tr><td>4.1</td><td><strong>-15%</strong></td><td>停火谈判启动</td></tr>
+<tr><td>4.15</td><td><strong>-16%</strong></td><td>首轮谈判失败</td></tr>
+<tr><td>5.1</td><td><strong>-18%</strong></td><td>消耗僵持</td></tr>
+<tr><td>5.14</td><td><strong>-18%</strong></td><td>中美峰会</td></tr>
+<tr><td><strong>5.28</strong></td><td><strong>-22.8%</strong></td><td>MOU达成·同日交火</td></tr>
+</tbody>
+</table>
+<div class="box red">-22.8% 为冲突以来最低点，较初期-9%恶化13.8个百分点。Silver Bulletin 创始人 Nate Silver 指出：如果和平协议失败或冲突升级，支持率可能进一步下降。</div>
+
+<h3>3.3 全球民意关键数据</h3>
+<table>
+<thead><tr><th>区域</th><th>数据</th><th>来源</th></tr></thead>
+<tbody>
+<tr><td>法国</td><td>85%担心伊朗政权；85%担心中东蔓延；54%担心全球维度；仅25%支持向美以提供武器</td><td>Ifop 3.4-5</td></tr>
+<tr><td>MENA</td><td>对伊朗政策正面评价：突尼斯49%/伊拉克48%/巴勒斯坦36%/摩洛哥35%/黎巴嫩29%/约旦19%/叙利亚3%</td><td>Arab Barometer 2025</td></tr>
+<tr><td>全球（美/中形象）</td><td>"正面影响"：中国50% vs 美国39%（差距11pp）</td><td>Ipsos 5.5</td></tr>
+<tr><td>欧洲</td><td>仅31%认为停火能持续；多数预期"再度升级"</td><td>Euroscope续调</td></tr>
+</tbody>
+</table>
+
+<!-- ========== 四、外交博弈 ========== -->
+<h2 id="s4">四、外交博弈演变</h2>
+
+<h3>4.1 中国角色：从"外围观察者"到"核心调解人"（但拒绝深度担保）</h3>
+
+<table>
+<thead><tr><th>时间</th><th>角色</th><th>关键行动</th></tr></thead>
+<tbody>
+<tr><td>2-3月</td><td><span class="tag gray">外围观察者</span></td><td>外交部呼吁停火，尚未提出具体方案</td></tr>
+<tr><td>4月</td><td><span class="tag yellow">积极斡旋者</span></td><td>外交部表态升级；安理会否决涉伊决议；《阻断办法》进入激活流程</td></tr>
+<tr><td><strong>5.6</strong></td><td><span class="tag green">被寻求担保</span></td><td>伊朗外长访华，明确接受中国为协议担保方。《阻断办法》首次激活</td></tr>
+<tr><td><strong>5.14</strong></td><td><span class="tag blue">核心调解人(有限)</span></td><td>中美北京峰会：仅达成"海峡自由航行"原则共识。中国未承诺深度担保</td></tr>
+<tr><td>5.28-6月</td><td><span class="tag yellow">配角</span></td><td>MOU由巴基斯坦+阿曼斡旋达成，非北京直接调解。中国无重大跟进动作</td></tr>
+</tbody>
+</table>
+<div class="box blue">5.14 北京峰会<strong>显著低于市场预期</strong>。中国不愿过度担保——否则协议破裂将损害外交信誉。伊朗战略教训：过度依赖单一大国（无论美中）是危险的。<div class="src">📊 Iran-Conflict-Geopolitical-Analysis-2026-05-29</div></div>
+
+<h3>4.2 美国：从"军事主导"到"三重撕裂"</h3>
+<table>
+<thead><tr><th>时期</th><th>主导策略</th><th>核心矛盾</th></tr></thead>
+<tbody>
+<tr><td>2月底-3月</td><td><span class="tag red">军事主导</span></td><td>寻求快速决胜；无"团结效应"（rally effect），党派分歧严重</td></tr>
+<tr><td>4月</td><td><span class="tag yellow">双轨并行</span></td><td>开启谈判+持续军事施压；(Pew)59%认为动武错误</td></tr>
+<tr><td>5月上</td><td><span class="tag yellow">谈判(外交团队) vs 军事(国防部)</span></td><td>特朗普拒绝14点方案；内部分裂尖锐化</td></tr>
+<tr><td>5.28-6月</td><td><span class="tag red">三重压力撕裂</span></td><td>以色列/共和党强硬派 vs 反战选民 vs 经济（油价$4.43+/支持率-22.8%）</td></tr>
+</tbody></table>
+<div class="callout">特朗普的"战情室修改要求"（5.30）可能是表演性强硬以安抚右翼，也可能是真犹豫（得罪以游说集团 vs 不签则中选前油价高企）。<div class="src">📊 地缘格局推测分析6.1</div></div>
+
+<h3>4.3 欧洲：从"追随"到"公开裂痕"到"独立部署"</h3>
+<table>
+<thead><tr><th>时间</th><th>表现</th></tr></thead>
+<tbody>
+<tr><td>2-3月</td><td>配合制裁框架。英首相斯塔默：英国不参与进攻性打击，仅允许基地防御目的</td></tr>
+<tr><td>4月</td><td>法国/西班牙公开挑战美国动武合法性。欧盟强调降级和外交窗口</td></tr>
+<tr><td>5月</td><td>德国总理默茨直接批评"美国无战略"。英国独立部署霍尔木兹护航舰队</td></tr>
+</tbody></table>
+
+<!-- ========== 五、地缘格局 ========== -->
+<h2 id="s5">五、地缘格局演变</h2>
+
+<h3>5.1 三大地缘结构变化</h3>
+
+<div class="grid3">
+  <div class="gc"><h4>1️⃣ 中国角色"有限化"</h4><p>北京峰会低于预期。中国未成为担保人。巴基斯坦+阿曼取代中国成主要调解方。中国战略：保持影响但避免直接风险承担。</p></div>
+  <div class="gc"><h4>2️⃣ "脆弱停火"常态化</h4><p>5.25美自卫打击+5.28同日交火表明：低强度冲突已成为谈判的"背景噪声"而非破裂信号。停火+交火并存成为新常态。</p></div>
+  <div class="gc"><h4>3️⃣ 小国脆弱性暴露</h4><p>特朗普威胁轰炸阿曼，揭示小国在大国竞争中的极端脆弱性。科威特拦截导弹暴露安全困境。可能加速海湾地缘多元化。</p></div>
+</div>
+
+<h3>5.2 伊朗内部博弈：贯穿始终的关键变量</h3>
+<table>
+<thead><tr><th>阵营</th><th>立场</th><th>在协议中的利益</th></tr></thead>
+<tbody>
+<tr><td><strong>务实派</strong><br>佩泽什基安/阿拉格齐</td><td>外交结束战争</td><td>协议→制裁解除→经济稳定</td></tr>
+<tr><td><strong>强硬派</strong><br>IRGC/卡利巴夫/前内贾德势力</td><td>拒绝妥协</td><td>协议削弱其权力基础</td></tr>
+<tr><td><strong>最高领袖继任</strong><br>哈梅内伊去世后争夺</td><td>各派系定位站</td><td>后哈梅内伊时代权力真空</td></tr>
+</tbody></table>
+<div class="box red">5.30-31：强硬派公开抵制和平努力（Sunday Guardian 6.1），与特朗普推回MOU形成"内外共振"——协议命运更加脆弱。</div>
+
+<h3>5.3 第三方武器入场 → "全球武器展示场"</h3>
+<div class="callout">6.1 传闻中国产导弹击落F-15 + 俄Yolka反无人机系统 + 印导弹出口伊朗 → 冲突正在从"美伊对抗"演变为各方检验武器系统的"全球武器展示场"。</div>
+
+<!-- ========== 六、经济 ========== -->
+<h2 id="s6">六、经济影响演变</h2>
+
+<h3>核心指标</h3>
+<table>
+<thead><tr><th>指标</th><th>战前(2026.2)</th><th>冲突高峰(5月)</th><th>MOU后(6.21)</th></tr></thead>
+<tbody>
+<tr><td>布伦特原油</td><td>~$70/桶</td><td>$107/桶</td><td>$95-100/桶</td></tr>
+<tr><td>美国汽油价格</td><td>$2.98/加仑</td><td>$4.60/加仑</td><td>~$4.20/加仑</td></tr>
+<tr><td>SPR消耗</td><td>—</td><td>月均1700万桶/50M桶累计</td><td>消耗放缓</td></tr>
+<tr><td>霍尔木兹航运量</td><td>正常(1700万桶/日)</td><td>近乎停滞</td><td>逐步恢复中</td></tr>
+</tbody></table>
+
+<div class="box warn">$70→$107→$95 油价曲线直接影响冲突政治轨迹：油价飙升→83%家庭承压→63%归咎总统→净支持率恶化→特朗普被迫转向"谈判优先"。</div>
+
+<!-- ========== 七、军事态势 ========== -->
+<h2 id="s7">七、军事态势</h2>
+
+<table>
+<thead><tr><th>维度</th><th>数据</th><th>来源</th></tr></thead>
+<tbody>
+<tr><td>冲突性质</td><td>美以为首联合行动（以"升旗之狮"+美"午夜锤"→2.28"咆哮雄狮+Epic Fury"）</td><td>冲突分析(4.16)</td></tr>
+<tr><td>伊朗阵亡</td><td>3000+（截至4.19，第48天）</td><td>冲突分析(4.16)</td></tr>
+<tr><td>黎巴嫩阵亡</td><td>2100+</td><td>同上</td></tr>
+<tr><td>美军阵亡</td><td>13+（含4名士兵+4重伤初期报告）</td><td>同上</td></tr>
+<tr><td>以方阵亡</td><td>23</td><td>同上</td></tr>
+<tr><td>卷入国家数</td><td>9+（伊/美/以/阿曼/阿联酋/卡塔尔/巴林/沙特/科威特/伊拉克/约旦/黎巴嫩）</td><td>舆情深度分析(2.28-3.13)</td></tr>
+<tr><td>伊朗报复</td><td>袭击27个美军基地；弹道导弹袭击"林肯"号航母</td><td>同上</td></tr>
+<tr><td>核进展</td><td>伊朗5.12威胁将浓缩铀提至90%→可能是谈判策略</td><td>地缘政治分析(5.29)</td></tr>
+<tr><td>和谈核心分歧</td><td>美要求暂停铀浓缩20年 / 伊最多同意5年 / 伊要求$2700亿战争赔偿</td><td>冲突分析(4.16)</td></tr>
+</tbody></table>
+
+<!-- ========== 八、未来情景 ========== -->
+<h2 id="s8">八、未来情景</h2>
+
+<div class="grid3">
+  <div class="gc"><h4 style="color:#3fb950;">✅ A: 协议签署 (35%)</h4><p>特朗普1-2周内签MOU。油价降至$80-90。中国有限担保。伊朗务实派压制强硬派。</p><div class="bp"><span class="bp-l">概率</span><div class="bp-t"><div class="bp-f" style="width:35%;background:#3fb950;"></div></div><span class="bp-v">35%</span></div></div>
+  <div class="gc"><h4 style="color:#d29922;">⚠️ B: 协议拖延 (40%)</h4><p>特朗普拖至7-8月。油价$90-100。局部交火持续。中期选举前核心议题。</p><div class="bp"><span class="bp-l">概率</span><div class="bp-t"><div class="bp-f" style="width:40%;background:#d29922;"></div></div><span class="bp-v">40%</span></div></div>
+  <div class="gc"><h4 style="color:#f85149;">🔴 C: 协议破裂 (25%)</h4><p>伊朗强硬派+特朗普放弃+军事升级。油价冲破$110。全球衰退风险上升。</p><div class="bp"><span class="bp-l">概率</span><div class="bp-t"><div class="bp-f" style="width:25%;background:#f85149;"></div></div><span class="bp-v">25%</span></div></div>
+</div>
+
+<h3>关键不确定变量</h3>
+<table>
+<thead><tr><th>变量</th><th>观测点</th><th>阈值</th></tr></thead>
+<tbody>
+<tr><td>特朗普签署意愿</td><td>Polymarket概率；战情室后续</td><td>若1-2周不签→概率降至&lt;20%</td></tr>
+<tr><td>伊朗强硬派</td><td>IRGC公开声明；议会对MOU表态</td><td>若公开否决→协议实际死亡</td></tr>
+<tr><td>油价轨迹</td><td>布伦特是否跌破$90</td><td>&lt;$90→美政治压力缓解→协议空间扩大</td></tr>
+<tr><td>中国角色</td><td>中国是否愿做最后担保</td><td>若拒绝→协议缺少最终保障机制</td></tr>
+<tr><td>海湾安全</td><td>科威特/阿曼中立性；误击事件</td><td>若重大误击→冲突螺旋升级</td></tr>
+</tbody></table>
+
+<div class="box blue">
+  <strong>全周期核心判断</strong><br><br>
+  <strong>1. 内部政治 > 外部军事</strong>：特朗普的签署意愿和伊朗强硬派的阻力，比战场胜负更能决定战争如何结束。<br>
+  <strong>2. 油价 > 外交</strong>：$95/桶是美政治痛阈。低于$85则特朗普有余地继续博弈；高于$100则被迫让步。<br>
+  <strong>3. 中国角色"有限化"</strong>：北京峰会确认中国为核心调解人，但拒绝深度担保。巴基斯坦+阿曼是MOU的真正推手。<br>
+  <strong>4. 民意已固化为结构性负基线</strong>：即使MOU也未能产生反弹。-22.8%的净支持率意味着特朗普在国内缺乏政治资本来推进任何涉伊策略。<br><br>
+  <div style="color:#8b949e;font-size:13px;">
+  整合自 29 份报告（2026.3.29→6.21）· Evidence Ledger 19项媒体证据+6项民调证据· 趋势图表4阶段矩阵· 1112行初始深度报告
+  </div>
+</div>
+
+<div class="ft">
+  <p>整合源：伊朗局势全球媒体分析(3.29) · Iran-Analyze-Evidence-Ledger(4.3) · Iran-Analyze-Trend-Charts(4.3/5.14/5.29) · 冲突分析CN(4.16) · 媒体态度(4.26/5.14/5.29/6.1) · 地缘政治(5.14/5.29/6.1) · 民调(4.3/4.26/5.14/5.29) · Iran_Analyze_Report · iran_conflict_analysis_report(1112行) · 综合分析(6.21)</p>
+  <p>民调来源：Pew · AP-NORC · Ipsos · YouGov/Economist · Reuters/Ipsos · CNN · Marist · Gallup Intl · Arab Barometer · Ifop · Silver Bulletin</p>
+  <p>报告生成：2026-06-26 · Sisyphus Agent · 29份报告全量整合 · 仅供研究参考</p>
+</div>
+
+</body>
+</html>

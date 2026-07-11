@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>冰之女皇 · 3D 建模 | Tsaritsa 3D Model</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:#080610; overflow:hidden; font-family:'Segoe UI','PingFang SC',sans-serif;
+  color:rgba(200,220,255,0.5);
+}
+#info {
+  position:absolute; top:18px; left:50%; transform:translateX(-50%);
+  font-size:14px; letter-spacing:4px; text-align:center;
+  color:rgba(180,210,255,0.4); text-shadow:0 0 40px rgba(100,180,255,0.06);
+  pointer-events:none; z-index:10;
+}
+#info .sub { font-size:10px; letter-spacing:2px; color:rgba(180,210,255,0.15); }
+#stats {
+  position:absolute; bottom:22px; left:50%; transform:translateX(-50%);
+  display:flex; gap:28px; font-size:11px; letter-spacing:1px;
+  background:rgba(8,6,16,0.7); padding:8px 28px; border-radius:20px;
+  border:1px solid rgba(100,180,255,0.06); pointer-events:none; z-index:10;
+}
+.stat { text-align:center; }
+.stat-lbl { font-size:9px; color:rgba(180,210,255,0.2); }
+.stat-val { font-size:14px; color:rgba(180,210,255,0.35); }
+#controls {
+  position:absolute; bottom:80px; right:24px; display:flex; flex-direction:column; gap:6px; z-index:10;
+}
+#controls button {
+  background:rgba(100,150,255,0.04); border:1px solid rgba(100,180,255,0.1);
+  color:rgba(180,210,255,0.3); padding:5px 14px; border-radius:5px;
+  font-size:10px; cursor:pointer; font-family:inherit; letter-spacing:1px;
+  transition:all 0.25s;
+}
+#controls button:hover { background:rgba(100,180,255,0.08); border-color:rgba(100,180,255,0.2); }
+#controls button.on { border-color:rgba(100,200,255,0.25); color:rgba(180,220,255,0.5); }
+#loading {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  color:rgba(180,210,255,0.2); font-size:13px; letter-spacing:3px;
+  z-index:1; animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:0.2} 50%{opacity:0.6} }
+</style>
+</head>
+<body>
+<div id="loading">✦ 加载中 ...</div>
+<div id="info">✦ 冰之女皇 · 安娜丝塔夏 ✦<br><span class="sub">TSARITSA · CRYO ARCHON</span></div>
+<div id="stats">
+  <div class="stat"><div class="stat-lbl">顶点</div><div class="stat-val" id="s-vtx">—</div></div>
+  <div class="stat"><div class="stat-lbl">面片</div><div class="stat-val" id="s-face">—</div></div>
+  <div class="stat"><div class="stat-lbl">拖拽旋转</div><div class="stat-val">◉</div></div>
+</div>
+<div id="controls">
+  <button id="btn-spin" class="on">⟳ 自转</button>
+  <button id="btn-particles" class="on">✦ 冰晶</button>
+  <button id="btn-wire" class="">▦ 线框</button>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ─── Scene setup ───
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x080610);
+scene.fog = new THREE.Fog(0x080610, 12, 20);
+
+const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 50);
+camera.position.set(5, 3, 8);
+camera.lookAt(0, 1.2, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+document.body.insertBefore(renderer.domElement, document.body.firstChild);
+document.getElementById('loading').style.display = 'none';
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 1.4, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 2.0;
+controls.minDistance = 3;
+controls.maxDistance = 15;
+controls.update();
+
+// ─── Lighting ───
+const ambient = new THREE.AmbientLight(0x224488, 0.3);
+scene.add(ambient);
+
+const mainLight = new THREE.DirectionalLight(0xaaccff, 2.5);
+mainLight.position.set(5, 10, 5);
+mainLight.castShadow = true;
+scene.add(mainLight);
+
+const fillLight = new THREE.DirectionalLight(0x4488ff, 0.6);
+fillLight.position.set(-4, 3, -3);
+scene.add(fillLight);
+
+const rimLight = new THREE.DirectionalLight(0x88ccff, 1.5);
+rimLight.position.set(-2, 4, -6);
+scene.add(rimLight);
+
+const bottomLight = new THREE.DirectionalLight(0x2244aa, 0.3);
+bottomLight.position.set(0, -2, 0);
+scene.add(bottomLight);
+
+// Cryo glow light
+const cryoLight = new THREE.PointLight(0x4488ff, 0.5, 6);
+cryoLight.position.set(0, 2.5, 0);
+scene.add(cryoLight);
+
+// ─── Materials ───
+const mat = {
+  skin: new THREE.MeshPhysicalMaterial({
+    color: 0xf5e8e0, roughness: 0.6, metalness: 0.0,
+    clearcoat: 0.1, clearcoatRoughness: 0.3,
+  }),
+  hair: new THREE.MeshPhysicalMaterial({
+    color: 0xd0d8e8, roughness: 0.2, metalness: 0.1,
+    clearcoat: 0.3, clearcoatRoughness: 0.2,
+  }),
+  hairDark: new THREE.MeshPhysicalMaterial({
+    color: 0x606880, roughness: 0.3, metalness: 0.05,
+  }),
+  dress: new THREE.MeshPhysicalMaterial({
+    color: 0x1a1a2e, roughness: 0.15, metalness: 0.3,
+    clearcoat: 0.4, clearcoatRoughness: 0.2,
+  }),
+  dressAccent: new THREE.MeshPhysicalMaterial({
+    color: 0x2a3050, roughness: 0.1, metalness: 0.5,
+    clearcoat: 0.6, clearcoatRoughness: 0.1,
+  }),
+  white: new THREE.MeshPhysicalMaterial({
+    color: 0xe8eef5, roughness: 0.3, metalness: 0.0,
+    clearcoat: 0.1,
+  }),
+  gold: new THREE.MeshPhysicalMaterial({
+    color: 0xd4a848, roughness: 0.15, metalness: 0.8,
+  }),
+  cryo: new THREE.MeshPhysicalMaterial({
+    color: 0x88ccff, roughness: 0.0, metalness: 0.0,
+    transparent: true, opacity: 0.3,
+    clearcoat: 1.0, clearcoatRoughness: 0.0,
+  }),
+  cryoGlow: new THREE.MeshPhysicalMaterial({
+    color: 0x4488ff, roughness: 0.0, metalness: 0.0,
+    transparent: true, opacity: 0.15,
+  }),
+  eye: new THREE.MeshPhysicalMaterial({
+    color: 0x6088b0, roughness: 0.0, metalness: 0.1,
+    clearcoat: 0.5,
+  }),
+  lip: new THREE.MeshPhysicalMaterial({
+    color: 0xd4a0a0, roughness: 0.3, metalness: 0.0,
+  }),
+  sole: new THREE.MeshPhysicalMaterial({
+    color: 0x0a0a12, roughness: 0.8, metalness: 0.0,
+  }),
+};
+
+// ─── Build character ───
+const char = new THREE.Group();
+
+// Ground shadow disc
+const shadowGeo = new THREE.RingGeometry(0, 2.2, 48);
+const shadowMat = new THREE.MeshBasicMaterial({
+  color: 0x060410, transparent: true, opacity: 0.4, side: THREE.DoubleSide,
+});
+const shadow = new THREE.Mesh(shadowGeo, shadowMat);
+shadow.rotation.x = -Math.PI / 2;
+shadow.position.y = -0.01;
+scene.add(shadow);
+
+// ─── Body ───
+function torso() {
+  const g = new THREE.Group();
+
+  // Torso shape using lathed profile (elegant corset)
+  const pts = [];
+  for (let i = 0; i <= 20; i++) {
+    const t = i / 20;
+    const y = t * 1.1;
+    let r;
+    if (t < 0.15) r = 0.42 - t * 0.6;        // neck base
+    else if (t < 0.35) r = 0.35 + (t-0.15) * 0.5;  // shoulders → bust
+    else if (t < 0.55) r = 0.45 - (t-0.35) * 0.2;  // bust → waist
+    else if (t < 0.75) r = 0.40 - (t-0.55) * 0.5;  // waist → hip
+    else r = 0.30 + (t-0.75) * 1.2;                  // hip → dress flare
+    pts.push(new THREE.Vector2(Math.max(r, 0.05), y));
+  }
+  const geo = new THREE.LatheGeometry(pts, 24);
+  const mesh = new THREE.Mesh(geo, mat.dress);
+  mesh.position.y = 0.6;
+  mesh.castShadow = true;
+  g.add(mesh);
+
+  // Dress lower flare (separate lathe for the skirt)
+  const skirtPts = [];
+  for (let i = 0; i <= 16; i++) {
+    const t = i / 16;
+    const y = t * 0.6;
+    let r = 0.75 + t * 1.2 + Math.sin(t * Math.PI) * 0.15;
+    skirtPts.push(new THREE.Vector2(r, y));
+  }
+  const skirtGeo = new THREE.LatheGeometry(skirtPts, 28);
+  const skirt = new THREE.Mesh(skirtGeo, mat.dressAccent);
+  skirt.position.y = 0.3;
+  skirt.castShadow = true;
+  g.add(skirt);
+
+  // Dress trim (white fur at bottom)
+  const trimPts = [];
+  for (let i = 0; i <= 12; i++) {
+    const t = i / 12;
+    const y = t * 0.08;
+    const r = 1.7 + Math.sin(t * Math.PI * 4) * 0.04;
+    trimPts.push(new THREE.Vector2(r, y));
+  }
+  const trimGeo = new THREE.LatheGeometry(trimPts, 28);
+  const trim = new THREE.Mesh(trimGeo, mat.white);
+  trim.position.y = 0.25;
+  g.add(trim);
+
+  // Bust/corset detail - gold trim
+  const corsetPts = [];
+  for (let i = 0; i <= 8; i++) {
+    const t = i / 8;
+    const y = 0.6 + t * 0.25;
+    const r = 0.38 + Math.sin(t * Math.PI) * 0.03;
+    corsetPts.push(new THREE.Vector2(r, y));
+  }
+  const corsetGeo = new THREE.LatheGeometry(corsetPts, 20);
+  const corset = new THREE.Mesh(corsetGeo, mat.gold);
+  corset.position.y = 0.6;
+  g.add(corset);
+
+  return g;
+}
+char.add(torso());
+
+// ─── Neck ───
+const neckGeo = new THREE.CylinderGeometry(0.16, 0.20, 0.25, 12);
+const neck = new THREE.Mesh(neckGeo, mat.skin);
+neck.position.y = 1.75;
+char.add(neck);
+
+// ─── Head ───
+function head() {
+  const g = new THREE.Group();
+
+  // Main head shape
+  const headGeo = new THREE.SphereGeometry(0.32, 24, 20);
+  // Stretch slightly
+  const pos = headGeo.getAttribute('position');
+  for (let i = 0; i < pos.count; i++) {
+    const y = pos.getY(i);
+    pos.setY(i, y * 1.08);
+    // Slightly narrow chin
+    if (y < -0.1) {
+      const factor = 1 - (-0.1 - y) * 0.2;
+      pos.setX(i, pos.getX(i) * factor);
+      pos.setZ(i, pos.getZ(i) * factor);
+    }
+  }
+  headGeo.computeVertexNormals();
+  const mesh = new THREE.Mesh(headGeo, mat.skin);
+  mesh.position.y = 1.92;
+  mesh.castShadow = true;
+  g.add(mesh);
+
+  // Eyes
+  for (const side of [-1, 1]) {
+    const eyeGeo = new THREE.SphereGeometry(0.045, 12, 12);
+    const eye = new THREE.Mesh(eyeGeo, mat.eye);
+    eye.position.set(side * 0.12, 1.95, 0.3);
+    g.add(eye);
+
+    // Pupil (dark)
+    const pupilGeo = new THREE.SphereGeometry(0.022, 8, 8);
+    const pupil = new THREE.Mesh(pupilGeo, new THREE.MeshPhysicalMaterial({
+      color: 0x0a0a18, roughness: 0, metalness: 0,
+    }));
+    pupil.position.set(side * 0.12, 1.95, 0.33);
+    g.add(pupil);
+
+    // Pupil highlight
+    const hlGeo = new THREE.SphereGeometry(0.008, 6, 6);
+    const hl = new THREE.Mesh(hlGeo, new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    hl.position.set(side * 0.12 + 0.02, 1.955, 0.34);
+    g.add(hl);
+
+    // Eyelash accent
+    const lidGeo = new THREE.SphereGeometry(0.025, 8, 8);
+    const lidMat = new THREE.MeshPhysicalMaterial({
+      color: 0x222238, roughness: 0.3,
+    });
+    const lid = new THREE.Mesh(lidGeo, lidMat);
+    lid.position.set(side * 0.12, 1.975, 0.3);
+    lid.scale.set(1, 0.3, 0.6);
+    g.add(lid);
+  }
+
+  // Eyebrows (thin strips)
+  for (const side of [-1, 1]) {
+    const browGeo = new THREE.BoxGeometry(0.08, 0.012, 0.02);
+    const brow = new THREE.Mesh(browGeo, new THREE.MeshPhysicalMaterial({
+      color: 0x808898, roughness: 0.5,
+    }));
+    brow.position.set(side * 0.12, 2.0, 0.31);
+    brow.rotation.z = side * 0.08;
+    g.add(brow);
+  }
+
+  // Nose (subtle)
+  const noseGeo = new THREE.ConeGeometry(0.025, 0.04, 6);
+  const nose = new THREE.Mesh(noseGeo, mat.skin);
+  nose.position.set(0, 1.90, 0.34);
+  nose.rotation.x = 0.2;
+  g.add(nose);
+
+  // Lips
+  for (const side of [-1, 1]) {
+    const lipGeo = new THREE.SphereGeometry(0.025, 8, 6);
+    const lip = new THREE.Mesh(lipGeo, mat.lip);
+    lip.position.set(side * 0.025, 1.86, 0.33);
+    lip.scale.set(1, 0.35, 0.5);
+    g.add(lip);
+  }
+
+  return g;
+}
+char.add(head());
+
+// ─── Hair ───
+function hair() {
+  const g = new THREE.Group();
+  const hc = 0xd0d8e8; // silver-blue hair color
+  const hd = 0x606880; // darker accent
+
+  // Back hair (long flowing)
+  const backPts = [];
+  for (let i = 0; i <= 20; i++) {
+    const t = i / 20;
+    const y = 1.92 - t * 0.65;
+    const r = 0.35 + t * 0.2 - Math.sin(t * Math.PI * 2) * 0.05;
+    backPts.push(new THREE.Vector2(r, y));
+  }
+  const backGeo = new THREE.LatheGeometry(backPts, 16);
+  const back = new THREE.Mesh(backGeo, new THREE.MeshPhysicalMaterial({
+    color: hd, roughness: 0.3, metalness: 0.05,
+  }));
+  back.position.y = 0;
+  g.add(back);
+
+  // Main hair volume (using multiple curved sweeps)
+  function addHairSweep(cx, cy, cz, rx, ry, rz, len, spread, color) {
+    const pts = [];
+    const segs = 12;
+    for (let i = 0; i <= segs; i++) {
+      const t = i / segs;
+      const y = -t * len;
+      const s = spread * Math.sin(t * Math.PI * 0.8) * (1 - t * 0.3);
+      pts.push(new THREE.Vector3(s, y, 0));
+    }
+    const curve = new THREE.CatmullRomCurve3(pts.map(p =>
+      new THREE.Vector3(p.x, p.y, p.z)
+    ));
+    const tubeGeo = new THREE.TubeGeometry(curve, 10, 0.03, 6, false);
+    const mesh = new THREE.Mesh(tubeGeo, new THREE.MeshPhysicalMaterial({
+      color: color || hc, roughness: 0.25, metalness: 0.08,
+    }));
+    mesh.position.set(cx, cy, cz);
+    mesh.rotation.set(rx, ry, rz);
+    g.add(mesh);
+  }
+
+  // Back hair strands
+  for (let i = -3; i <= 3; i++) {
+    const spread = 0.08 + Math.abs(i) * 0.02;
+    addHairSweep(i * 0.06, 1.88, -0.2 + Math.abs(i) * 0.03,
+      0.05, i * 0.1, 0.05, 1.0, spread, i % 2 === 0 ? hc : hd);
+  }
+
+  // Side hair
+  for (const side of [-1, 1]) {
+    // Side strands
+    for (let j = 0; j < 3; j++) {
+      addHairSweep(side * (0.28 + j * 0.04), 1.85, 0.05 + j * 0.02,
+        -0.1 + j * 0.05, side * (0.3 + j * 0.1), 0.1,
+        0.7 + j * 0.15, 0.06 + j * 0.01, j % 2 === 0 ? hc : hd);
+    }
+  }
+
+  // Front bangs
+  for (let i = -4; i <= 4; i++) {
+    const spread = 0.03 + (4 - Math.abs(i)) * 0.008;
+    addHairSweep(i * 0.045, 1.98, 0.25 + Math.abs(i) * 0.01,
+      0.2 + Math.abs(i) * 0.05, 0, -0.1,
+      0.3 + Math.abs(i) * 0.04, spread, hc);
+  }
+
+  // Long side bang (one side)
+  for (let j = 0; j < 4; j++) {
+    addHairSweep(-0.32 + j * 0.02, 1.9, 0.1 + j * 0.02,
+      -0.1, -0.3 - j * 0.1, 0.05,
+      0.6 + j * 0.15, 0.03 + j * 0.005, hc);
+  }
+
+  return g;
+}
+char.add(hair());
+
+// ─── Arms ───
+function arms() {
+  const g = new THREE.Group();
+
+  for (const side of [-1, 1]) {
+    const armG = new THREE.Group();
+
+    // Upper arm
+    const uaGeo = new THREE.CylinderGeometry(0.06, 0.08, 0.4, 8);
+    const ua = new THREE.Mesh(uaGeo, mat.dress);
+    ua.position.set(0, -0.2, 0);
+    armG.add(ua);
+
+    // Sleeve puff (shoulder)
+    const puffGeo = new THREE.SphereGeometry(0.1, 8, 8);
+    const puff = new THREE.Mesh(puffGeo, mat.white);
+    puff.scale.set(1, 0.6, 1);
+    puff.position.set(0, 0.02, 0);
+    armG.add(puff);
+
+    // Forearm
+    const faGeo = new THREE.CylinderGeometry(0.045, 0.05, 0.35, 8);
+    const fa = new THREE.Mesh(faGeo, mat.skin);
+    fa.position.set(0, -0.45, 0);
+    armG.add(fa);
+
+    // Glove
+    const gloveGeo = new THREE.CylinderGeometry(0.048, 0.04, 0.12, 8);
+    const glove = new THREE.Mesh(gloveGeo, mat.dressAccent);
+    glove.position.set(0, -0.6, 0);
+    armG.add(glove);
+
+    armG.position.set(side * 0.4, 1.55, 0);
+    armG.rotation.z = side * 0.3;
+    armG.rotation.x = side * 0.2;
+    // Slight natural arm bend
+    armG.rotation.y = side * 0.15;
+    g.add(armG);
+  }
+  return g;
+}
+char.add(arms());
+
+// ─── Crown / Tiara ───
+function crown() {
+  const g = new THREE.Group();
+
+  // Base band
+  const bandGeo = new THREE.TorusGeometry(0.22, 0.02, 8, 24);
+  const band = new THREE.Mesh(bandGeo, mat.gold);
+  band.position.y = 2.08;
+  band.rotation.x = Math.PI / 2;
+  g.add(band);
+
+  // Crown points
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 7) * Math.PI * 2 - Math.PI / 2;
+    const spikeH = 0.08 + (i % 2 === 0 ? 0.06 : 0.0);
+    const spikeGeo = new THREE.ConeGeometry(0.02, spikeH, 4);
+    const spike = new THREE.Mesh(spikeGeo, mat.gold);
+    spike.position.set(Math.cos(a) * 0.22, 2.08 + spikeH/2, Math.sin(a) * 0.22);
+    g.add(spike);
+
+    // Small jewel at base of each spike
+    if (i % 2 === 0) {
+      const jewelGeo = new THREE.SphereGeometry(0.012, 6, 6);
+      const jewel = new THREE.Mesh(jewelGeo, new THREE.MeshPhysicalMaterial({
+        color: 0x4488ff, roughness: 0, metalness: 0.1,
+        emissive: 0x2266cc, emissiveIntensity: 0.3,
+      }));
+      jewel.position.set(Math.cos(a) * 0.2, 2.08, Math.sin(a) * 0.2);
+      g.add(jewel);
+    }
+  }
+
+  // Center jewel (large)
+  const centerJewel = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.03),
+    new THREE.MeshPhysicalMaterial({
+      color: 0x4488ff, roughness: 0, metalness: 0.0,
+      emissive: 0x4488ff, emissiveIntensity: 0.5,
+      transparent: true, opacity: 0.8,
+    })
+  );
+  centerJewel.position.set(0, 2.12, 0.18);
+  g.add(centerJewel);
+
+  return g;
+}
+char.add(crown());
+
+// ─── Cape / Coat ───
+function cape() {
+  const g = new THREE.Group();
+
+  // Back cape
+  const capePts = [];
+  for (let i = 0; i <= 16; i++) {
+    const t = i / 16;
+    const y = 1.5 - t * 0.9;
+    let r = 0.1 + t * 0.9 + Math.sin(t * Math.PI * 3) * 0.03;
+    capePts.push(new THREE.Vector2(r, y));
+  }
+  const capeGeo = new THREE.LatheGeometry(capePts, 20);
+  const capeMesh = new THREE.Mesh(capeGeo, new THREE.MeshPhysicalMaterial({
+    color: 0x101828, roughness: 0.2, metalness: 0.3,
+    clearcoat: 0.2, side: THREE.DoubleSide,
+  }));
+  capeMesh.position.set(0, 0.6, -0.25);
+  g.add(capeMesh);
+
+  // Fur trim on cape
+  const furPts = [];
+  for (let i = 0; i <= 12; i++) {
+    const t = i / 12;
+    const r = 0.5 + t * 0.6 + Math.sin(t * Math.PI * 5) * 0.03;
+    furPts.push(new THREE.Vector2(r, t * 0.04));
+  }
+  const furGeo = new THREE.LatheGeometry(furPts, 20);
+  const fur = new THREE.Mesh(furGeo, mat.white);
+  fur.position.set(0, 0.55, -0.25);
+  g.add(fur);
+
+  return g;
+}
+char.add(cape());
+
+// ─── Cryo floating effects ───
+const cryoParticles = [];
+const cryoGroup = new THREE.Group();
+
+function createCryoShader() {
+  const geo = new THREE.BufferGeometry();
+  const count = 120;
+  const pos = new Float32Array(count * 3);
+  const sizes = new Float32Array(count);
+  const offsets = new Float32Array(count);
+  const speeds = new Float32Array(count);
+
+  for (let i = 0; i < count; i++) {
+    const theta = Math.random() * Math.PI * 2;
+    const rad = 0.3 + Math.random() * 1.2;
+    pos[i * 3] = Math.cos(theta) * rad;
+    pos[i * 3 + 1] = 0.5 + Math.random() * 2.5;
+    pos[i * 3 + 2] = Math.sin(theta) * rad;
+    sizes[i] = 0.008 + Math.random() * 0.025;
+    offsets[i] = Math.random() * Math.PI * 2;
+    speeds[i] = 0.3 + Math.random() * 0.5;
+    cryoParticles.push({ offset: offsets[i], speed: speeds[i], baseY: pos[i*3+1], radius: rad, angle: theta });
+  }
+
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+  const mat2 = new THREE.PointsMaterial({
+    color: 0x88ddff,
+    size: 0.03,
+    transparent: true,
+    opacity: 0.4,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+
+  const points = new THREE.Points(geo, mat2);
+  cryoGroup.add(points);
+}
+createCryoShader();
+
+// Additional ice crystal shards (few large ones)
+function iceShards() {
+  const g = new THREE.Group();
+  for (let i = 0; i < 20; i++) {
+    const shardGeo = new THREE.OctahedronGeometry(0.01 + Math.random() * 0.025);
+    const shard = new THREE.Mesh(shardGeo, new THREE.MeshPhysicalMaterial({
+      color: 0x88ccff, roughness: 0, metalness: 0,
+      transparent: true, opacity: 0.2 + Math.random() * 0.3,
+      emissive: 0x4488ff, emissiveIntensity: 0.2,
+    }));
+    const theta = Math.random() * Math.PI * 2;
+    const rad = 0.2 + Math.random() * 1.5;
+    shard.position.set(
+      Math.cos(theta) * rad,
+      0.3 + Math.random() * 2.8,
+      Math.sin(theta) * rad
+    );
+    shard.rotation.set(Math.random() * 6, Math.random() * 6, Math.random() * 6);
+    g.add(shard);
+  }
+  return g;
+}
+cryoGroup.add(iceShards());
+
+scene.add(cryoGroup);
+scene.add(char);
+
+// ─── Environment ───
+// Floor grid
+const gridHelper = new THREE.GridHelper(8, 16, 0x1a2040, 0x0a1020);
+gridHelper.position.y = -0.01;
+gridHelper.material.transparent = true;
+gridHelper.material.opacity = 0.15;
+scene.add(gridHelper);
+
+// Ground reflection ring
+const ringGeo = new THREE.RingGeometry(0.5, 2.5, 48);
+const ringMat = new THREE.MeshBasicMaterial({
+  color: 0x1a3050, transparent: true, opacity: 0.06, side: THREE.DoubleSide,
+});
+const ring = new THREE.Mesh(ringGeo, ringMat);
+ring.rotation.x = -Math.PI / 2;
+ring.position.y = -0.005;
+scene.add(ring);
+
+// ─── Stats ───
+function updateStats() {
+  let vtx = 0, face = 0;
+  char.traverse(c => {
+    if (c.isMesh && c.geometry) {
+      vtx += c.geometry.getAttribute('position')?.count || 0;
+      face += c.geometry.index ? c.geometry.index.count / 3 : (c.geometry.getAttribute('position')?.count || 0) / 3;
+    }
+  });
+  document.getElementById('s-vtx').textContent = Math.round(vtx).toLocaleString();
+  document.getElementById('s-face').textContent = Math.round(face).toLocaleString();
+}
+updateStats();
+
+// ─── Animation loop ───
+let time = 0;
+let showParticles = true;
+let wireframe = false;
+
+function animate() {
+  requestAnimationFrame(animate);
+  time += 0.016;
+
+  // Auto-rotate
+  controls.update();
+
+  // Cryo particles animation
+  if (cryoGroup.children[0] && cryoGroup.children[0].isPoints) {
+    const pos = cryoGroup.children[0].geometry.getAttribute('position');
+    const array = pos.array;
+    for (let i = 0; i < cryoParticles.length; i++) {
+      const p = cryoParticles[i];
+      const newY = p.baseY + Math.sin(time * p.speed + p.offset) * 0.2;
+      array[i * 3 + 1] = newY;
+    }
+    pos.needsUpdate = true;
+  }
+
+  // Rotate ice shards
+  cryoGroup.children.forEach(child => {
+    if (child.isGroup) {
+      child.children.forEach(shard => {
+        shard.rotation.x += 0.005;
+        shard.rotation.y += 0.008;
+      });
+    }
+  });
+
+  // Cryo light pulse
+  cryoLight.intensity = 0.4 + Math.sin(time * 0.5) * 0.15;
+
+  // Toggle visibility
+  cryoGroup.visible = showParticles;
+
+  renderer.render(scene, camera);
+}
+
+animate();
+
+// ─── Controls ───
+document.getElementById('btn-spin').addEventListener('click', function() {
+  controls.autoRotate = !controls.autoRotate;
+  this.classList.toggle('on', controls.autoRotate);
+});
+document.getElementById('btn-particles').addEventListener('click', function() {
+  showParticles = !showParticles;
+  this.classList.toggle('on', showParticles);
+});
+document.getElementById('btn-wire').addEventListener('click', function() {
+  wireframe = !wireframe;
+  this.classList.toggle('on', wireframe);
+  char.traverse(c => {
+    if (c.isMaterial) return;
+    if (c.isMesh && c.material) {
+      if (Array.isArray(c.material)) {
+        c.material.forEach(m => m.wireframe = wireframe);
+      } else {
+        c.material.wireframe = wireframe;
+      }
+    }
+  });
+});
+
+// ─── Resize ───
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+console.log('✦ Tsaritsa 3D Model loaded');
+</script>
+</body>
+</html>

@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>机械异形减速齿轮 | Alien Reduction Gear</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #050508;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: 'Courier New', 'Consolas', monospace;
+  overflow: hidden;
+  user-select: none;
+}
+#wrap {
+  position: relative;
+  background: #080810;
+  border-radius: 16px;
+  border: 1px solid #1a1a2e;
+  box-shadow: 0 0 60px rgba(0,20,40,0.6), inset 0 0 80px rgba(0,10,30,0.3);
+  padding: 4px;
+}
+canvas {
+  display: block;
+  border-radius: 12px;
+  cursor: default;
+}
+#hud {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #3af;
+  font-size: 13px;
+  letter-spacing: 3px;
+  text-shadow: 0 0 20px rgba(50,170,255,0.4), 0 0 60px rgba(50,170,255,0.15);
+  pointer-events: none;
+  opacity: 0.7;
+}
+#stats {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 32px;
+  color: #6af;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-shadow: 0 0 12px rgba(100,170,255,0.3);
+  pointer-events: none;
+  background: rgba(5,5,10,0.7);
+  padding: 8px 24px;
+  border-radius: 20px;
+  border: 1px solid rgba(50,170,255,0.1);
+}
+.stat-item { text-align: center; }
+.stat-label { color: #457; font-size: 10px; }
+.stat-value { color: #8cf; font-size: 15px; font-weight: bold; }
+
+#controls {
+  position: absolute;
+  bottom: 80px;
+  right: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: all;
+}
+#controls button {
+  background: rgba(10,20,40,0.7);
+  border: 1px solid rgba(50,170,255,0.25);
+  color: #6af;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 1px;
+}
+#controls button:hover {
+  background: rgba(30,80,140,0.5);
+  border-color: rgba(50,170,255,0.6);
+  box-shadow: 0 0 20px rgba(50,170,255,0.15);
+}
+#controls button.active {
+  border-color: #6af;
+  box-shadow: 0 0 15px rgba(50,170,255,0.2);
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c"></canvas>
+  <div id="hud">⏣ 机械异形减速齿轮 · ALIEN REDUCTION GEAR ⏣</div>
+  <div id="stats">
+    <div class="stat-item"><div class="stat-label">总减速比</div><div class="stat-value" id="s-ratio">27:1</div></div>
+    <div class="stat-item"><div class="stat-label">输入转速</div><div class="stat-value" id="s-in">2700 RPM</div></div>
+    <div class="stat-item"><div class="stat-label">输出转速</div><div class="stat-value" id="s-out">100 RPM</div></div>
+    <div class="stat-item"><div class="stat-label">级数</div><div class="stat-value">3</div></div>
+  </div>
+  <div id="controls">
+    <button id="btn-pause">⏸ 暂停</button>
+    <button id="btn-speed">⟳ 1×</button>
+    <button id="btn-glow" class="active">✦ 光效</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width = 900;
+const H = canvas.height = 760;
+const CX = W/2, CY = H/2;
+
+// ─── Gear data ───
+// 3-stage compound reduction: 12T→36T, 16T→48T, 20T→60T → total 27:1
+const STAGES = [
+  { teeth: [12, 36], radii: [22, 66], label: '3:1' },
+  { teeth: [16, 48], radii: [26, 78], label: '3:1' },
+  { teeth: [20, 60], radii: [30, 90], label: '3:1' },
+];
+
+// Compute positions: zigzag layout
+// Row 1 (top): G1(pinion) → G2(gear)
+// Row 2 (mid): G3(pinion, coaxial with G2) → G4(gear)
+// Row 3 (bot): G5(pinion, coaxial with G4) → G6(gear)
+const ROW_Y = [160, 380, 595];
+const gears = [];
+let gidx = 0;
+
+STAGES.forEach((stage, si) => {
+  const isFirst = si === 0;
+  const r1 = stage.radii[0], r2 = stage.radii[1];
+  const prev = gears[gidx - 1] || null;
+
+  let x1, x2;
+  if (isFirst) {
+    x1 = 170;
+    x2 = x1 + r1 + r2;
+  } else {
+    // coaxial: small gear shares x with previous row's large gear
+    x1 = prev ? prev.x : 280;
+    x2 = x1 + r1 + r2;
+  }
+
+  const p1 = { x: x1, y: ROW_Y[si], r: r1, n: stage.teeth[0], stage: si, idx: gidx++, pinion: true };
+  const p2 = { x: x2, y: ROW_Y[si], r: r2, n: stage.teeth[1], stage: si, idx: gidx++, pinion: false };
+  gears.push(p1, p2);
+});
+
+// Input/Output labels
+const inputPos = { x: gears[0].x - 55, y: gears[0].y };
+const outputPos = { x: gears[gears.length-1].x + 60, y: gears[gears.length-1].y };
+
+// ─── Animation state ───
+const baseSpeed = 2.0;
+let speedMul = 1;
+let paused = false;
+let showGlow = true;
+let time = 0;
+
+// Gear rotation angles (radians)
+const angles = gears.map(() => 0);
+
+// Angular velocities (relative to input = 1)
+// For a gear train: ω_out = ω_in * (N_driver / N_driven)
+// G1→G2: ω2 = ω1 * 12/36 = ω1/3
+// G3→G4: ω4 = ω3 * 16/48 = ω3/3  (ω3 = ω2, same shaft)
+// G5→G6: ω6 = ω5 * 20/60 = ω5/3  (ω5 = ω4, same shaft)
+const angVel = []; // fraction as [num, den]
+angVel[0] = [1, 1];   // G1 = input
+angVel[1] = [1, 3];   // G2 = 1/3 of G1 (12/36)
+angVel[2] = [1, 3];   // G3 same shaft as G2
+angVel[3] = [1, 9];   // G4 = G3 * 16/48 = (1/3)*(1/3) = 1/9
+angVel[4] = [1, 9];   // G5 same shaft as G4
+angVel[5] = [1, 27];  // G6 = G5 * 20/60 = (1/9)*(1/3) = 1/27
+
+// ─── Part-time particles ───
+const particles = [];
+class Particle {
+  constructor(x, y, vx, vy, life, color) {
+    this.x = x; this.y = y;
+    this.vx = vx; this.vy = vy;
+    this.life = life; this.maxLife = life;
+    this.color = color;
+    this.size = 1 + Math.random() * 2;
+  }
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vx *= 0.99;
+    this.vy *= 0.99;
+    this.life--;
+  }
+  draw(ctx) {
+    const a = this.life / this.maxLife;
+    ctx.globalAlpha = a * 0.6;
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size * a, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+function emitSparks(cx, cy, count, color, spread) {
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const s = 0.5 + Math.random() * spread;
+    particles.push(new Particle(
+      cx, cy,
+      Math.cos(a) * s, Math.sin(a) * s,
+      30 + Math.random() * 40,
+      color
+    ));
+  }
+}
+
+// ─── Drawing functions ───
+
+// Draw a single gear tooth profile
+function drawGear(ctx, cx, cy, r, teeth, angle, colorSet, glow) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(angle);
+
+  const innerR = r * 0.78;
+  const rootR = r * 0.82;
+  const toothH = r - innerR;
+  const halfAngle = Math.PI / teeth;
+  const toothArc = halfAngle * 0.42;
+  const rootArc = halfAngle * 0.35;
+
+  // Gear body
+  ctx.beginPath();
+  for (let i = 0; i < teeth; i++) {
+    const a = i * 2 * Math.PI / teeth - halfAngle;
+    const a1 = a - toothArc;
+    const a2 = a + toothArc;
+    const ra = a + rootArc;
+    const rb = a - rootArc;
+
+    if (i === 0) {
+      ctx.moveTo(Math.cos(rb) * innerR, Math.sin(rb) * innerR);
+    }
+    // root → tooth leading edge
+    ctx.lineTo(Math.cos(a1) * rootR, Math.sin(a1) * rootR);
+    ctx.lineTo(Math.cos(a1) * r, Math.sin(a1) * r);
+    // tooth top curve (slightly organic)
+    const midA = a;
+    const bulgeR = r * 1.02;
+    ctx.quadraticCurveTo(
+      Math.cos(midA) * bulgeR, Math.sin(midA) * bulgeR,
+      Math.cos(a2) * r, Math.sin(a2) * r
+    );
+    // tooth trailing edge → root
+    ctx.lineTo(Math.cos(a2) * rootR, Math.sin(a2) * rootR);
+    // root valley
+    const rMid = a + halfAngle;
+    ctx.quadraticCurveTo(
+      Math.cos(rMid) * innerR, Math.sin(rMid) * innerR,
+      Math.cos(rb + 2*halfAngle) * innerR, Math.sin(rb + 2*halfAngle) * innerR
+    );
+  }
+  ctx.closePath();
+
+  // Gradient fill - biomechanical metallic
+  const grad = ctx.createRadialGradient(0, 0, r * 0.2, 0, 0, r);
+  grad.addColorStop(0, colorSet.highlight);
+  grad.addColorStop(0.3, colorSet.body);
+  grad.addColorStop(0.7, colorSet.dark);
+  grad.addColorStop(1, colorSet.edge);
+
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Stroke with glow
+  ctx.strokeStyle = colorSet.stroke;
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  // Extra edge highlight
+  ctx.strokeStyle = colorSet.rim;
+  ctx.lineWidth = 0.5;
+  ctx.beginPath();
+  for (let i = 0; i < teeth; i++) {
+    const a = i * 2 * Math.PI / teeth - halfAngle;
+    const a1 = a - toothArc;
+    const a2 = a + toothArc;
+    ctx.moveTo(Math.cos(a1) * r, Math.sin(a1) * r);
+    ctx.lineTo(Math.cos(a2) * r, Math.sin(a2) * r);
+  }
+  ctx.stroke();
+
+  // Spokes for larger gears
+  if (r > 40) {
+    const spokeCount = teeth < 20 ? 4 : 6;
+    const spokeR = r * 0.65;
+    ctx.strokeStyle = colorSet.dark;
+    ctx.lineWidth = r > 60 ? 3 : 2;
+    for (let i = 0; i < spokeCount; i++) {
+      const a = (i / spokeCount) * Math.PI * 2 + 0.1;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * r * 0.2, Math.sin(a) * r * 0.2);
+      ctx.lineTo(Math.cos(a) * spokeR, Math.sin(a) * spokeR);
+      ctx.stroke();
+    }
+    // inner rim
+    ctx.beginPath();
+    ctx.arc(0, 0, spokeR, 0, Math.PI * 2);
+    ctx.strokeStyle = colorSet.rim;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Center hub
+  const hubR = r * 0.18;
+  const grad2 = ctx.createRadialGradient(0, 0, 0, 0, 0, hubR);
+  grad2.addColorStop(0, '#8cf');
+  grad2.addColorStop(0.4, '#246');
+  grad2.addColorStop(1, '#112');
+  ctx.beginPath();
+  ctx.arc(0, 0, hubR, 0, Math.PI * 2);
+  ctx.fillStyle = grad2;
+  ctx.fill();
+  ctx.strokeStyle = colorSet.rim;
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+
+  // Center hole
+  ctx.beginPath();
+  ctx.arc(0, 0, hubR * 0.4, 0, Math.PI * 2);
+  ctx.fillStyle = '#050508';
+  ctx.fill();
+  ctx.strokeStyle = '#48a';
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+
+  // Glow effect
+  if (glow && showGlow) {
+    ctx.shadowColor = colorSet.glow;
+    ctx.shadowBlur = 20;
+    ctx.strokeStyle = 'transparent';
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  ctx.restore();
+}
+
+// Draw connecting shaft (biomechanical)
+function drawShaft(ctx, x1, y1, x2, y2, glow) {
+  const grad = ctx.createLinearGradient(x1, y1, x2, y2);
+  grad.addColorStop(0, 'rgba(30,80,140,0.15)');
+  grad.addColorStop(0.3, 'rgba(50,170,255,0.08)');
+  grad.addColorStop(0.5, 'rgba(80,200,255,0.12)');
+  grad.addColorStop(0.7, 'rgba(50,170,255,0.08)');
+  grad.addColorStop(1, 'rgba(30,80,140,0.15)');
+
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = 6;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+
+  // Shaft glow
+  if (glow && showGlow) {
+    ctx.shadowColor = 'rgba(50,170,255,0.3)';
+    ctx.shadowBlur = 15;
+    ctx.strokeStyle = 'rgba(50,170,255,0.04)';
+    ctx.lineWidth = 14;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  // Organic vein lines on shaft
+  ctx.strokeStyle = 'rgba(60,180,255,0.06)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 3; i++) {
+    const t = 0.2 + i * 0.3;
+    const px = x1 + (x2 - x1) * t;
+    const py = y1 + (y2 - y1) * t;
+    const perpX = -(y2 - y1) * 0.015;
+    const perpY = (x2 - x1) * 0.015;
+    ctx.beginPath();
+    ctx.moveTo(px - perpX * 4, py - perpY * 4);
+    ctx.quadraticCurveTo(
+      px + perpX * (2 + Math.sin(time * 0.02 + i) * 3),
+      py + perpY * (2 + Math.sin(time * 0.02 + i) * 3),
+      px + perpX * 4, py + perpY * 4
+    );
+    ctx.stroke();
+  }
+}
+
+// Draw housing frame
+function drawHousing(ctx) {
+  // Outer frame
+  ctx.strokeStyle = 'rgba(20,40,70,0.3)';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(10, 10, W-20, H-20);
+
+  // Inner decorative lines
+  ctx.strokeStyle = 'rgba(30,80,140,0.06)';
+  ctx.lineWidth = 1;
+  // Corner accents
+  const cornerSize = 30;
+  [
+    [30, 30, 1, 1], [W-30, 30, -1, 1],
+    [30, H-30, 1, -1], [W-30, H-30, -1, -1]
+  ].forEach(([cx, cy, dx, dy]) => {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - 12 * dy);
+    ctx.lineTo(cx, cy);
+    ctx.lineTo(cx - 12 * dx, cy);
+    ctx.stroke();
+    // small glow node
+    ctx.fillStyle = 'rgba(50,170,255,0.08)';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 3, 0, Math.PI*2);
+    ctx.fill();
+  });
+
+  // Organic rib lines
+  ctx.strokeStyle = 'rgba(30,60,100,0.04)';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i < 8; i++) {
+    const y = 60 + i * 90;
+    ctx.beginPath();
+    ctx.moveTo(20, y);
+    ctx.quadraticCurveTo(W/2, y + 10 + Math.sin(i*1.5)*8, W-20, y);
+    ctx.stroke();
+  }
+}
+
+// Draw energy flow along the drivetrain
+function drawEnergyFlow(ctx, t) {
+  if (!showGlow) return;
+
+  const path = [];
+  // Trace the power flow through all gear centers
+  path.push({ x: gears[0].x, y: gears[0].y });
+  for (let i = 1; i < gears.length; i += 2) {
+    path.push({ x: gears[i].x, y: gears[i].y });
+  }
+
+  // Draw flowing energy beads
+  for (let seg = 0; seg < path.length - 1; seg++) {
+    const p1 = path[seg], p2 = path[seg+1];
+    for (let b = 0; b < 5; b++) {
+      const offset = (t * 0.03 + seg * 0.2 + b * 0.2) % 1;
+      const x = p1.x + (p2.x - p1.x) * offset;
+      const y = p1.y + (p2.y - p1.y) * offset;
+      const alpha = Math.sin(offset * Math.PI) * 0.4;
+      const size = 2 + Math.sin(offset * Math.PI) * 2;
+
+      ctx.fillStyle = `rgba(80,200,255,${alpha})`;
+      ctx.shadowColor = 'rgba(50,170,255,0.5)';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI*2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  }
+
+  // Vertical energy (between rows - shafts)
+  for (let si = 0; si < STAGES.length - 1; si++) {
+    const gIdx = si * 2 + 1; // large gear of each stage
+    const x = gears[gIdx].x;
+    const y1 = gears[gIdx].y;
+    const y2 = gears[gIdx + 1].y;
+
+    for (let b = 0; b < 4; b++) {
+      const offset = (t * 0.025 + si * 0.3 + b * 0.25) % 1;
+      const y = y1 + (y2 - y1) * offset;
+      const alpha = Math.sin(offset * Math.PI) * 0.35;
+      ctx.fillStyle = `rgba(100,200,255,${alpha})`;
+      ctx.shadowColor = 'rgba(50,170,255,0.4)';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(x, y, 2 + Math.sin(offset * Math.PI) * 1.5, 0, Math.PI*2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  }
+}
+
+// Draw gear mesh indicators (glowing contact points)
+function drawMeshPoints(ctx, t) {
+  if (!showGlow) return;
+  for (let si = 0; si < STAGES.length; si++) {
+    const g1 = gears[si * 2];     // pinion
+    const g2 = gears[si * 2 + 1]; // gear
+    const mx = (g1.x + g2.x) / 2;
+    const my = (g1.y + g2.y) / 2;
+    const a = Math.sin(t * 0.06 + si * 1.8) * 0.3 + 0.5;
+
+    ctx.fillStyle = `rgba(50,200,255,${a * 0.2})`;
+    ctx.shadowColor = `rgba(50,200,255,${a * 0.3})`;
+    ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.arc(mx, my, 4 + Math.sin(t * 0.05 + si) * 2, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+}
+
+// Draw labels
+function drawLabels(ctx) {
+  ctx.font = '10px "Courier New", monospace';
+  ctx.textAlign = 'center';
+
+  // Gear tooth labels
+  gears.forEach((g, i) => {
+    const label = `${g.n}T`;
+    ctx.fillStyle = 'rgba(100,200,255,0.25)';
+    ctx.font = '10px "Courier New", monospace';
+    ctx.fillText(label, g.x, g.y + g.r + 16);
+
+    // Ratio on large gears
+    if (!g.pinion) {
+      const stage = STAGES[g.stage];
+      ctx.fillStyle = 'rgba(100,200,255,0.15)';
+      ctx.font = '9px "Courier New", monospace';
+      ctx.fillText(stage.label, g.x, g.y - g.r - 10);
+    }
+  });
+
+  // Input/Output labels
+  ctx.save();
+  ctx.font = '11px "Courier New", monospace';
+
+  // Input arrow
+  ctx.fillStyle = 'rgba(50,170,255,0.4)';
+  ctx.textAlign = 'right';
+  ctx.fillText('▸ INPUT', inputPos.x - 5, inputPos.y + 4);
+  ctx.strokeStyle = 'rgba(50,170,255,0.15)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(inputPos.x - 2, inputPos.y);
+  ctx.lineTo(gears[0].x - gears[0].r - 4, inputPos.y);
+  ctx.stroke();
+
+  // Output arrow
+  ctx.fillStyle = 'rgba(255,150,50,0.4)';
+  ctx.textAlign = 'left';
+  const lastG = gears[gears.length-1];
+  ctx.fillText('OUTPUT ▸', lastG.x + lastG.r + 10, lastG.y + 4);
+  ctx.strokeStyle = 'rgba(255,150,50,0.15)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(lastG.x + lastG.r + 4, lastG.y);
+  ctx.lineTo(lastG.x + lastG.r + 30, lastG.y);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+// Draw background biomechanical patterns
+function drawBgTexture(ctx, t) {
+  // Subtle gear-like concentric rings
+  ctx.strokeStyle = 'rgba(10,30,60,0.04)';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i < 12; i++) {
+    const r = 50 + i * 60;
+    ctx.beginPath();
+    ctx.arc(CX, CY + 20, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Radial lines
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * Math.PI * 2 + t * 0.0001;
+    ctx.beginPath();
+    ctx.moveTo(CX + Math.cos(a) * 30, CY + 20 + Math.sin(a) * 30);
+    ctx.lineTo(CX + Math.cos(a) * 450, CY + 20 + Math.sin(a) * 450);
+    ctx.stroke();
+  }
+}
+
+// ─── Main render loop ───
+function render(timestamp) {
+  if (!paused) {
+    time = timestamp || 0;
+  }
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  const bgGrad = ctx.createRadialGradient(CX, CY, 100, CX, CY, 500);
+  bgGrad.addColorStop(0, '#0c0c18');
+  bgGrad.addColorStop(0.4, '#080810');
+  bgGrad.addColorStop(1, '#050508');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Background texture
+  drawBgTexture(ctx, time);
+
+  // Housing frame
+  drawHousing(ctx);
+
+  // Update angles
+  if (!paused) {
+    const dt = speedMul * baseSpeed * 0.016;
+    gears.forEach((_, i) => {
+      angles[i] += dt * angVel[i][0] / angVel[i][1];
+    });
+  }
+
+  // Draw shafts first (behind gears)
+  for (let si = 0; si < STAGES.length; si++) {
+    const g1 = gears[si * 2];
+    const g2 = gears[si * 2 + 1];
+    drawShaft(ctx, g1.x, g1.y, g2.x, g2.y, true);
+  }
+  // Vertical shafts (coaxial)
+  for (let si = 0; si < STAGES.length - 1; si++) {
+    const topG = gears[si * 2 + 1];
+    const botG = gears[si * 2 + 2];
+    drawShaft(ctx, topG.x, topG.y, botG.x, botG.y, true);
+  }
+
+  // Draw gears
+  const colorSets = [
+    { body: '#1a2a3a', dark: '#0a1520', highlight: '#2a4a6a', edge: '#0a1a2a', stroke: '#3a6a9a', rim: '#4a8aba', glow: 'rgba(50,170,255,0.15)' },
+    { body: '#1a2a32', dark: '#0a1518', highlight: '#2a505a', edge: '#0a2020', stroke: '#3a8a8a', rim: '#4aaaaa', glow: 'rgba(50,220,220,0.12)' },
+    { body: '#1a222a', dark: '#0a1018', highlight: '#2a3a4a', edge: '#0a1518', stroke: '#3a6a8a', rim: '#4a8aaa', glow: 'rgba(70,180,255,0.1)' },
+  ];
+
+  gears.forEach((g, i) => {
+    const cs = colorSets[g.stage] || colorSets[0];
+    // Rim glow pulse
+    const glowPulse = 0.8 + Math.sin(time * 0.02 + g.idx * 0.5) * 0.2;
+    drawGear(ctx, g.x, g.y, g.r, g.n, angles[i], {
+      ...cs,
+      glow: cs.glow.replace(/[\d.]+\)$/, (m) => (parseFloat(m) * glowPulse) + ')')
+    }, true);
+  });
+
+  // Energy flow particles
+  drawEnergyFlow(ctx, time);
+  drawMeshPoints(ctx, time);
+  drawLabels(ctx);
+
+  // Particle update & draw
+  if (!paused) {
+    particles.forEach(p => p.update());
+    // Periodic spark emission from gear meshes
+    if (Math.random() < 0.15) {
+      const si = Math.floor(Math.random() * 3);
+      const g1 = gears[si * 2];
+      const g2 = gears[si * 2 + 1];
+      const mx = (g1.x + g2.x) / 2;
+      const my = (g1.y + g2.y) / 2;
+      emitSparks(mx, my, 2, '#4af', 1.5);
+    }
+    // Sparks from gear hubs
+    gears.forEach(g => {
+      if (Math.random() < 0.02) {
+        emitSparks(g.x, g.y, 1, '#8cf', 0.5);
+      }
+    });
+  }
+  particles.filter(p => p.life > 0).forEach(p => p.draw(ctx));
+
+  requestAnimationFrame(render);
+}
+
+// ─── Controls ───
+document.getElementById('btn-pause').addEventListener('click', function() {
+  paused = !paused;
+  this.textContent = paused ? '▶ 运行' : '⏸ 暂停';
+  this.classList.toggle('active', paused);
+});
+
+document.getElementById('btn-speed').addEventListener('click', function() {
+  const speeds = [0.25, 0.5, 1, 2, 4];
+  const labels = ['⟳ ¼×', '⟳ ½×', '⟳ 1×', '⟳ 2×', '⟳ 4×'];
+  let idx = speeds.indexOf(speedMul);
+  idx = (idx + 1) % speeds.length;
+  speedMul = speeds[idx];
+  this.textContent = labels[idx];
+
+  // Update RPM display
+  const inRpm = Math.round(2700 * speedMul);
+  const outRpm = Math.round(100 * speedMul);
+  document.getElementById('s-in').textContent = inRpm + ' RPM';
+  document.getElementById('s-out').textContent = outRpm + ' RPM';
+});
+
+document.getElementById('btn-glow').addEventListener('click', function() {
+  showGlow = !showGlow;
+  this.classList.toggle('active', showGlow);
+});
+
+// ─── Startup ───
+requestAnimationFrame(render);
+</script>
+</body>
+</html>

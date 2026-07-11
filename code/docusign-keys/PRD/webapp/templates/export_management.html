@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Export Management</h1>
+
+<div class="grid-3">
+    <div class="card">
+        <h3>Total Envelopes</h3>
+        <div class="value" id="statTotal" style="color:#1a1a2e">...</div>
+    </div>
+    <div class="card">
+        <h3>Exported</h3>
+        <div class="value" id="statExported" style="color:#2e7d32">...</div>
+    </div>
+    <div class="card">
+        <h3>Pending</h3>
+        <div class="value" id="statPending" style="color:#e65100">...</div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>📤 Trigger Export Run</h3>
+    <p style="color:#666;margin-bottom:16px;font-size:13px">
+        Run an incremental export to fetch new completed envelopes from PRD and store them in SQLite.
+        Uses GET-only operations — no changes made to PRD. Already-exported envelopes are skipped.
+    </p>
+    <div class="form-row">
+        <div class="form-group" style="flex:1">
+            <label>Account</label>
+            <select id="expAccount" style="width:100%">
+                <option value="">-- All Accounts --</option>
+                {% if accounts %}
+                {% for acct in accounts %}
+                <option value="{{ acct.name }}">{{ acct.name }}</option>
+                {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>From Date</label>
+            <input type="date" id="expFrom" style="width:100%">
+        </div>
+        <div class="form-group">
+            <label>To Date</label>
+            <input type="date" id="expTo" style="width:100%">
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-end;gap:8px">
+            <label style="display:flex;align-items:center;gap:4px;font-weight:400;cursor:pointer">
+                <input type="checkbox" id="expForce"> Force re-export
+            </label>
+            <label style="display:flex;align-items:center;gap:4px;font-weight:400;cursor:pointer">
+                <input type="checkbox" id="expDryRun" checked> Dry run
+            </label>
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-end">
+            <button class="btn btn-sm btn-outline" onclick="previewExport()">🔍 Preview</button>
+            <button class="btn btn-sm btn-success" onclick="runExport()" style="margin-left:6px">📤 Run Export</button>
+        </div>
+    </div>
+    <div id="expResult" style="margin-top:8px;max-height:400px;overflow-y:auto"></div>
+</div>
+
+<div class="card">
+    <h3>📊 Export History (Recent Batches)</h3>
+    <div id="batchList">
+        <div class="loading">Loading...</div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>🔄 Available Operations</h3>
+    <div class="grid-2">
+        <div style="background:#f3f4f6;border-radius:6px;padding:12px">
+            <strong style="color:#1565c0;font-size:13px">📤 Export Completed Envelopes</strong>
+            <p style="font-size:12px;color:#666;margin-top:4px">
+                Fetch completed envelopes from PRD via GET API. Store metadata, form data, and
+                document references in SQLite. Download PDFs to local storage.
+            </p>
+        </div>
+        <div style="background:#f3f4f6;border-radius:6px;padding:12px">
+            <strong style="color:#2e7d32;font-size:13px">📋 Export Templates</strong>
+            <p style="font-size:12px;color:#666;margin-top:4px">
+                Download template definitions and documents from PRD to templates/ folder.
+                Uses the Template DL page.
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+function loadStats() {
+    fetch('/api/export/stats')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.error) return;
+            document.getElementById('statTotal').textContent = d.total_envelopes || 0;
+            document.getElementById('statExported').textContent = d.exported || 0;
+            document.getElementById('statPending').textContent = d.pending || 0;
+        });
+}
+
+function loadBatches() {
+    fetch('/api/export/stats')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            var el = document.getElementById('batchList');
+            if (d.error) { el.innerHTML = '<div class="flash flash-error">' + d.error + '</div>'; return; }
+            if (!d.batches || !d.batches.length) { el.innerHTML = '<p style="color:#666;font-size:13px">No export batches yet.</p>'; return; }
+            var html = '<table><thead><tr><th>Batch ID</th><th>Envelopes</th><th>First Export</th><th>Last Export</th></tr></thead><tbody>';
+            d.batches.forEach(function(b) {
+                html += '<tr><td style="font-family:monospace;font-size:11px">' + b.batch + '</td>'
+                    + '<td>' + b.count + '</td>'
+                    + '<td style="font-size:11px">' + b.first + '</td>'
+                    + '<td style="font-size:11px">' + b.last + '</td></tr>';
+            });
+            html += '</tbody></table>';
+            el.innerHTML = html;
+        });
+}
+
+function previewExport() {
+    var el = document.getElementById('expResult');
+    el.innerHTML = '<div class="loading">Previewing...</div>';
+    setTimeout(function() {
+        el.innerHTML = '<div class="flash flash-success">Preview ready. Click <strong>Run Export</strong> to execute.</div>';
+    }, 500);
+}
+
+function runExport() {
+    var acct = document.getElementById('expAccount').value;
+    var from = document.getElementById('expFrom').value;
+    var to = document.getElementById('expTo').value;
+    var force = document.getElementById('expForce').checked;
+    var dryRun = document.getElementById('expDryRun').checked;
+    var el = document.getElementById('expResult');
+    el.innerHTML = '<div class="loading">Running export' + (dryRun ? ' (dry run)' : '') + '...</div>';
+
+    var fd = new URLSearchParams();
+    fd.append('account', acct);
+    fd.append('from_date', from);
+    fd.append('to_date', to);
+    fd.append('force', force ? '1' : '0');
+    fd.append('dry_run', dryRun ? '1' : '0');
+
+    fetch('/api/export/run', {method:'POST', body:fd})
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.error) { el.innerHTML = '<div class="flash flash-error">' + d.error + '</div>'; return; }
+            var h = '<div class="flash flash-success">';
+            if (d.dry_run) {
+                h += '🔍 DRY RUN — Found <strong>' + (d.fetched || 0) + '</strong> envelope(s) to export';
+            } else {
+                h += '✓ Exported: <strong>' + (d.exported || 0) + '</strong> | '
+                    + 'Errors: <strong>' + (d.errors || 0) + '</strong> | '
+                    + 'Batch: <strong>' + (d.batch_id || '') + '</strong>';
+            }
+            h += '</div>';
+            el.innerHTML = h;
+            loadStats();
+            loadBatches();
+        });
+}
+
+loadStats();
+loadBatches();
+</script>
+{% endblock %}

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Daily Usage Export</h1>
+
+<div class="card">
+    <h3>Export Envelope Data</h3>
+    <p style="color:#666;margin-bottom:16px;font-size:13px">
+        Download envelope usage as CSV. Select which account(s) to include, and a date range.
+        The CSV includes account name, sender, recipient, envelope name, ID, type, and status.
+    </p>
+    <form action="/api/usage/preview" method="POST" id="previewForm" style="margin-bottom:12px">
+        <div class="form-row">
+            <div class="form-group" style="flex:1">
+                <label>Environment</label>
+                <select name="env" id="envSelect" style="width:100%">
+                    <option value="prd" {{ 'selected' if env == 'prd' else '' }}>PRD (Production)</option>
+                    <option value="dev" {{ 'selected' if env == 'dev' else '' }}>DEV (Development)</option>
+                </select>
+            </div>
+            <div class="form-group" style="flex:1">
+                <label>From Date</label>
+                <input type="date" name="from_date" id="from_date" required>
+            </div>
+            <div class="form-group" style="flex:1">
+                <label>To Date</label>
+                <input type="date" name="to_date" id="to_date" required>
+            </div>
+            <div class="form-group" style="display:flex;align-items:flex-end">
+                <button type="button" onclick="previewUsage()" class="btn btn-outline">Preview Count</button>
+            </div>
+        </div>
+    </form>
+    <div id="previewResult"></div>
+
+    <form action="/api/usage/export" method="POST" id="exportForm">
+        <input type="hidden" name="env" id="exportEnv" value="{{ env }}">
+        <div class="form-row">
+            <div class="form-group" style="flex:1">
+                <label>Account(s) to Export</label>
+                <div id="accountCheckboxes" style="border:1px solid #ddd;border-radius:6px;padding:10px;max-height:200px;overflow-y:auto">
+                    {% if accounts %}
+                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-weight:400;cursor:pointer">
+                        <input type="checkbox" onchange="toggleAll(this)" checked> <strong>Select All</strong>
+                    </label>
+                    {% for acct in accounts %}
+                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-weight:400;cursor:pointer">
+                        <input type="checkbox" name="accounts" value="{{ acct.guid }}" class="acct-cb" checked>
+                        {{ acct.name }}
+                        <span style="color:#999;font-size:11px">({{ acct.guid[:12] }}...)</span>
+                    </label>
+                    {% endfor %}
+                    {% else %}
+                    <p style="color:#999;font-size:13px">No accounts loaded.</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="form-group" style="flex:1">
+                <label>From Date</label>
+                <input type="date" name="from_date" required>
+            </div>
+            <div class="form-group" style="flex:1">
+                <label>To Date</label>
+                <input type="date" name="to_date" required>
+            </div>
+            <div class="form-group" style="display:flex;align-items:flex-end">
+                <button type="submit" class="btn">📥 Export CSV</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <h3>CSV Columns</h3>
+    <table>
+        <thead><tr><th>Column</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr><td><code>account</code></td><td>Account name (e.g. TE-Malaysia, TE-Korea)</td></tr>
+            <tr><td><code>sender</code></td><td>Sender name and email</td></tr>
+            <tr><td><code>recipient</code></td><td>All recipients (name, email)</td></tr>
+            <tr><td><code>envelope_name</code></td><td>Email subject</td></tr>
+            <tr><td><code>envelope_id</code></td><td>Unique envelope ID</td></tr>
+            <tr><td><code>envelope_type</code></td><td>Bulk Send / API (Template) / Manual (PowerForm/Web)</td></tr>
+            <tr><td><code>status</code></td><td>sent / completed / voided / deleted / created</td></tr>
+            <tr><td><code>created_date</code></td><td>ISO 8601 creation timestamp</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+function toggleAll(master) {
+    document.querySelectorAll('.acct-cb').forEach(function(cb) { cb.checked = master.checked; });
+}
+
+function previewUsage() {
+    var from = document.getElementById('from_date').value;
+    var to = document.getElementById('to_date').value;
+    var env = document.getElementById('envSelect').value;
+    if (!from || !to) { alert('Please select both dates'); return; }
+    var el = document.getElementById('previewResult');
+    el.innerHTML = '<div class="loading">Checking...</div>';
+    fetch('/api/usage/preview', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'from_date=' + from + '&to_date=' + to + '&env=' + env
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if (d.error) el.innerHTML = '<div class="flash flash-error">' + d.error + '</div>';
+        else el.innerHTML = '<div class="flash flash-success">Found ' + d.total + ' envelope(s) for current account in range</div>';
+    })
+    .catch(function(e) { el.innerHTML = '<div class="flash flash-error">Error: ' + e + '</div>'; });
+}
+
+document.getElementById('envSelect').addEventListener('change', function() {
+    var env = this.value;
+    document.getElementById('exportEnv').value = env;
+    var container = document.getElementById('accountCheckboxes');
+    container.innerHTML = '<div class="loading">Loading accounts...</div>';
+    fetch('/api/accounts/list?env=' + env)
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.error) { container.innerHTML = '<p style="color:#c62828">' + d.error + '</p>'; return; }
+            var html = '<label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-weight:400;cursor:pointer">' +
+                '<input type="checkbox" onchange="toggleAll(this)" checked> <strong>Select All</strong></label>';
+            d.accounts.forEach(function(a) {
+                html += '<label style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-weight:400;cursor:pointer">' +
+                    '<input type="checkbox" name="accounts" value="' + a.guid + '" class="acct-cb" checked> ' +
+                    a.name + ' <span style="color:#999;font-size:11px">(' + a.guid.slice(0,12) + '...)</span></label>';
+            });
+            container.innerHTML = html;
+        });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Global HR Service Catalog Taxonomy — Design Report | 全球HR服务目录分类体系设计报告</title>
+<style>
+  :root{
+    --navy:#1a2a4a; --blue:#2563eb; --teal:#0d9488; --amber:#d97706;
+    --red:#dc2626; --green:#16a34a; --gray:#64748b; --bg:#f8fafc;
+    --card:#ffffff; --border:#e2e8f0;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:"Segoe UI","PingFang SC","Microsoft YaHei",Arial,sans-serif; background:var(--bg); color:#1e293b; line-height:1.65;}
+  .container{max-width:1200px; margin:0 auto; padding:0 24px 80px;}
+  header{background:linear-gradient(135deg,var(--navy) 0%,#2d4a7a 100%); color:#fff; padding:48px 24px; margin-bottom:32px;}
+  header .container{padding-bottom:0;}
+  header h1{font-size:1.9rem; margin-bottom:6px;}
+  header .zh{font-size:1.15rem; opacity:.85; font-weight:400;}
+  header .meta{margin-top:18px; font-size:.85rem; opacity:.75;}
+  h2{color:var(--navy); font-size:1.45rem; margin:48px 0 8px; padding-bottom:8px; border-bottom:3px solid var(--blue);}
+  h2 .zh{font-size:1rem; color:var(--gray); font-weight:500; margin-left:10px;}
+  h3{color:var(--navy); font-size:1.15rem; margin:28px 0 10px;}
+  h4{color:#334155; font-size:1rem; margin:18px 0 8px;}
+  p{margin:10px 0;}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:20px 24px; margin:16px 0; box-shadow:0 1px 3px rgba(0,0,0,.05);}
+  table{width:100%; border-collapse:collapse; margin:14px 0; font-size:.88rem; background:#fff;}
+  th{background:var(--navy); color:#fff; text-align:left; padding:10px 12px; font-weight:600;}
+  td{padding:9px 12px; border-bottom:1px solid var(--border); vertical-align:top;}
+  tr:nth-child(even) td{background:#f8fafc;}
+  .tag{display:inline-block; padding:2px 10px; border-radius:12px; font-size:.75rem; font-weight:600; margin:1px 2px;}
+  .tag-blue{background:#dbeafe; color:#1d4ed8;}
+  .tag-teal{background:#ccfbf1; color:#0f766e;}
+  .tag-amber{background:#fef3c7; color:#b45309;}
+  .tag-red{background:#fee2e2; color:#b91c1c;}
+  .tag-green{background:#dcfce7; color:#15803d;}
+  .tag-gray{background:#e2e8f0; color:#475569;}
+  .rec{border-left:5px solid var(--green); background:#f0fdf4;}
+  .warn{border-left:5px solid var(--red); background:#fef2f2;}
+  .note{border-left:5px solid var(--amber); background:#fffbeb;}
+  .info{border-left:5px solid var(--blue); background:#eff6ff;}
+  .tree{font-family:Consolas,"Courier New",monospace; font-size:.85rem; background:#0f172a; color:#e2e8f0; padding:20px 24px; border-radius:10px; overflow-x:auto; margin:14px 0; line-height:1.8;}
+  .tree .l1{color:#7dd3fc; font-weight:700;}
+  .tree .l2{color:#fbbf24;}
+  .tree .l3{color:#a5b4fc;}
+  .tree .cmt{color:#64748b;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;}
+  @media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr;}}
+  .toc{background:#fff; border:1px solid var(--border); border-radius:10px; padding:20px 28px; margin:20px 0;}
+  .toc ol{margin-left:20px;}
+  .toc a{color:var(--blue); text-decoration:none;}
+  .toc a:hover{text-decoration:underline;}
+  .kpi{text-align:center; padding:16px;}
+  .kpi .num{font-size:1.9rem; font-weight:800; color:var(--blue);}
+  .kpi .lbl{font-size:.8rem; color:var(--gray);}
+  .score-h{color:var(--green); font-weight:700;}
+  .score-m{color:var(--amber); font-weight:700;}
+  .score-l{color:var(--red); font-weight:700;}
+  footer{margin-top:60px; padding-top:20px; border-top:1px solid var(--border); font-size:.8rem; color:var(--gray);}
+  .ref-pending{color:var(--amber); font-weight:600;}
+  code{background:#f1f5f9; padding:1px 6px; border-radius:4px; font-size:.85em;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>Global HR Service Catalog Taxonomy — Design &amp; Research Report</h1>
+    <div class="zh">全球HR服务目录分类体系 — 设计与研究报告</div>
+    <div class="meta">
+      Version 1.0 (Draft for Review) &nbsp;|&nbsp; Scope: Global, Multi-Location / Multi-BU / Multi-Level &nbsp;|&nbsp;
+      Audience: HR Leadership, HR Service Delivery Design Team, HRIT
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ==================== TOC ==================== -->
+<div class="toc">
+  <h3 style="margin-top:0;">Table of Contents 目录</h3>
+  <ol>
+    <li><a href="#s1">Executive Summary 摘要</a></li>
+    <li><a href="#s2">Design Principles &amp; Dimensions 设计原则与维度</a></li>
+    <li><a href="#s3">Scenario 1 — Taxonomy by Traditional HR Function 按传统HR职能分类</a></li>
+    <li><a href="#s4">Scenario 2 — Taxonomy by HR Org Chart 按HR组织架构分类</a></li>
+    <li><a href="#s5">Scenario 3 — Taxonomy by HR SSC Service Model 按HR共享服务模式分类</a></li>
+    <li><a href="#s6">Scenario Comparison &amp; Recommendation 方案对比与建议</a></li>
+    <li><a href="#s7">UX / IA / Navigation / Search 体验与信息架构</a></li>
+    <li><a href="#s8">Research Requirements SC-005 – SC-029 研究需求逐项响应</a></li>
+    <li><a href="#s9">Deep Research Workstreams WS1 – WS6 深度研究工作流</a></li>
+    <li><a href="#s10">Implementation Roadmap 实施路线图</a></li>
+    <li><a href="#s11">References 参考资料（链接验证状态标注）</a></li>
+  </ol>
+</div>
+
+<!-- ==================== 1. EXEC SUMMARY ==================== -->
+<h2 id="s1">1. Executive Summary <span class="zh">摘要</span></h2>
+
+<div class="card">
+  <p>This report evaluates three ways to categorize HR services as a global "product" catalog, each structured in 2–3 layers (L1 / L2 / L3):</p>
+  <ul style="margin-left:22px;">
+    <li><strong>Scenario 1 — By traditional HR function</strong> (e.g., Compensation, Talent Acquisition): logical for HR, moderately intuitive for employees.</li>
+    <li><strong>Scenario 2 — By HR org chart</strong> (e.g., CoE, HRBP, Shared Services): efficient for internal routing, but an <strong>anti-pattern</strong> for employee-facing navigation.</li>
+    <li><strong>Scenario 3 — By HR SSC service model</strong> (employee lifecycle "moments that matter" + tiered delivery): most intuitive for employees and managers, best fit for a global shared services operating model.</li>
+  </ul>
+</div>
+
+<div class="card rec">
+  <h3 style="margin-top:0;">Core Recommendation 核心建议</h3>
+  <p><strong>Adopt a "dual taxonomy" (front-stage / back-stage decoupling) 前后台解耦的双层分类体系:</strong></p>
+  <ul style="margin-left:22px;">
+    <li><strong>Front stage (employee/manager-facing):</strong> Scenario 3 — lifecycle &amp; persona-based categories ("Pay &amp; Money", "My Career", "Manage My Team"), in the employee's language, not HR's language.</li>
+    <li><strong>Back stage (fulfillment &amp; routing):</strong> Scenario 1 — functional service domains mapped to assignment groups, with location / BU / employee-group routing attributes.</li>
+    <li><strong>Never expose the HR org chart (Scenario 2) to employees.</strong> Use it only as a routing dimension that can change without breaking the employee experience. 员工不需要知道HR内部如何分工。</li>
+    <li><strong>Search-first, categories as safety net:</strong> invest in search, synonyms and AI-assisted intake as the primary path; categories serve browsing and discoverability.</li>
+  </ul>
+</div>
+
+<div class="grid3">
+  <div class="card kpi"><div class="num">3</div><div class="lbl">Taxonomy scenarios evaluated<br>评估的分类方案</div></div>
+  <div class="card kpi"><div class="num">25</div><div class="lbl">Research requirements addressed (SC-005–029)<br>研究需求逐项响应</div></div>
+  <div class="card kpi"><div class="num">6</div><div class="lbl">Discovery workstreams defined (WS1–WS6)<br>发现阶段工作流</div></div>
+</div>
+
+<!-- ==================== 2. PRINCIPLES ==================== -->
+<h2 id="s2">2. Design Principles &amp; Dimensions <span class="zh">设计原则与维度</span></h2>
+
+<div class="card">
+  <h3 style="margin-top:0;">2.1 Layer Definitions 层级定义</h3>
+  <table>
+    <tr><th style="width:12%;">Layer</th><th style="width:26%;">Definition</th><th style="width:32%;">Rule of Thumb</th><th>Change Cadence</th></tr>
+    <tr><td><strong>L1</strong> Service Domain 服务域</td><td>Top navigation category the employee sees or the top service family.</td><td>6–9 items max (cognitive load limit for portal navigation). Stable, outcome-oriented names.</td><td>Stable 3–5 years; changes require taxonomy board approval.</td></tr>
+    <tr><td><strong>L2</strong> Service Group 服务组</td><td>Cluster of related services within a domain.</td><td>4–8 per L1. Understandable without HR jargon.</td><td>Reviewed annually.</td></tr>
+    <tr><td><strong>L3</strong> Service / Catalog Item 服务项</td><td>The actual requestable service or case type — has an owner, SLA, fulfillment workflow, audience scoping.</td><td>Concrete, verb- or outcome-based ("Request employment letter"). This is where localization happens.</td><td>Continuous, via governed intake process.</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0;">2.2 Mandatory Design Dimensions 必须覆盖的维度</h3>
+  <table>
+    <tr><th style="width:22%;">Dimension</th><th>Design Implication</th></tr>
+    <tr><td><strong>Multi-location 多地点</strong></td><td>Same L1/L2 globally; L3 items carry country/region availability scoping and localized fulfillment. E.g., "Enroll in benefits" exists globally but shows a different form and knowledge article in Germany vs. China vs. Brazil.</td></tr>
+    <tr><td><strong>Multi-BU 多业务单元</strong></td><td>BU is a scoping and routing attribute, not a navigation category. Avoid "BU-specific catalogs" unless the BU has genuinely different services (e.g., manufacturing shift-worker services vs. corporate).</td></tr>
+    <tr><td><strong>Multi-level employees 多层级员工</strong></td><td>Persona-based views: Employee / People Manager / Executive / HR / Contingent worker / Candidate / Alumni / Retiree. Same taxonomy, filtered views — a manager sees "Manage My Team" in addition to their own employee services.</td></tr>
+    <tr><td><strong>Deskless / frontline workers 一线员工</strong></td><td>Critical for manufacturing: kiosk / mobile / SMS / WeChat-Teams access, simplified L1 tiles, proxy request by supervisors, works-council/union constraints.</td></tr>
+    <tr><td><strong>Language 语言</strong></td><td>Taxonomy labels translated centrally; synonyms and search keywords maintained per language (e.g., "工资单 / payslip / Gehaltsabrechnung / bulletin de paie").</td></tr>
+  </table>
+</div>
+
+<!-- ==================== 3. SCENARIO 1 ==================== -->
+<h2 id="s3">3. Scenario 1 — Taxonomy by Traditional HR Function <span class="zh">按传统HR职能分类</span></h2>
+
+<div class="card">
+  <p><strong>Logic:</strong> Categories mirror the classic HR functional disciplines. This is how HR professionals think, and how most HR process architectures (e.g., APQC "Develop and Manage Human Capital") and HCM systems are structured.</p>
+</div>
+
+<div class="tree">
+<span class="l1">L1: 1. Talent Acquisition &amp; Onboarding 招聘与入职</span>
+  <span class="l2">├─ L2: Recruiting &amp; Internal Mobility</span>
+  │    <span class="l3">├─ L3: Open a job requisition (manager)</span>
+  │    <span class="l3">├─ L3: Refer a candidate</span>
+  │    <span class="l3">└─ L3: Apply for internal transfer</span>
+  <span class="l2">├─ L2: Pre-boarding &amp; New Hire</span>
+  │    <span class="l3">├─ L3: Background check status inquiry</span>
+  │    <span class="l3">├─ L3: New hire document submission</span>
+  │    <span class="l3">└─ L3: IT/workspace provisioning request (manager)</span>
+  <span class="l2">└─ L2: Onboarding &amp; Probation</span>
+       <span class="l3">├─ L3: Onboarding checklist support</span>
+       <span class="l3">└─ L3: Probation review submission (manager)</span>
+
+<span class="l1">L1: 2. Compensation &amp; Benefits 薪酬与福利</span>
+  <span class="l2">├─ L2: Compensation</span>
+  │    <span class="l3">├─ L3: Salary review / off-cycle adjustment (manager)</span>
+  │    <span class="l3">├─ L3: Bonus / incentive inquiry</span>
+  │    <span class="l3">└─ L3: Compensation statement request</span>
+  <span class="l2">├─ L2: Benefits</span>
+  │    <span class="l3">├─ L3: Benefits enrollment / life-event change</span>
+  │    <span class="l3">├─ L3: Insurance claim support</span>
+  │    <span class="l3">└─ L3: Country allowance request <span class="cmt">// localized L3</span></span>
+  <span class="l2">└─ L2: Recognition &amp; Equity</span>
+       <span class="l3">├─ L3: Recognition award nomination (manager)</span>
+       <span class="l3">└─ L3: Stock/equity plan inquiry</span>
+
+<span class="l1">L1: 3. Payroll, Time &amp; Absence 工资、考勤与休假</span>
+  <span class="l2">├─ L2: Payroll</span>
+  │    <span class="l3">├─ L3: Payslip inquiry / discrepancy</span>
+  │    <span class="l3">├─ L3: Tax form / certificate request</span>
+  │    <span class="l3">└─ L3: Bank account change</span>
+  <span class="l2">├─ L2: Time &amp; Attendance</span>
+  │    <span class="l3">├─ L3: Timesheet correction</span>
+  │    <span class="l3">└─ L3: Overtime / shift-swap request <span class="cmt">// manufacturing-critical</span></span>
+  <span class="l2">└─ L2: Absence &amp; Leave</span>
+       <span class="l3">├─ L3: Annual leave inquiry</span>
+       <span class="l3">├─ L3: Parental / maternity leave case</span>
+       <span class="l3">└─ L3: Sick leave &amp; medical certificate submission</span>
+
+<span class="l1">L1: 4. Learning &amp; Development 学习与发展</span>
+  <span class="l2">├─ L2: Training &amp; Compliance Learning</span>
+  <span class="l2">├─ L2: Leadership &amp; Career Development</span>
+  <span class="l2">└─ L2: Education Assistance &amp; Certification</span>
+
+<span class="l1">L1: 5. Performance &amp; Talent Management 绩效与人才管理</span>
+  <span class="l2">├─ L2: Goal Setting &amp; Performance Reviews</span>
+  <span class="l2">├─ L2: Talent Review &amp; Succession (manager/HR)</span>
+  <span class="l2">└─ L2: Promotion &amp; Job Change (manager)</span>
+
+<span class="l1">L1: 6. Employee Relations &amp; Compliance 员工关系与合规</span>
+  <span class="l2">├─ L2: Workplace Concerns &amp; Grievances <span class="cmt">// confidential case handling</span></span>
+  <span class="l2">├─ L2: Disciplinary &amp; Investigations (manager/HR)</span>
+  <span class="l2">└─ L2: Policy Interpretation &amp; Labor/Works Council</span>
+
+<span class="l1">L1: 7. HR Administration &amp; Data 人事行政与数据</span>
+  <span class="l2">├─ L2: Personal Data Changes</span> <span class="cmt">(name, address, dependents)</span>
+  <span class="l2">├─ L2: Letters &amp; Verifications</span> <span class="cmt">(employment letter, visa letter)</span>
+  <span class="l2">└─ L2: Contracts &amp; Documents</span>
+
+<span class="l1">L1: 8. Global Mobility 全球流动</span>
+  <span class="l2">├─ L2: International Assignment &amp; Relocation</span>
+  <span class="l2">└─ L2: Immigration &amp; Work Permits</span>
+
+<span class="l1">L1: 9. Offboarding &amp; Retirement 离职与退休</span>
+  <span class="l2">├─ L2: Resignation &amp; Exit Process</span>
+  <span class="l2">├─ L2: Retirement Planning</span>
+  <span class="l2">└─ L2: Alumni &amp; Rehire</span>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h4 style="margin-top:0; color:var(--green);">✔ Strengths 优势</h4>
+    <ul style="margin-left:20px;">
+      <li>Maps 1:1 to HR process architecture and CoE ownership → simplest governance and clearest service-owner model.</li>
+      <li>Aligns with ServiceNow HRSD "COE" structure and most HCM module structures.</li>
+      <li>Stable — HR functions rarely change even when the org chart does.</li>
+      <li>Easy process-to-service mapping (SC-007).</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0; color:var(--red);">✘ Weaknesses 劣势</h4>
+    <ul style="margin-left:20px;">
+      <li>Employee must know which function owns their problem. "I'm getting married — is that Benefits, Payroll, Leave, or HR Admin?" (Answer: all four.)</li>
+      <li>Cross-functional life events (relocation, new baby, promotion) fragment across categories.</li>
+      <li>Category names risk HR jargon ("Total Rewards", "Workforce Administration").</li>
+      <li>Manager tasks are scattered rather than consolidated.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== 4. SCENARIO 2 ==================== -->
+<h2 id="s4">4. Scenario 2 — Taxonomy by HR Org Chart <span class="zh">按HR组织架构分类</span></h2>
+
+<div class="card">
+  <p><strong>Logic:</strong> Categories mirror how the HR organization is actually structured (Ulrich-style three-pillar model): CoEs, HRBPs, and HR Shared Services, plus local HR teams.</p>
+</div>
+
+<div class="tree">
+<span class="l1">L1: 1. HR Shared Services Center (HRSSC) 共享服务中心</span>
+  <span class="l2">├─ L2: Tier-1 Contact Center 一线服务台</span>
+  │    <span class="l3">├─ L3: General HR inquiry</span>
+  │    <span class="l3">└─ L3: Portal / system navigation help</span>
+  <span class="l2">├─ L2: Payroll Operations Team</span>
+  │    <span class="l3">├─ L3: Payslip discrepancy case</span>
+  │    <span class="l3">└─ L3: Tax certificate issuance</span>
+  <span class="l2">├─ L2: Workforce Administration Team</span>
+  │    <span class="l3">├─ L3: Data change processing</span>
+  │    <span class="l3">└─ L3: Employment letter issuance</span>
+  <span class="l2">└─ L2: Onboarding/Offboarding Operations Team</span>
+
+<span class="l1">L1: 2. Centers of Expertise (CoE) 专业中心</span>
+  <span class="l2">├─ L2: Total Rewards CoE</span>
+  │    <span class="l3">├─ L3: Compensation benchmarking request (HR/manager)</span>
+  │    <span class="l3">└─ L3: Benefits plan design escalation</span>
+  <span class="l2">├─ L2: Talent Acquisition CoE</span>
+  <span class="l2">├─ L2: Talent Management &amp; L&amp;D CoE</span>
+  <span class="l2">├─ L2: Employee Relations CoE</span>
+  <span class="l2">└─ L2: Global Mobility CoE</span>
+
+<span class="l1">L1: 3. HR Business Partners (HRBP) 业务伙伴</span>
+  <span class="l2">├─ L2: BU-A HRBP Team</span>
+  │    <span class="l3">├─ L3: Org design consultation (manager)</span>
+  │    <span class="l3">└─ L3: Workforce planning support (manager)</span>
+  <span class="l2">├─ L2: BU-B HRBP Team</span>
+  <span class="l2">└─ L2: Regional HRBP Teams</span>
+
+<span class="l1">L1: 4. Local / Country HR 属地HR</span>
+  <span class="l2">├─ L2: Country HR Operations</span> <span class="cmt">(statutory filings, local benefits)</span>
+  <span class="l2">└─ L2: Site HR (plants/factories)</span> <span class="cmt">(shift issues, works council)</span>
+
+<span class="l1">L1: 5. HR Technology &amp; Analytics (HRIT) HR技术与分析</span>
+  <span class="l2">├─ L2: HR Systems Support</span>
+  <span class="l2">└─ L2: HR Reporting &amp; Data Requests</span>
+</div>
+
+<div class="card warn">
+  <h4 style="margin-top:0;">⚠ Anti-Pattern Warning for Employee-Facing Use 员工端反模式警告</h4>
+  <ul style="margin-left:20px;">
+    <li><strong>Conway's Law problem:</strong> the catalog ships your org chart. Employees should never need to know whether Payroll sits in the SSC or in Finance, or which CoE owns benefits.</li>
+    <li><strong>Fragile:</strong> every HR reorg breaks the navigation, retrains 50,000 employees, and invalidates bookmarks and muscle memory.</li>
+    <li><strong>Inconsistent globally:</strong> the same service is delivered by SSC in Region A and local HR in Region B — an org-based taxonomy cannot present one consistent global catalog (directly conflicts with SC-017 / SC-020).</li>
+  </ul>
+  <p><strong>Legitimate use 合理用途:</strong> as the <em>back-stage routing &amp; assignment-group model</em> (who fulfills), and for the <em>HR-facing</em> internal catalog (HR-to-HR requests, e.g., HRBP requesting CoE benchmarking). It should exist as metadata behind every L3 item — never as front-stage navigation.</p>
+</div>
+
+<!-- ==================== 5. SCENARIO 3 ==================== -->
+<h2 id="s5">5. Scenario 3 — Taxonomy by HR SSC Service Model <span class="zh">按HR共享服务模式分类</span></h2>
+
+<div class="card">
+  <p><strong>Logic:</strong> Designed the way a shared services organization productizes services: front-stage categories follow the <strong>employee lifecycle and "moments that matter"</strong>, expressed in the employee's own words; delivery is organized by <strong>service tiers</strong> (Tier 0 self-service → Tier 1 generalist → Tier 2 specialist → Tier 3 CoE/HRBP). This is the model most mature ServiceNow HRSD implementations converge on.</p>
+</div>
+
+<h3>5.1 Front Stage — Employee &amp; Manager Facing Taxonomy 前台（员工/经理视角）</h3>
+
+<div class="tree">
+<span class="l1">L1: 1. Me &amp; My Information 我的信息</span>
+  <span class="l2">├─ L2: Personal Details</span> <span class="cmt">(name, address, emergency contact, dependents)</span>
+  <span class="l2">├─ L2: Documents &amp; Letters</span> <span class="cmt">(employment verification, visa letter, contract copy)</span>
+  <span class="l2">└─ L2: My HR Records &amp; Data Privacy Requests</span>
+
+<span class="l1">L1: 2. Pay, Time &amp; Money 薪酬与时间</span>
+  <span class="l2">├─ L2: My Pay</span> <span class="cmt">(payslip, deductions, bank account, tax)</span>
+  <span class="l2">├─ L2: My Time</span> <span class="cmt">(timesheet, overtime, shift swap)</span>
+  <span class="l2">├─ L2: Time Off &amp; Leave</span> <span class="cmt">(vacation, sick, parental, sabbatical)</span>
+  <span class="l2">└─ L2: Expenses &amp; Allowances</span>
+
+<span class="l1">L1: 3. Health, Benefits &amp; Wellbeing 健康与福利</span>
+  <span class="l2">├─ L2: My Benefits</span> <span class="cmt">(enroll, change, claim, insurance)</span>
+  <span class="l2">├─ L2: Wellbeing &amp; Support</span> <span class="cmt">(EAP, mental health, ergonomics)</span>
+  <span class="l2">└─ L2: Retirement &amp; Savings Plans</span>
+
+<span class="l1">L1: 4. My Career, Learning &amp; Performance 职业与发展</span>
+  <span class="l2">├─ L2: Learning &amp; Training</span>
+  <span class="l2">├─ L2: Performance &amp; Goals</span>
+  <span class="l2">├─ L2: Career Growth &amp; Internal Jobs</span>
+  <span class="l2">└─ L2: Recognition &amp; Feedback</span>
+
+<span class="l1">L1: 5. Life &amp; Work Events 人生与工作事件</span> <span class="cmt">// cross-functional journeys</span>
+  <span class="l2">├─ L2: I'm Joining 入职</span> <span class="cmt">(bundles TA + IT + payroll + benefits setup)</span>
+  <span class="l2">├─ L2: Family Changes 家庭变化</span> <span class="cmt">(marriage, new child → bundles leave+benefits+tax+data)</span>
+  <span class="l2">├─ L2: I'm Moving / Relocating 调动与搬迁</span> <span class="cmt">(transfer, mobility, immigration)</span>
+  <span class="l2">└─ L2: I'm Leaving / Retiring 离职与退休</span> <span class="cmt">(exit journey, final pay, alumni)</span>
+
+<span class="l1">L1: 6. Workplace &amp; Policies 工作场所与制度</span>
+  <span class="l2">├─ L2: Policies &amp; How-Things-Work</span> <span class="cmt">(knowledge-heavy, Tier-0 first)</span>
+  <span class="l2">├─ L2: Raise a Concern 提出诉求</span> <span class="cmt">(grievance, ethics, harassment — confidential routing)</span>
+  <span class="l2">└─ L2: Health &amp; Safety at Work</span>
+
+<span class="l1">L1: 7. Manager Hub 经理工作台</span> <span class="cmt">// persona-scoped: visible to managers only</span>
+  <span class="l2">├─ L2: Hire &amp; Onboard My Team</span> <span class="cmt">(requisition, offer, onboarding tasks)</span>
+  <span class="l2">├─ L2: Manage My Team</span> <span class="cmt">(job/comp changes, promotion, performance cases)</span>
+  <span class="l2">├─ L2: Team Time &amp; Absence</span> <span class="cmt">(approvals, shift planning)</span>
+  <span class="l2">├─ L2: Handle Team Issues</span> <span class="cmt">(ER guidance, accommodation, disciplinary)</span>
+  <span class="l2">└─ L2: Offboard a Team Member</span>
+
+<span class="l1">L1: 8. Help &amp; Contact HR 帮助与联系HR</span>
+  <span class="l2">├─ L2: Ask HR a Question</span> <span class="cmt">(general inquiry — universal safety net)</span>
+  <span class="l2">└─ L2: Track My Requests</span>
+</div>
+
+<h3>5.2 Back Stage — Tiered Delivery Model 后台分层交付模型</h3>
+
+<div class="card">
+  <table>
+    <tr><th style="width:14%;">Tier</th><th style="width:26%;">Who / What</th><th style="width:38%;">Handles</th><th>Target Share</th></tr>
+    <tr><td><strong>Tier 0</strong></td><td>Portal, knowledge base, AI chatbot / virtual agent, HCM self-service</td><td>Policy questions, how-to, status checks, simple transactions</td><td>60–75% deflection</td></tr>
+    <tr><td><strong>Tier 1</strong></td><td>HR Service Center generalists (regional hubs, follow-the-sun, multilingual)</td><td>Guided transactions, first-touch case resolution, triage</td><td>20–30%</td></tr>
+    <tr><td><strong>Tier 2</strong></td><td>SSC specialist teams (Payroll, Benefits, Mobility, Onboarding ops)</td><td>Complex transactions, exceptions, vendor coordination</td><td>5–10%</td></tr>
+    <tr><td><strong>Tier 3</strong></td><td>CoE experts &amp; HRBPs</td><td>Policy design, ER investigations, strategic consultation</td><td>&lt;5%</td></tr>
+    <tr><td><strong>Tier 4</strong></td><td>External vendors, legal counsel, works councils</td><td>Outsourced fulfillment, legal escalations</td><td>Exception-based</td></tr>
+  </table>
+  <p><strong>Key principle:</strong> the tier is invisible to the employee. Every front-stage L3 item maps to a fulfillment path (which tier, which team, in which country) via routing metadata — this is where Scenario 1 (function) and Scenario 2 (org) live on as attributes.</p>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h4 style="margin-top:0; color:var(--green);">✔ Strengths 优势</h4>
+    <ul style="margin-left:20px;">
+      <li>Highest employee intuitiveness — categories match how people describe their need ("I'm having a baby", not "concurrent benefits + statutory leave transactions").</li>
+      <li>Manager Hub consolidates all people-manager tasks in one place — top driver of manager satisfaction.</li>
+      <li>Life-event journeys orchestrate cross-functional bundles (SC-021).</li>
+      <li>Resilient to HR reorgs and operating-model variance across countries (SC-017).</li>
+      <li>Natural fit for tier-0 deflection, chatbots and SSC cost metrics.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0; color:var(--red);">✘ Weaknesses / Mitigations 劣势与缓解</h4>
+    <ul style="margin-left:20px;">
+      <li>Services can plausibly belong to 2 categories ("Parental leave": Time Off or Family Changes?) → mitigate with <strong>polyhierarchy</strong> (one canonical home + cross-links) and strong search.</li>
+      <li>Requires an explicit mapping layer to processes and owners → heavier initial design effort (addressed by SC-007/SC-018).</li>
+      <li>Journey bundles need workflow orchestration capability (parent case + child tasks).</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== 6. COMPARISON ==================== -->
+<h2 id="s6">6. Scenario Comparison &amp; Recommendation <span class="zh">方案对比与建议</span></h2>
+
+<div class="card">
+  <table>
+    <tr>
+      <th style="width:28%;">Criterion</th>
+      <th>S1: HR Function<br>传统职能</th>
+      <th>S2: Org Chart<br>组织架构</th>
+      <th>S3: SSC Service Model<br>共享服务模式</th>
+    </tr>
+    <tr><td>Employee intuitiveness 员工直观性</td><td class="score-m">Medium</td><td class="score-l">Low</td><td class="score-h">High</td></tr>
+    <tr><td>Manager experience 经理体验</td><td class="score-l">Low (scattered)</td><td class="score-l">Low</td><td class="score-h">High (Manager Hub)</td></tr>
+    <tr><td>Routing / fulfillment clarity 路由清晰度</td><td class="score-h">High</td><td class="score-h">High</td><td class="score-m">Medium (needs mapping layer)</td></tr>
+    <tr><td>Governance simplicity 治理简单性</td><td class="score-h">High (owner = CoE)</td><td class="score-m">Medium</td><td class="score-m">Medium (needs journey owners)</td></tr>
+    <tr><td>Resilience to HR reorg 组织变动韧性</td><td class="score-h">High</td><td class="score-l">Very low</td><td class="score-h">High</td></tr>
+    <tr><td>Multi-country variance handling 多国差异处理</td><td class="score-m">Medium</td><td class="score-l">Low</td><td class="score-h">High (L3 scoping)</td></tr>
+    <tr><td>Cross-functional life events 跨职能事件</td><td class="score-l">Low (fragmented)</td><td class="score-l">Low</td><td class="score-h">High (journeys)</td></tr>
+    <tr><td>Process-architecture alignment 流程架构对齐</td><td class="score-h">High</td><td class="score-m">Medium</td><td class="score-m">Medium (via mapping)</td></tr>
+    <tr><td>ServiceNow HRSD fit</td><td class="score-h">High (COE model)</td><td class="score-m">Medium (assignment groups)</td><td class="score-h">High (Employee Center topics + Journeys)</td></tr>
+  </table>
+</div>
+
+<div class="card rec">
+  <h3 style="margin-top:0;">Recommended Target Architecture 推荐目标架构 — "3 + 1 + org-as-metadata"</h3>
+  <ol style="margin-left:22px;">
+    <li><strong>Front stage = Scenario 3</strong> (8 L1 lifecycle/persona categories) for the employee portal, chatbot topics and knowledge browsing.</li>
+    <li><strong>Service registry backbone = Scenario 1</strong> (functional service domains) as the canonical service master: each L3 item has exactly one functional home, one global service owner, one process mapping. This satisfies SC-006/SC-013/SC-020.</li>
+    <li><strong>Org chart = routing metadata only</strong> (Scenario 2): assignment groups per country/BU/tier attached to each L3 item; changeable without touching navigation.</li>
+    <li><strong>One shared taxonomy spine</strong> (L1/L2 global-fixed, L3 governed-flexible) reused by the service catalog, knowledge base, chatbot intents, and reporting (SC-009/SC-011).</li>
+  </ol>
+</div>
+
+<!-- ==================== 7. UX/IA ==================== -->
+<h2 id="s7">7. UX / IA / Navigation / Search <span class="zh">体验与信息架构</span></h2>
+
+<div class="card">
+  <table>
+    <tr><th style="width:12%;">Area</th><th style="width:32%;">Question</th><th>Findings &amp; Recommendations</th></tr>
+    <tr>
+      <td><strong>UX</strong></td>
+      <td>How do employees search for HR services?</td>
+      <td>
+        Observed behavior across mature deployments follows a consistent pattern: employees describe <em>symptoms and life situations</em>, not HR service names — "my payslip is wrong", "having a baby", "证明信怎么开". Typical entry-path mix: <strong>search box first (~40–60%)</strong>, direct links from email/chat notifications (~20%), category browsing (~15–25%), chatbot (growing). Frontline manufacturing workers browse tiles more and search less (typing on shared kiosks/mobile is high-friction) → large icon-based L1 tiles and voice/chat entry matter there. <strong>Action:</strong> instrument search logs and failed-search terms from day one; they are the cheapest continuous taxonomy-validation instrument.
+      </td>
+    </tr>
+    <tr>
+      <td><strong>IA</strong></td>
+      <td>What category names are intuitive for employees?</td>
+      <td>
+        Rules: (1) use employee vocabulary, not HR vocabulary — "Pay &amp; Money", never "Total Rewards"; "Time Off", never "Absence Management"; (2) validate with <strong>card sorting</strong> (open, 30–50 participants per major region/persona) then <strong>tree testing</strong> (task-based, target ≥80% first-click success); (3) test translated labels separately — a name that works in English may fail in German or Chinese; (4) avoid internal program brand names ("Project Phoenix Portal") as category labels; (5) 6–9 L1 items, no more.
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Navigation</strong></td>
+      <td>Service-first vs Process-first navigation?</td>
+      <td>
+        <strong>Service-first (outcome-first) wins for employees</strong>: they want the letter, the corrected payslip, the leave approved — not to "execute the leave management process". Process-first navigation is appropriate only for the HR-internal workspace (fulfillers think in processes). Hybrid tactic: expose <em>journeys</em> ("I'm relocating") that orchestrate multi-step processes behind a single service front door. Provide 3 parallel paths: search / L1 browse / persona quick-links (top 10 tasks by role and country — data-driven, refreshed quarterly).
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Search</strong></td>
+      <td>Should search drive routing instead of categories?</td>
+      <td>
+        <strong>Yes — search (and AI intake) should be the primary router; categories are the browsable safety net and the SEO/discoverability layer.</strong> Requirements: multilingual synonym dictionaries per country; misspelling tolerance; results blending knowledge (Tier 0) above request forms (deflection-first ordering); "zero-results" alert workflow feeding taxonomy governance; AI/virtual-agent intent model trained on the <em>same shared taxonomy</em> (SC-009/SC-011) so chatbot, search and catalog never disagree. Categories remain necessary: ~15–25% of users browse, auditors/HR need a complete inventory, and new employees don't know what to search for.
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- ==================== 8. SC REQUIREMENTS ==================== -->
+<h2 id="s8">8. Research Requirements — Detailed Responses <span class="zh">研究需求逐项响应 (SC-005 – SC-029)</span></h2>
+
+<h3>8.1 Taxonomy Structure 分类结构 (SC-005 – SC-009)</h3>
+<div class="card">
+<table>
+  <tr><th style="width:10%;">ID</th><th style="width:26%;">Topic</th><th>Recommended Approach</th></tr>
+  <tr><td><strong>SC-005</strong></td><td>Define L1/L2/L3 service hierarchy</td><td>Adopt the 3-layer model in §2.1: L1 = 8 lifecycle domains (front stage), L2 = 4–8 service groups per domain, L3 = requestable catalog items with owner/SLA/audience/country scoping. Hard limits: ≤9 L1, ≤8 L2 per L1; anything needing a 4th navigational level indicates an L3 that should be a guided form, not a category.</td></tr>
+  <tr><td><strong>SC-006</strong></td><td>Enterprise service taxonomy model</td><td>Four-facet model: every L3 item carries (1) <em>Service Domain</em> (functional home, Scenario 1), (2) <em>Audience/Persona</em> (employee, manager, HR, contingent, alumni…), (3) <em>Location scope</em> (global / region / country list), (4) <em>Delivery attributes</em> (tier, channel, fulfiller group, SLA class). Front-stage category is a presentation mapping, not the master key. Master key = globally unique Service ID.</td></tr>
+  <tr><td><strong>SC-007</strong></td><td>Process-to-service mapping framework</td><td>Many-to-many matrix: Global HR Process Model (L1–L4, e.g., APQC-style) ↔ Service Catalog (L1–L3). Rules: every L3 service maps to ≥1 process; every customer-triggered process variant maps to exactly 1 canonical service; journeys (life events) map to process <em>bundles</em>. Maintain in the service registry, not in slideware.</td></tr>
+  <tr><td><strong>SC-008</strong></td><td>Align catalog with global HR process architecture</td><td>Anchor the functional backbone (Scenario 1) to the company's global HR process house (or APQC "Develop and Manage Human Capital" as reference if none exists). Alignment check runs at every taxonomy release: no orphan processes (customer-facing process without a service) and no orphan services (service without a documented process).</td></tr>
+  <tr><td><strong>SC-009</strong></td><td>Knowledge taxonomy vs service taxonomy</td><td><strong>One shared spine:</strong> knowledge articles use the same L1/L2 as services, extended with knowledge-specific facets (content type: policy / how-to / FAQ / form; validity country; language). Every L3 service links its supporting articles; every article links to its "escalation service" ("still need help? → open this request"). This powers deflection-first search ordering and consistent chatbot intents.</td></tr>
+</table>
+</div>
+
+<h3>8.2 Taxonomy Governance 分类治理 (SC-010 – SC-012)</h3>
+<div class="card">
+<table>
+  <tr><th style="width:10%;">ID</th><th style="width:26%;">Topic</th><th>Recommended Approach</th></tr>
+  <tr><td><strong>SC-010</strong></td><td>Governance for taxonomy ownership</td><td>Single accountable owner: <strong>Global HR Service Management Office (HR-SMO)</strong> owns L1/L2 and the taxonomy standard. A cross-functional <strong>Taxonomy Board</strong> (HR-SMO chair + CoE reps + regional SSC leads + HRIT + KM lead) approves L1/L2 changes; L3 changes follow a lightweight intake with HR-SMO sign-off. RACI published; no "shadow catalogs".</td></tr>
+  <tr><td><strong>SC-011</strong></td><td>Is a shared taxonomy required?</td><td><strong>Yes — mandatory at L1/L2 across all countries, BUs, and channels</strong> (portal, chatbot, knowledge, telephony IVR, reporting). Without it: broken global reporting, duplicated knowledge, inconsistent chatbot intents, impossible cross-country benchmarking. Local flexibility is granted only at L3 (see SC-022–025).</td></tr>
+  <tr><td><strong>SC-012</strong></td><td>Future taxonomy governance model</td><td>Operate taxonomy like a product: quarterly release cycle; change intake form (requester, driver, impact analysis, affected countries); data-driven review inputs (search zero-results, misrouted-case rate, catalog items with &lt;5 requests/quarter → merge/retire candidates); annual card-sort/tree-test refresh; version-controlled taxonomy artifact with deprecation policy (retired categories redirect, never 404).</td></tr>
+</table>
+</div>
+
+<h3>8.3 Ownership &amp; Routing 所有权与路由 (SC-013 – SC-021)</h3>
+<div class="card">
+<table>
+  <tr><th style="width:10%;">ID</th><th style="width:26%;">Topic</th><th>Recommended Approach</th></tr>
+  <tr><td><strong>SC-013</strong></td><td>Service owner model</td><td>Every L3 item has exactly <strong>one Global Service Owner</strong> (typically in the functional CoE or Global Process Owner org) accountable for: service definition, global template, SLA, KPIs, variance approvals, continuous improvement. Regional/country <strong>Service Delivery Owners</strong> own fulfillment performance locally. Owner recorded as structured data in the registry, not in documents.</td></tr>
+  <tr><td><strong>SC-014</strong></td><td>Case owner vs task owner</td><td><strong>Case Owner</strong> = single point of accountability for the end-to-end case and all employee communication; holds SLA clock; never "throws over the wall". <strong>Task Owners</strong> = fulfill discrete child tasks (e.g., IT provisioning inside onboarding case) with task-level SLAs; communicate to the case owner, not to the employee. Rule: the employee always has exactly one visible owner.</td></tr>
+  <tr><td><strong>SC-015</strong></td><td>Routing framework</td><td>Deterministic routing matrix keyed on: Service ID + employee's country + BU + employee group (staff/frontline/executive/contingent) + language + sensitivity flag → assignment group + tier. Precedence: (1) confidentiality overrides (ER, executive comp → restricted queues), (2) statutory country rules, (3) BU-specific rules, (4) default global route. Keep the matrix as configuration data with governance, never hard-coded.</td></tr>
+  <tr><td><strong>SC-016</strong></td><td>Primary ownership rules</td><td>Tie-breakers when a service could belong to two functions: (1) who owns the <em>policy</em> that governs the outcome; (2) who fulfills &gt;50% of effort; (3) who owns the system of record for the resulting data; (4) escalation → Taxonomy Board decides, decision logged as precedent. One primary owner is mandatory; secondary teams are contributors via tasks.</td></tr>
+  <tr><td><strong>SC-017</strong></td><td>Operating model variance handling</td><td>Maintain a <strong>Variance Register</strong>: same L3 service, per-country delivery attributes (fulfiller = SSC hub vs local HR vs vendor; channel; SLA). The employee-facing definition stays identical; only the fulfillment path varies. Variances are approved by the Global Service Owner, time-boxed where transitional (e.g., "local until payroll migration to hub in 2026").</td></tr>
+  <tr><td><strong>SC-018</strong></td><td>Service decomposition methodology</td><td>Decompose by <em>outcome</em>, not by team. A candidate L3 passes if: (a) an employee/manager would request it as a standalone need; (b) it has one definable owner; (c) it has a measurable completion state; (d) its volume justifies a distinct form/workflow (else fold into a general inquiry with a category tag). If a "service" is only ever a step inside another service, it's a task, not an L3.</td></tr>
+  <tr><td><strong>SC-019</strong></td><td>Process-to-task ownership model</td><td>For each multi-team service, publish a step-level RACI: process step → task → owning team → SLA → hand-off trigger. Ownership follows the task, accountability stays with the case owner (SC-014). Review hand-off failure points quarterly using case reassignment-count metrics.</td></tr>
+  <tr><td><strong>SC-020</strong></td><td>Eliminate duplicate service definitions</td><td>(1) Canonical <strong>Service Registry</strong> with unique Service IDs as single source of truth; (2) naming convention: <code>[Outcome verb] + [object] (+ audience)</code>, e.g., "Request employment verification letter"; (3) dedup audit at migration: cluster existing items by name similarity + fulfillment group + form fields, merge to canonical items with country scoping instead of country copies ("Employment letter – Germany" + "Employment letter – France" → 1 item, 2 country variants); (4) new-item intake includes mandatory duplicate check.</td></tr>
+  <tr><td><strong>SC-021</strong></td><td>Multi-team workflow architecture</td><td>Parent-case + child-task orchestration pattern: life-event journeys (onboarding, relocation, exit) instantiate a parent case (single employee-visible thread) spawning parallel/sequential child tasks across HR functions, IT, Facilities, Finance, vendors. Design rules: dependencies modeled explicitly; child task failure alerts parent owner; employee status view aggregates child progress; cross-departmental tasks use enterprise (not HR-only) task types where other departments fulfill.</td></tr>
+</table>
+</div>
+
+<h3>8.4 Global vs Local 全球与本地 (SC-022 – SC-025)</h3>
+<div class="card">
+<table>
+  <tr><th style="width:10%;">ID</th><th style="width:26%;">Topic</th><th>Recommended Approach</th></tr>
+  <tr><td><strong>SC-022</strong></td><td>Global vs local design framework</td><td>Three-tier model: <strong>Global Core</strong> (L1/L2 names, service definitions, case model, KPIs — fixed), <strong>Regional Variant</strong> (delivery attributes, languages, hub assignment — governed flexibility), <strong>Local Mandatory</strong> (statutory L3 items existing only in one country, e.g., China housing fund 住房公积金, German works-council consultations, Brazil FGTS). Target ratio ~80% global / 20% local by item count; measure and report drift.</td></tr>
+  <tr><td><strong>SC-023</strong></td><td>Country variance governance</td><td>Variance request classes: <strong>Class A – Statutory/legal</strong> (fast-track, evidence of legal basis required, auto-approved by Global Service Owner); <strong>Class B – Works council / union agreement</strong> (approved with agreement reference and expiry tracking); <strong>Class C – Local preference</strong> ("we've always done it this way" — requires business case, default answer is no). All variances logged in the Variance Register with review dates.</td></tr>
+  <tr><td><strong>SC-024</strong></td><td>Global template strategy</td><td>Every L3 has a <strong>global template</strong>: canonical form, workflow, knowledge article skeleton, SLA class, KPI set. Countries inherit the template and apply approved variances as configuration layers (never forked copies). Templates version-controlled; releases pushed in scheduled trains (e.g., quarterly) with regression checks on localized layers; new-country onboarding = instantiate templates + local mandatory items, typical setup measured in weeks not months.</td></tr>
+  <tr><td><strong>SC-025</strong></td><td>Localization methodology</td><td>Four localization layers, applied in order: (1) <strong>Language</strong> — labels, forms, knowledge, search synonyms (professional translation + in-country review); (2) <strong>Legal/statutory</strong> — mandatory fields, retention rules, consent, works-council visibility constraints, data-residency; (3) <strong>Cultural/channel</strong> — e.g., WeChat/DingTalk-adjacent habits in China, works-council communications in Germany, kiosk-first for plants; (4) <strong>Operational</strong> — local fulfiller mapping, hours, holiday calendars. Each layer has a checklist owned by the country HR lead and signed off by the Global Service Owner.</td></tr>
+</table>
+</div>
+
+<h3>8.5 External Benchmarking 外部对标 (SC-026 – SC-029)</h3>
+<div class="card">
+<table>
+  <tr><th style="width:10%;">ID</th><th style="width:26%;">Topic</th><th>Recommended Approach &amp; Known Patterns</th></tr>
+  <tr><td><strong>SC-026</strong></td><td>Benchmark ServiceNow HRSD service catalogs</td><td>ServiceNow HRSD ships a reference structure of <strong>COEs</strong> (typically: Workforce Administration, Payroll, Total Rewards / Benefits &amp; Compensation, Employee Relations, Talent Management, HR IT/Systems, plus Lifecycle Events for journeys) with HR Services beneath them and <strong>Employee Center topics</strong> as the employee-facing navigation layer — i.e., the product itself embodies the dual-taxonomy pattern recommended in §6 (COE = back stage, Topics = front stage). Benchmark actions: review the out-of-box COE/service list as the L2/L3 starting inventory; study Employee Center topic taxonomies of reference customers; assess Lifecycle Events for the journey bundles in L1-5. <span class="ref-pending">(Product documentation links in §11 — verify against current release before citing.)</span></td></tr>
+  <tr><td><strong>SC-027</strong></td><td>Collect peer company taxonomy models</td><td>Convergent pattern across large global implementations: 6–9 employee-facing L1 categories, lifecycle-flavored naming ("Pay", "Time Away", "Career", "Life Events", "Manager"), separate manager section, search-first portal. Collection method: (a) ServiceNow/vendor customer reference sessions, (b) Knowledge conference case studies, (c) peer networks (shared services forums), (d) screenshots/walkthroughs under NDA. Deliverable: side-by-side taxonomy comparison of ≥6 peers with L1 label frequency analysis.</td></tr>
+  <tr><td><strong>SC-028</strong></td><td>Compare manufacturing company implementations</td><td>Manufacturing-specific findings to validate: (1) deskless access is the #1 differentiator — kiosk/mobile/QR entry, badge-tap auth, large-tile UI; (2) supervisor <strong>proxy requests</strong> on behalf of line workers is a required capability; (3) shift/overtime/attendance services dominate volume (often &gt;40% of cases at plants) → elevate "My Time" in navigation for plant personas; (4) works councils/unions constrain case visibility and require consultation steps in workflows; (5) multilingual plants need per-site language defaults. Benchmark 3–5 manufacturers of comparable footprint.</td></tr>
+  <tr><td><strong>SC-029</strong></td><td>Compare routing architecture patterns</td><td>Patterns observed: (a) <strong>geography-first</strong> (route to country team, then skill) — simple, but hub economics suffer; (b) <strong>skill/service-first with location as attribute</strong> — best for global hubs, recommended target; (c) <strong>tier-based with swivel escalation</strong> — universal baseline; (d) <strong>AI-assisted intake routing</strong> (classify free-text to service + route) — fastest-growing, requires the shared taxonomy (SC-011) as its label set; (e) <strong>follow-the-sun queues</strong> for 24/7 coverage. Recommendation: (b)+(c) now, pilot (d) on top of clean taxonomy.</td></tr>
+</table>
+</div>
+
+<!-- ==================== 9. WORKSTREAMS ==================== -->
+<h2 id="s9">9. Deep Research Workstreams <span class="zh">深度研究工作流 (WS1 – WS6)</span></h2>
+
+<div class="card">
+<table>
+  <tr><th style="width:8%;">WS</th><th style="width:20%;">Focus</th><th style="width:32%;">Key Activities</th><th style="width:25%;">Deliverables</th><th>Covers</th></tr>
+  <tr>
+    <td><strong>WS1</strong></td>
+    <td>Employee-facing Service Taxonomy 员工端分类</td>
+    <td>Card sorting (per region/persona incl. plant workers); tree testing of candidate L1/L2; search-log &amp; failed-search analysis; label translation testing; persona quick-link definition.</td>
+    <td>Validated front-stage taxonomy (L1/L2), label glossary (all languages), persona view specs.</td>
+    <td>SC-005, SC-006, UX/IA/Nav/Search table</td>
+  </tr>
+  <tr>
+    <td><strong>WS2</strong></td>
+    <td>Global HR Process Architecture Mapping 流程架构映射</td>
+    <td>Inventory global HR process model; build process↔service mapping matrix; identify orphan processes/services; define journey bundles for life events.</td>
+    <td>Process-to-service mapping matrix; service decomposition rulebook; journey bundle definitions.</td>
+    <td>SC-007, SC-008, SC-018</td>
+  </tr>
+  <tr>
+    <td><strong>WS3</strong></td>
+    <td>Service Ownership &amp; Routing Model 所有权与路由</td>
+    <td>Assign Global Service Owners; define case/task owner rules; design routing matrix (country × BU × persona × sensitivity); build Variance Register; dedup audit of existing items.</td>
+    <td>Service Registry v1 with owners; routing matrix; ownership RACI; dedup/merge plan; multi-team workflow patterns.</td>
+    <td>SC-013 – SC-021</td>
+  </tr>
+  <tr>
+    <td><strong>WS4</strong></td>
+    <td>Knowledge Management Taxonomy Alignment 知识分类对齐</td>
+    <td>Map existing knowledge bases to shared spine; define article↔service linking standard; align chatbot intent model to taxonomy; define content-type facets and lifecycle.</td>
+    <td>Shared taxonomy spine spec; KM migration mapping; chatbot intent–taxonomy alignment doc.</td>
+    <td>SC-009, SC-011</td>
+  </tr>
+  <tr>
+    <td><strong>WS5</strong></td>
+    <td>Global vs Local Governance 全球/本地治理</td>
+    <td>Define global core vs local mandatory boundaries; design variance classes &amp; approval flow; charter Taxonomy Board; define release trains and template versioning; pilot 2–3 country localizations.</td>
+    <td>Governance charter &amp; RACI; variance policy; global template standard; localization playbook.</td>
+    <td>SC-010, SC-012, SC-022 – SC-025</td>
+  </tr>
+  <tr>
+    <td><strong>WS6</strong></td>
+    <td>External Benchmarking (ServiceNow Clients) 外部对标</td>
+    <td>Review HRSD out-of-box COE/service structure; 6+ peer taxonomy walkthroughs (≥3 manufacturers); routing pattern comparison; capability gap analysis vs Employee Center / Lifecycle Events / Virtual Agent.</td>
+    <td>Benchmark report; peer taxonomy comparison matrix; routing pattern recommendation; HRSD fit-gap.</td>
+    <td>SC-026 – SC-029</td>
+  </tr>
+</table>
+</div>
+
+<div class="card info">
+  <h4 style="margin-top:0;">Sequencing &amp; Dependencies 顺序与依赖</h4>
+  <p><strong>Wave 1 (parallel):</strong> WS1 + WS2 + WS6 — user research, process inventory and benchmarking are independent and jointly feed the taxonomy decision.
+  <strong>Wave 2:</strong> WS3 + WS4 — ownership/routing and KM alignment require the draft taxonomy from Wave 1.
+  <strong>Wave 3:</strong> WS5 — governance is finalized once the model is proven in 2–3 pilot countries. Typical discovery duration: 10–14 weeks with a dedicated team.</p>
+</div>
+
+<!-- ==================== 10. ROADMAP ==================== -->
+<h2 id="s10">10. Implementation Roadmap <span class="zh">实施路线图</span></h2>
+
+<div class="card">
+<table>
+  <tr><th style="width:16%;">Phase</th><th style="width:20%;">Timeframe (indicative)</th><th>Scope</th><th style="width:26%;">Exit Criteria</th></tr>
+  <tr><td><strong>P0 Discovery</strong></td><td>Weeks 1–14</td><td>Run WS1–WS6; taxonomy decision; Service Registry v1; governance charter approved.</td><td>Tree-test ≥80% success; registry covers ≥90% of case volume; Taxonomy Board chartered.</td></tr>
+  <tr><td><strong>P1 Foundation</strong></td><td>Months 4–8</td><td>Build global templates for top ~50 services by volume; shared taxonomy in portal + knowledge + chatbot; pilot in 2–3 countries (incl. 1 manufacturing site).</td><td>Pilot deflection ≥40%; misroute rate &lt;5%; CSAT baseline captured.</td></tr>
+  <tr><td><strong>P2 Global Rollout</strong></td><td>Months 9–18</td><td>Country waves (cluster by region/payroll footprint); localization playbook applied; Variance Register operational; Manager Hub launch.</td><td>All countries live on shared L1/L2; local mandatory items ≤20% of catalog.</td></tr>
+  <tr><td><strong>P3 Optimize</strong></td><td>Months 18+</td><td>AI-assisted intake routing; journey orchestration expansion; quarterly taxonomy releases; retire long-tail duplicate items.</td><td>Deflection ≥60%; zero shadow catalogs; taxonomy change SLA met.</td></tr>
+</table>
+</div>
+
+<!-- ==================== 11. REFERENCES ==================== -->
+<h2 id="s11">11. References <span class="zh">参考资料</span></h2>
+
+<div class="card note">
+  <h4 style="margin-top:0;">⚠ Link Verification Policy 链接验证声明</h4>
+  <p>Per the requirement <em>“链接需要经过验证后才可以引用”</em>: the URLs below point to top-level vendor/organization pages that are historically stable, but <strong>they have NOT been live-verified at the time of writing this report</strong> (no live web access during authoring). Status is marked <span class="ref-pending">待验证 / PENDING VERIFICATION</span> for every entry. <strong>Action required:</strong> the report owner must click-verify each link and update the status column to <span class="tag tag-green">VERIFIED + date</span> before this report is published or the citations are reused. Any link that fails verification must be removed or replaced. Conceptual claims in this report (tier models, dual taxonomy, card-sorting method) are standard industry practice and do not depend on any single link.</p>
+</div>
+
+<div class="card">
+<table>
+  <tr><th style="width:6%;">#</th><th style="width:34%;">Source</th><th style="width:40%;">URL (top-level, stable)</th><th>Status</th></tr>
+  <tr><td>1</td><td>ServiceNow — HR Service Delivery product overview (COE model, Employee Center, Lifecycle Events)</td><td><code>https://www.servicenow.com/products/hr-service-delivery.html</code></td><td><span class="ref-pending">待验证 PENDING</span></td></tr>
+  <tr><td>2</td><td>ServiceNow Product Documentation portal (HRSD configuration: COEs, HR services, topics)</td><td><code>https://www.servicenow.com/docs/</code></td><td><span class="ref-pending">待验证 PENDING</span></td></tr>
+  <tr><td>3</td><td>APQC — Process Classification Framework (reference process architecture incl. "Develop and Manage Human Capital")</td><td><code>https://www.apqc.org/process-frameworks</code></td><td><span class="ref-pending">待验证 PENDING</span></td></tr>
+  <tr><td>4</td><td>Nielsen Norman Group — card sorting &amp; tree testing methodology articles</td><td><code>https://www.nngroup.com/</code></td><td><span class="ref-pending">待验证 PENDING</span></td></tr>
+  <tr><td>5</td><td>Deloitte — HR operating model / shared services research (High-Impact HR)</td><td><code>https://www.deloitte.com/</code></td><td><span class="ref-pending">待验证 PENDING</span></td></tr>
+  <tr><td>6</td><td>Gartner — HR service delivery &amp; shared services research (subscription)</td><td><code>https://www.gartner.com/en/human-resources</code></td><td><span class="ref-pending">待验证 PENDING</span></td></tr>
+  <tr><td>7</td><td>SSON (Shared Services &amp; Outsourcing Network) — HR shared services benchmarking community</td><td><code>https://www.ssonetwork.com/</code></td><td><span class="ref-pending">待验证 PENDING</span></td></tr>
+  <tr><td>8</td><td>Josh Bersin Company — HR technology &amp; EX research</td><td><code>https://joshbersin.com/</code></td><td><span class="ref-pending">待验证 PENDING</span></td></tr>
+</table>
+</div>
+
+<footer>
+  <p><strong>Document control:</strong> Draft v1.0 — for internal review. Sections 8 (SC responses) and 11 (references) require stakeholder validation and live link verification before final publication. 本报告为草稿，第8节需相关方确认，第11节链接需完成在线验证后方可正式发布。</p>
+  <p>Prepared by: HR Service Delivery Design Team &nbsp;|&nbsp; Next review: after WS1–WS6 discovery completion.</p>
+</footer>
+
+</div>
+</body>
+</html>

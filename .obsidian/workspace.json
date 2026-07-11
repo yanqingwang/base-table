@@ -4,24 +4,47 @@
     "type": "split",
     "children": [
       {
-        "id": "b8a332654428e92f",
+        "id": "8ae250be01eca1d4",
         "type": "tabs",
         "children": [
           {
-            "id": "161453ba1360f0f5",
+            "id": "40ceacae9c571d9f",
             "type": "leaf",
             "state": {
-              "type": "markdown",
+              "type": "html-effectiveness-view",
               "state": {
-                "file": "Reports/Andrej_Karpathy_Knowledge_Analysis_2026-04-26.md",
-                "mode": "source",
-                "source": false
+                "file": "AIReports/TrustMRR-HR-SaaS-创业机会分析报告-2026-07-10.html"
               },
-              "icon": "lucide-file",
-              "title": "Andrej_Karpathy_Knowledge_Analysis_2026-04-26"
+              "icon": "eye",
+              "title": "TrustMRR-HR-SaaS-创业机会分析报告-2026-07-10"
+            }
+          },
+          {
+            "id": "0ca858f7416f0c58",
+            "type": "leaf",
+            "state": {
+              "type": "html-effectiveness-view",
+              "state": {
+                "file": "AIReports/AI-Weekly-2026-07-10.html"
+              },
+              "icon": "eye",
+              "title": "AI-Weekly-2026-07-10"
+            }
+          },
+          {
+            "id": "2d135c403dd88d0d",
+            "type": "leaf",
+            "state": {
+              "type": "html-effectiveness-view",
+              "state": {
+                "file": "AIReports/探寻工作的意义-2026-06-28.html"
+              },
+              "icon": "eye",
+              "title": "探寻工作的意义-2026-06-28"
             }
           }
-        ]
+        ],
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -53,7 +76,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "刘开心",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -78,7 +101,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 378.5
+    "width": 629.5,
+    "collapsed": true
   },
   "right": {
     "id": "df398ba2463bd268",
@@ -161,8 +185,19 @@
               "icon": "lucide-list",
               "title": "大纲"
             }
+          },
+          {
+            "id": "bdc94dbc512ca377",
+            "type": "leaf",
+            "state": {
+              "type": "copilot-chat-view",
+              "state": {},
+              "icon": "lucide-ghost",
+              "title": "copilot-chat-view"
+            }
           }
-        ]
+        ],
+        "currentTab": 5
       }
     ],
     "direction": "horizontal",
@@ -178,50 +213,56 @@
       "templates:插入模板": false,
       "command-palette:打开命令面板": false,
       "bases:新建数据库": false,
-      "remotely-save:Remotely Save": false,
-      "nutstore-sync:Start sync": false,
-      "nutstore-sync:Stop sync": false
+      "copilot:Open Copilot Chat": false,
+      "remotely-save:Remotely Save": false
     }
   },
-  "active": "161453ba1360f0f5",
+  "active": "2d135c403dd88d0d",
   "lastOpenFiles": [
-    "AGENTS.md",
-    "AITasks/HRIS Cost Management.md",
-    "Reports/Andrej_Karpathy_Knowledge_Analysis_2026-04-26.md",
-    "AITasks/HR DOA Guideline and management.md",
-    "AITasks/Base Table.md",
-    "code/base-table/packaging/arch/base-table-0.1.0-1-x86_64.pkg.tar.zst",
-    "code/base-table/packaging/arch/pkg/base-table/usr/bin/base-table.x6eEP9",
-    "code/base-table/packaging/arch/pkg/base-table/usr/share/licenses/base-table/LICENSE",
-    "code/base-table/packaging/arch/pkg/base-table/usr/share/licenses/base-table",
-    "code/base-table/packaging/arch/pkg/base-table/usr/share/licenses",
-    "code/base-table/packaging/arch/pkg/base-table/usr/share/applications/base-table.desktop",
-    "code/base-table/packaging/arch/pkg/base-table/usr/share/applications",
-    "code/base-table/packaging/arch/pkg/base-table/usr/share/icons/hicolor/32x32/apps/base-table.png",
-    "code/base-table/packaging/arch/pkg/base-table/usr/share/icons/hicolor/32x32/apps",
-    "code/base-table/packaging/arch/pkg/base-table/usr/share/icons/hicolor/32x32",
-    "code/base-table/packaging/arch/pkg/base-table/usr/share/icons/hicolor",
-    "code/base-table/README.md",
-    "code/base-table/INSTALL-USAGE.md",
-    "code/base-table/node_modules/@tauri-apps/plugin-dialog/README.md",
-    "Reports/Claude_Code_Manual.md",
-    "AITasks/AI Work Impact.md",
-    "Reports/AI最近三周关键新闻与使用技巧Top30汇总-2026-04-25.md",
-    "code/Local/AGENTS.md.md",
-    "AITasks/OPC1.md",
-    "base-table/src-tauri/icons/icon.png",
-    "AITasks/Skills.md",
-    "base-table/node_modules/jsdom/README.md",
-    "base-table/node_modules/typescript/SECURITY.md",
-    "base-table/node_modules/typescript/README.md",
-    "base-table/node_modules/@tauri-apps/api/README.md",
-    "base-table/node_modules/@tauri-apps/api/CHANGELOG.md",
-    "base-table/node_modules/@tauri-apps/cli/README.md",
-    "base-table/node_modules/@tauri-apps/cli/CHANGELOG.md",
-    "base-table/node_modules/react-dom/README.md",
-    "base-table/node_modules/@testing-library/jest-dom/node_modules/dom-accessibility-api/README.md",
-    "base-table/node_modules/@testing-library/jest-dom/node_modules/dom-accessibility-api/LICENSE.md",
-    "base-table/node_modules/@testing-library/dom/README.md",
-    "base-table/node_modules/@asamuzakjp/css-color/node_modules/lru-cache/README.md"
+    "AIReports/TrustMRR-HR-SaaS-创业机会分析报告-2026-07-10.md",
+    "code/noteforge/frontend/src/plugins/HEPlugin.ts",
+    "code/noteforge/frontend/src/plugins/PluginManager.ts",
+    "code/noteforge/frontend/src/plugins",
+    "code/noteforge/target/debug/deps/noteforge-4307e68643223b6e",
+    "code/noteforge/target/debug/incremental/noteforge-2u4koyes779bn/s-hkapp5few8-19pswo0-b160t7h2lmh2sjp06g7qb4vsd/work-products.bin",
+    "code/noteforge/target/debug/incremental/noteforge-2u4koyes779bn/s-hkapp5few8-19pswo0-b160t7h2lmh2sjp06g7qb4vsd/query-cache.bin",
+    "code/noteforge/target/debug/incremental/noteforge-2u4koyes779bn/s-hkapp5few8-19pswo0-b160t7h2lmh2sjp06g7qb4vsd/ez69gzwn7esrgu4shcrytgrul.o",
+    "code/noteforge/target/debug/incremental/noteforge-2u4koyes779bn/s-hkapp5few8-19pswo0-b160t7h2lmh2sjp06g7qb4vsd/eysfz0ogoejuxj8nb44d735b2.o",
+    "code/noteforge/target/debug/incremental/noteforge-2u4koyes779bn/s-hkapp5few8-19pswo0-b160t7h2lmh2sjp06g7qb4vsd/evyel7hzlt4i41ewlcrbfnx4i.o",
+    "code/noteforge/target/debug/incremental/noteforge-2u4koyes779bn/s-hkapp5few8-19pswo0-b160t7h2lmh2sjp06g7qb4vsd/et9a3y5jv3pbfeuyh33kmnjxx.o",
+    "code/html-to-md-effect-plugin/test-sample.md",
+    "code/html-to-md-effect-plugin/README.md",
+    "code/html-to-md-effect-plugin/test-小狗.md",
+    "code/html-to-md-effect-plugin/node_modules/moment/README.md",
+    "code/html-to-md-effect-plugin/node_modules/moment/CHANGELOG.md",
+    "code/html-to-md-effect-plugin/node_modules/typescript/SECURITY.md",
+    "code/html-to-md-effect-plugin/node_modules/typescript/README.md",
+    "code/html-to-md-effect-plugin/node_modules/@esbuild/linux-x64/README.md",
+    "code/html-to-md-effect-plugin/node_modules/@codemirror/view/README.md",
+    "code/html-to-md-effect-plugin/node_modules/@codemirror/view/CHANGELOG.md",
+    "code/html-to-md-effect-plugin/node_modules/undici-types/README.md",
+    "code/html-to-md-effect-plugin/node_modules/@codemirror/state/README.md",
+    "code/html-to-md-effect-plugin/node_modules/@codemirror/state/CHANGELOG.md",
+    "code/html-to-md-effect-plugin/node_modules/esbuild/README.md",
+    "code/html-to-md-effect-plugin/node_modules/tslib/SECURITY.md",
+    "code/html-to-md-effect-plugin/node_modules/esbuild/LICENSE.md",
+    "code/html-to-md-effect-plugin/node_modules/tslib/README.md",
+    "code/html-to-md-effect-plugin/node_modules/style-mod/README.md",
+    "code/html-to-md-effect-plugin/node_modules/@marijn/find-cluster-break/README.md",
+    "code/html-to-md-effect-plugin/node_modules/crelt/README.md",
+    "code/html-to-md-effect-plugin/node_modules/w3c-keyname/README.md",
+    "code/html-to-md-effect-plugin/node_modules/builtin-modules/readme.md",
+    "code/html-to-md-effect-plugin/node_modules/style-mod/src/README.md",
+    "code/html-to-md-effect-plugin/node_modules/obsidian/README.md",
+    "AIReports/zoom-test-100.png",
+    "AIReports/zoom-test-110.png",
+    "code/noteforge/frontend/node_modules/highlight.js/styles/brown-papersq.png",
+    "code/noteforge/frontend/node_modules/highlight.js/styles/pojoaque.jpg",
+    "code/noteforge/frontend/dist/icons.svg",
+    "code/noteforge/frontend/dist/favicon.svg",
+    "code/noteforge/frontend/src/assets/vite.svg",
+    "code/noteforge/frontend/src/assets/react.svg",
+    "code/noteforge/frontend/src/assets/hero.png",
+    "code/noteforge/frontend/public/favicon.svg"
   ]
 }

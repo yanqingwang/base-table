@@ -109,7 +109,7 @@ pub async fn public_apply(
                 resume_text: input.resume_text.clone(),
                 resume_file_url: None,
                 profile_photo_url: None,
-                status: "screening".to_string(),
+                status: "screened".to_string(),
                 source: "direct".to_string(),
                 notes: None,
                 created_at: now.clone(),

@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>伊朗冲突综合分析报告 | 2026年6月</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto; line-height: 1.6; }
+  h1 { color: #58a6ff; font-size: 28px; margin-bottom: 8px; }
+  h2 { color: #f0883e; font-size: 20px; margin: 35px 0 15px; border-bottom: 1px solid #30363d; padding-bottom: 8px; }
+  h3 { color: #d2a8ff; font-size: 16px; margin: 25px 0 10px; }
+  h4 { color: #8b949e; font-size: 14px; margin: 20px 0 8px; text-transform: uppercase; letter-spacing: 1px; }
+  .subtitle { color: #8b949e; font-size: 14px; margin-bottom: 5px; }
+  .meta { color: #6e7681; font-size: 13px; margin-bottom: 30px; }
+  .exec-summary { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin: 20px 0; }
+  .exec-summary p { color: #c9d1d9; font-size: 14px; }
+  table { width: 100%; border-collapse: collapse; margin: 15 0; font-size: 13px; }
+  th { background: #161b22; color: #8b949e; padding: 10px 8px; border-bottom: 1px solid #30363d; text-align: left; font-weight: 600; }
+  td { padding: 10px 8px; border-bottom: 1px solid #21262d; }
+  tr:hover { background: #161b22; }
+  .highlight { color: #f0883e; font-weight: bold; }
+  .positive { color: #3fb950; }
+  .negative { color: #f85149; }
+  .neutral { color: #8b949e; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-right: 4px; }
+  .tag-green { background: #1b3a1f; color: #3fb950; }
+  .tag-red { background: #3a1b1b; color: #f85149; }
+  .tag-yellow { background: #3a2f1b; color: #d29922; }
+  .tag-gray { background: #1b1f24; color: #8b949e; }
+  .tag-blue { background: #1b2d3a; color: #58a6ff; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 16px; margin: 12px 0; }
+  .card-title { color: #f0883e; font-weight: 600; font-size: 15px; margin-bottom: 8px; }
+  .flex-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin: 15px 0; }
+  .stat-box { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 16px; text-align: center; }
+  .stat-number { font-size: 28px; font-weight: 700; color: #58a6ff; }
+  .stat-label { font-size: 12px; color: #8b949e; margin-top: 4px; }
+  .stat-sub { font-size: 12px; color: #6e7681; margin-top: 2px; }
+  .timeline { position: relative; padding-left: 30px; margin: 20px 0; }
+  .timeline::before { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: #30363d; }
+  .timeline-item { position: relative; margin-bottom: 20px; }
+  .timeline-item::before { content: ''; position: absolute; left: -24px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: #f0883e; border: 2px solid #0d1117; }
+  .timeline-item.major::before { background: #f85149; width: 16px; height: 16px; left: -26px; top: 4px; }
+  .timeline-item.breakthrough::before { background: #3fb950; }
+  .timeline-date { color: #8b949e; font-size: 12px; font-weight: 600; }
+  .timeline-title { color: #c9d1d9; font-weight: 600; font-size: 14px; }
+  .timeline-desc { color: #8b949e; font-size: 13px; margin-top: 2px; }
+  .scenario-table { width: 100%; margin: 15px 0; }
+  .scenario-table td { vertical-align: top; }
+  .bar-container { display: flex; align-items: center; margin: 4px 0; }
+  .bar-label { width: 100px; font-size: 13px; color: #c9d1d9; }
+  .bar-track { flex: 1; height: 20px; background: #21262d; border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; }
+  .bar-value { width: 50px; text-align: right; font-size: 13px; font-weight: 600; }
+  .pill-pro { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 11px; }
+  .pill-pro.s1 { background: #1b3a1f; color: #3fb950; }
+  .pill-pro.s2 { background: #1b2f3a; color: #58a6ff; }
+  .pill-pro.s3 { background: #3a2f1b; color: #d29922; }
+  .pill-pro.s4 { background: #3a1b1b; color: #f85149; }
+  .pill-pro.s5 { background: #1b1f24; color: #8b949e; }
+  @media (max-width: 768px) {
+    body { padding: 12px; }
+    .flex-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== HEADER ==================== -->
+<h1>伊朗冲突综合分析报告</h1>
+<p class="subtitle">Iran Conflict Comprehensive Analysis Report</p>
+<p class="meta">报告日期：2026年6月21日 | 涵盖周期：2026年2月28日 — 6月21日 | 版本：V3.0 最终版</p>
+
+<!-- ==================== EXECUTIVE SUMMARY ==================== -->
+<div class="exec-summary">
+<h3 style="color:#58a6ff; margin:0 0 12px 0;">📋 执行摘要</h3>
+<p>自2026年2月28日美以对伊朗发动军事打击以来，伊朗冲突持续近四个月。截至本报告发布时，冲突经历了<strong class="highlight">"突袭爆发→全面升级→海峡封锁→停火谈判→军事博弈→外交突破"</strong>六个阶段。</p>
+<p style="margin-top:10px;"><strong class="positive">重大进展</strong>：2026年6月17日（周三），美国总统特朗普与伊朗总统佩泽什基安在巴基斯坦斡旋下，于法国凡尔赛宫电子签署了<strong class="highlight">《伊斯兰堡谅解备忘录》（Islamabad MOU）</strong>。这份14点文件规定：<span class="positive">立即永久停止一切军事行动</span>（包括黎巴嫩战线）、<span class="positive">30天内恢复霍尔木兹海峡通航</span>（前60天免费）、<span class="positive">美国立即发放石油制裁豁免</span>、双方在60天内谈判最终协议（可延期）。</p>
+<p style="margin-top:10px;">全球反应呈现<strong class="highlight">"谨慎乐观、深度怀疑并存"</strong>的格局。联合国、欧盟、G7国家普遍欢迎，但欧洲主流媒体（《世界报》《卫报》《明镜》）尖锐批评美国"失败求和"，以色列更直斥为"绥靖"。油市应声下跌，布伦特原油回落至$95-100/桶区间。</p>
+<p style="margin-top:10px;">本报告综合4份前期研究报告（媒体态度、民众态度、地缘政治分析、趋势图表），并融入6月MOU最新动态，提供全面、系统的分析。</p>
+</div>
+
+<!-- ==================== PART 1: GLOBAL MEDIA ATTITUDE ==================== -->
+<h2>📰 第一部分：全球媒体态度研究</h2>
+
+<h3>1.1 全球媒体态度总览（更新至6月21日）</h3>
+
+<table>
+<tr><th>媒体阵营</th><th>2月28日</th><th>5月14日</th><th>5月29日</th><th>6月21日（MOU后）</th><th>变化方向</th><th>核心特征</th></tr>
+<tr>
+  <td>🇨🇳 中文媒体</td>
+  <td>+1</td><td>+1</td><td>+1</td><td><span class="positive">+1</span></td>
+  <td>→ 稳定支持</td>
+  <td>从"调停者"到"谨慎乐观协调者"；欢迎MOU但强调"仍需观察执行"</td>
+</tr>
+<tr>
+  <td>🇺🇸 美国英语媒体</td>
+  <td>−1</td><td>−1</td><td>0（剧烈摇摆）</td><td><span class="neutral">+0.5</span></td>
+  <td>↗ 转向谨慎乐观</td>
+  <td>从"突破希望vs停火脆弱"的极端摇摆转为"协议落地"的审慎报道</td>
+</tr>
+<tr>
+  <td>🇫🇷 法国媒体</td>
+  <td>−1</td><td>−1</td><td>−1</td><td><span class="neutral">−0.5</span></td>
+  <td>↗ 略有缓和</td>
+  <td>马克龙在凡尔赛见证签字；但《世界报》社论批评协议"是美国的失败"</td>
+</tr>
+<tr>
+  <td>🇩🇪 德国媒体</td>
+  <td>0</td><td>0</td><td>−0.5</td><td><span class="neutral">−0.5</span></td>
+  <td>→ 保持批评</td>
+  <td>默茨欢迎协议，但《明镜》称协议"抛弃了阿拉伯盟友"</td>
+</tr>
+<tr>
+  <td>🇪🇸 西班牙媒体</td>
+  <td>−1</td><td>−1</td><td>−1</td><td><span class="neutral">−0.5</span></td>
+  <td>↗ 略有缓和</td>
+  <td>桑切斯一贯反战；MOU被视为外交胜利</td>
+</tr>
+<tr>
+  <td>🇬🇧 英国媒体</td>
+  <td>0</td><td>0</td><td>0</td><td><span class="neutral">0</span></td>
+  <td>→ 谨慎参与</td>
+  <td>斯塔默称"重大突破"；但《卫报》称协议为"未缓解的失败"</td>
+</tr>
+<tr>
+  <td>🌍 阿拉伯媒体</td>
+  <td>−1</td><td>−1</td><td>−1</td><td><span class="neutral">0</span></td>
+  <td>↗ 转向中立欢迎</td>
+  <td>海湾各国官方欢迎协议，但半岛电视台质疑"伊朗会否真履行"</td>
+</tr>
+<tr>
+  <td>🇷🇺 俄罗斯媒体</td>
+  <td>+1</td><td>+1</td><td>+1</td><td><span class="positive">+1</span></td>
+  <td>→ 稳定支持</td>
+  <td>普京在俄罗斯-东盟峰会欢迎协议；但俄媒强调"持久和平仍需时日"</td>
+</tr>
+<tr>
+  <td>🇮🇱 以色列媒体</td>
+  <td>−1.5</td><td>−1.5</td><td>−1.5</td><td><span class="negative">−2</span></td>
+  <td>⬇ 进一步恶化</td>
+  <td>内塔尼亚胡明确反对任何放松对伊压力的协议；以媒称"绥靖"</td>
+</tr>
+</table>
+
+<!-- ==================== 1.2 CHINESE MEDIA ==================== -->
+<h3>1.2 🇨🇳 中文世界态度</h3>
+
+<div class="card">
+<div class="card-title">核心立场：<span class="positive">+1（稳定支持 → 谨慎乐观欢迎）</span></div>
+<p>中国媒体在整个冲突期间保持清晰的亲伊朗/反单边主义立场。对于6月MOU，中国外交部发言人林剑表示："中方欢迎美伊签署谅解备忘录，希望双方以理性和务实的态度进行下一阶段谈判。"新华社和央视在报道中强调协议"具有积极意义"，但同样指出"仍需观察执行情况"。</p>
+</div>
+
+<table>
+<tr><th>媒体</th><th>立场</th><th>叙事框架</th><th>典型报道</th></tr>
+<tr>
+  <td>新华社</td>
+  <td><span class="tag tag-green">+1</span></td>
+  <td>MOU是"积极信号"；呼吁全面执行</td>
+  <td>"美伊签署谅解备忘录为结束冲突迈出关键一步"</td>
+</tr>
+<tr>
+  <td>央视</td>
+  <td><span class="tag tag-green">+1</span></td>
+  <td>强调外交解决路径，但指出执行风险</td>
+  <td>"60天窗口期：和平能否落地？"</td>
+</tr>
+<tr>
+  <td>环球网</td>
+  <td><span class="tag tag-green">+1</span></td>
+  <td>"中国角色"叙事；强调北京平衡策略</td>
+  <td>"中国未直接担保但持续发挥建设性作用"</td>
+</tr>
+<tr>
+  <td>观察者网</td>
+  <td><span class="tag tag-green">+1</span></td>
+  <td>分析美国"战略收缩"；中国相对获益</td>
+  <td>"美国花了几千亿美元回到原点"</td>
+</tr>
+</table>
+
+<p><strong>中国角色分析</strong>：中国在MOU达成过程中并非主要调解方（巴基斯坦和卡塔尔承担了核心角色）。CNN分析指出，中国在整个冲突中实现了"精心校准的平衡"——在谴责美以攻击的同时继续购买伊朗石油、保持与各方沟通、未直接介入军事或担保角色。这对中国而言是相对有利的结果：霍尔木兹海峡重新开放有利于能源安全，而美国在冲突中消耗了大量军事资源。</p>
+
+<!-- ==================== 1.3 ENGLISH WORLD ==================== -->
+<h3>1.3 🇺🇸 英语世界态度</h3>
+
+<div class="card">
+<div class="card-title">核心立场：<span class="neutral">从−1剧烈摇摆 → +0.5（MOU后转向谨慎乐观）</span></div>
+<p>美国英语媒体经历了整个冲突中最剧烈的态度波动。MOU签署后，主流媒体呈现"震惊式接受"——之前极端摇摆（"基本谈妥"→"自卫打击"→"再次突破"）后，终于面对一个确实签署的协议文本。</p>
+</div>
+
+<table>
+<tr><th>媒体</th><th>MOU后立场</th><th>核心叙事</th></tr>
+<tr>
+  <td>CNN</td><td><span class="tag tag-blue">+0.5</span></td><td>滚动报道14点文本；引用高级官员解读；聚焦"60天窗口期"的不确定性</td>
+</tr>
+<tr>
+  <td>纽约时报</td><td><span class="tag tag-blue">+0.5</span></td><td>全文发布MOU并逐段注释；分析核问题悬而未决</td>
+</tr>
+<tr>
+  <td>福克斯新闻</td><td><span class="tag tag-green">+1</span></td><td>特朗普"美国优先"叙事；白宫声明"确保伊朗永不拥核"</td>
+</tr>
+<tr>
+  <td>彭博社</td><td><span class="tag tag-blue">+0.5</span></td><td>油市反应：布伦特原油单日下跌3.3%，为2008年来最大单日跌幅</td>
+</tr>
+<tr>
+  <td>路透社</td><td><span class="tag tag-blue">0</span></td><td>多源确认MOU签署；强调文本"宽泛到模糊"</td>
+</tr>
+<tr>
+  <td>卫报</td><td><span class="tag tag-red">−1</span></td><td>尖锐批评：战争是"未缓解的失败"，MOU是"示弱求和"</td>
+</tr>
+</table>
+
+<div class="flex-grid">
+<div class="stat-box">
+<div class="stat-number">−22.8%</div>
+<div class="stat-label">战争净支持率（Silver Bulletin 5月28日）</div>
+<div class="stat-sub">MOU后可能略有回升，仍为历史低点</div>
+</div>
+<div class="stat-box">
+<div class="stat-number">35%</div>
+<div class="stat-label">特朗普总体支持率（Reuters/Ipsos 6月3-8日）</div>
+<div class="stat-sub">高油价为关键拖累因素</div>
+</div>
+<div class="stat-box">
+<div class="stat-number">49%</div>
+<div class="stat-label">汽油价格高于战前水平</div>
+<div class="stat-sub">MOU后有望回落但仍远高于战前</div>
+</div>
+</div>
+
+<p><strong>国内政治维度</strong>：共和党内部出现分歧——参议员林赛·格雷厄姆（Lindsey Graham）对MOU表示"谨慎支持"但承诺"密切关注"核谈判；前拜登政府官员马修·米勒则批评"特朗普做出了重要让步，只换到了开战前的状态"。路透社/益普索6月初民调显示特朗普支持率仅35%，高油价为主要拖累因素。MOU签署后白宫宣布这是"美国优先的外交胜利"。</p>
+
+<!-- ==================== 1.4 ARAB WORLD ==================== -->
+<h3>1.4 🌍 阿拉伯世界态度</h3>
+
+<div class="card">
+<div class="card-title">核心立场：<span class="neutral">从−1（双重批评）→ 0（官方欢迎但媒体质疑）</span></div>
+<p>阿拉伯世界在MOU后的反应呈现"官方–媒体"分裂：沙特、阿联酋、卡塔尔、科威特、巴林政府均发表声明欢迎协议；但半岛电视台等媒体保持质疑，认为MOU未解决伊朗核野心。</p>
+</div>
+
+<table>
+<tr><th>国家/媒体</th><th>MOU后立场</th><th>核心叙事</th></tr>
+<tr>
+  <td>沙特阿拉伯</td><td><span class="tag tag-yellow">官方欢迎</span></td><td>政府声明希望MOU带来"持久和平与地区稳定"</td>
+</tr>
+<tr>
+  <td>卡塔尔</td><td><span class="tag tag-green">积极欢迎</span></td><td>称MOU是"以和平手段解决分歧的承诺的再次确认"；赞扬巴基斯坦调解</td>
+</tr>
+<tr>
+  <td>阿联酋</td><td><span class="tag tag-yellow">官方欢迎</span></td><td>强调航行自由和地区稳定</td>
+</tr>
+<tr>
+  <td>科威特</td><td><span class="tag tag-yellow">欢迎但警惕</span></td><td>曾被伊朗导弹击中；欢迎停火但警惕伊朗后续行动</td>
+</tr>
+<tr>
+  <td>半岛电视台</td><td><span class="tag tag-yellow">中性质疑</span></td><td>质疑伊朗是否真正放弃核野心；报道伊朗官员称"将继续收费"</td>
+</tr>
+<tr>
+  <td>阿曼</td><td><span class="tag tag-green">欢迎</span></td><td>曾被特朗普威胁轰炸；MOU规定伊朗与阿曼协商海峡未来管理</td>
+</tr>
+</table>
+
+<p>值得注意的是，MOU第5条明确规定伊朗需与阿曼协商霍尔木兹海峡的未来管理和海上服务——这对阿曼是重要的外交成果。伊朗首席谈判代表加利巴夫在国家电视台上表示"海峡不会回到战前状态，伊朗将收取服务费"——这一表态引发海湾国家的进一步警惕。</p>
+
+<!-- ==================== 1.5 EUROPEAN WORLD ==================== -->
+<h3>1.5 🇪🇺 欧洲世界态度</h3>
+
+<div class="card">
+<div class="card-title">核心立场：<span class="neutral">分裂加剧——领袖欢迎 vs 媒体批评</span></div>
+<p>欧洲对MOU的反应呈现显著的"官方–媒体"撕裂。政治领袖（马克龙、斯塔默、默茨、冯德莱恩）纷纷表态欢迎，但主要报纸的评论尖锐批评。</p>
+</div>
+
+<table>
+<tr><th>国家</th><th>官方立场</th><th>媒体立场</th><th>核心叙事</th></tr>
+<tr>
+  <td>🇫🇷 法国</td><td><span class="tag tag-green">热烈欢迎</span></td><td><span class="tag tag-red">尖锐批评</span></td>
+  <td>马克龙在凡尔赛宫见证签字，称"为持久和平铺平道路"；《世界报》社论称战争是"灾难"，谈判起点"对伊朗极为有利"</td>
+</tr>
+<tr>
+  <td>🇬🇧 英国</td><td><span class="tag tag-green">欢迎</span></td><td><span class="tag tag-red">尖锐批评</span></td>
+  <td>斯塔默称"非常重大的突破"；《卫报》称战争为"未缓解的失败"</td>
+</tr>
+<tr>
+  <td>🇩🇪 德国</td><td><span class="tag tag-yellow">谨慎欢迎</span></td><td><span class="tag tag-red">尖锐批评</span></td>
+  <td>默茨欢迎MOU，称"为稳定全球经济和安全铺路"；《明镜》称协议"抛弃了阿拉伯盟友，削弱了美国影响力"</td>
+</tr>
+<tr>
+  <td>🇮🇹 意大利</td><td><span class="tag tag-yellow">谨慎欢迎</span></td><td><span class="tag tag-yellow">中性</span></td>
+  <td>与其他E4国家联合声明"伊朗绝不能获得核武器"</td>
+</tr>
+<tr>
+  <td>🇪🇺 欧盟</td><td><span class="tag tag-green">欢迎</span></td><td>—</td>
+  <td>冯德莱恩：优先事项是"各方迅速全面执行"；卡拉斯：MOU是"潜在突破"</td>
+</tr>
+</table>
+
+<p>欧洲舆论的深层关切：能源危机焦虑（布伦特$100+/桶持续近四个月）超越安全关切。MOU签署后，欧洲领袖更关注"通货膨胀何时缓解"而非"伊朗核问题如何解决"。E4（英法德意）联合声明焦点是"伊朗绝不能拥核"——表明欧洲的核心安全关切并未因MOU而消散。</p>
+
+<!-- ==================== 1.6 RUSSIAN ==================== -->
+<h3>1.6 🇷🇺 俄罗斯态度</h3>
+
+<div class="card">
+<div class="card-title">核心立场：<span class="positive">+1（稳定支持，但暗藏边缘化焦虑）</span></div>
+<p>普京在俄罗斯-东盟峰会（喀山）上欢迎MOU，称其为"走向永久停火的一步"，可成为"未来和平协议的模板"。但俄方同时强调"实现持久和平仍需漫长过程"。俄总统外交政策助理乌沙科夫表示，俄罗斯关于接收伊朗浓缩铀的提议"仍然在桌面上"——暗示俄罗斯在MOU框架中被边缘化的不满。</p>
+</div>
+
+<p><strong>俄罗斯的困境</strong>：MOU主要由巴基斯坦斡旋达成，中国在中美峰会上发挥了间接作用，而俄罗斯的调解角色被完全边缘化。普京5月9日提出的"接收伊朗浓缩铀"倡议未被纳入MOU文本。俄罗斯在伊朗问题上影响力下降的原因包括：乌克兰战争消耗外交资源、中国在经济领域的主导地位、以及伊朗对2015年JCPOA后俄罗斯未能阻止美国退约的历史记忆。</p>
+
+<!-- ==================== 1.7 POST-MOU NEW SHIFTS ==================== -->
+<h3>1.7 🔄 新增：6月和平协议后的最新态度变化</h3>
+
+<table>
+<tr><th>主体</th><th>MOU前立场</th><th>MOU后立场</th><th>变化</th><th>关键信号</th></tr>
+<tr>
+  <td>🇺🇳 联合国</td><td>呼吁停火</td><td><span class="positive">热烈欢迎</span></td>
+  <td class="positive">↗ 积极</td>
+  <td>古特雷斯：MOU是"和平解决冲突的关键一步"</td>
+</tr>
+<tr>
+  <td>🇵🇰 巴基斯坦</td><td>积极斡旋</td><td><span class="positive">重大外交胜利</span></td>
+  <td class="positive">↗ 极大提升</td>
+  <td>成为MOU签署方和主要担保方；国际声望大幅提升</td>
+</tr>
+<tr>
+  <td>🇨🇳 中国</td><td>谨慎协调</td><td><span class="positive">欢迎但不过度介入</span></td>
+  <td class="neutral">→ 不变</td>
+  <td>保持"协调者"定位；继续购买伊朗石油；相对受益</td>
+</tr>
+<tr>
+  <td>🇮🇱 以色列</td><td>强硬反对</td><td><span class="negative">公开谴责</span></td>
+  <td class="negative">⬇ 更加敌对</td>
+  <td>内塔尼亚胡明确反对任何放松对伊压力的协议</td>
+</tr>
+<tr>
+  <td>🇪🇺 欧洲领袖</td><td>谨慎观望</td><td><span class="positive">正式欢迎</span></td>
+  <td class="positive">↗ 积极</td>
+  <td>G7联合声明支持；马克龙在凡尔赛见证签字</td>
+</tr>
+<tr>
+  <td>🇪🇺 欧洲媒体</td><td>批评美国</td><td><span class="negative">尖锐批评</span></td>
+  <td class="negative">⬇ 更加负面</td>
+  <td>《世界报》《卫报》《明镜》一致定性为"美国失败"</td>
+</tr>
+<tr>
+  <td>🇯🇵 日本</td><td>经济焦虑</td><td><span class="positive">明确欢迎</span></td>
+  <td class="positive">↗ 积极</td>
+  <td>首相高市早苗强调"尽快恢复海峡航行自由"</td>
+</tr>
+<tr>
+  <td>🏦 全球市场</td><td>极度波动</td><td><span class="positive">积极反应</span></td>
+  <td class="positive">↗ 油价回落</td>
+  <td>布伦特从$107回落至$95-100；SPR消耗速度可能放缓</td>
+</tr>
+</table>
+
+<!-- ==================== PART 2: PUBLIC ATTITUDE ==================== -->
+<h2>👥 第二部分：民众态度变化（排除媒体）</h2>
+
+<h3>2.1 全球民众态度总览（2月28日 → 6月21日）</h3>
+
+<table>
+<tr><th>地区/指标</th><th>2月28日</th><th>5月14日</th><th>5月29日</th><th>6月21日（MOU后推定）</th><th>变化方向</th></tr>
+<tr>
+  <td colspan="5"><strong>🇺🇸 美国</strong></td>
+</tr>
+<tr>
+  <td>战争净支持率（Silver Bulletin）</td>
+  <td>−9%</td><td>−18%</td><td>−22.8%</td><td style="color:#d29922;">~−15%*</td>
+  <td><span class="neutral">↗ 可能回升</span></td>
+</tr>
+<tr>
+  <td>不赞成总统处理伊朗问题</td>
+  <td>基线</td><td>62%</td><td>~62%</td><td>~55%*</td>
+  <td><span class="neutral">↗ 可能改善</span></td>
+</tr>
+<tr>
+  <td>认为军事行动错误</td>
+  <td>~40%</td><td>59%</td><td>~59%</td><td>~55%*</td>
+  <td><span class="neutral">↗ 小幅改善</span></td>
+</tr>
+<tr>
+  <td>感受到燃料预算压力</td>
+  <td>基线</td><td>83%</td><td>83%+</td><td>~70%*</td>
+  <td><span class="neutral">↗ 有望缓解</span></td>
+</tr>
+<tr>
+  <td colspan="5"><strong>🌐 全球</strong></td>
+</tr>
+<tr>
+  <td>认为应避免卷入</td>
+  <td>基线</td><td>81%</td><td>~81%</td><td>~80%*</td>
+  <td><span class="neutral">→ 不变</span></td>
+</tr>
+<tr>
+  <td>预期战争持续数月以上</td>
+  <td>基线</td><td>59%</td><td>~60%+</td><td>~50%*</td>
+  <td><span class="neutral">↗ 乐观上升</span></td>
+</tr>
+<tr>
+  <td>美国正面形象</td>
+  <td>~59%（2024.10）</td><td>39%</td><td>~39%</td><td>~42%*</td>
+  <td><span class="neutral">↗ 略有修复</span></td>
+</tr>
+<tr>
+  <td>能源成本"不值得"</td>
+  <td>基线</td><td>70%</td><td>~75%+</td><td>~60%*</td>
+  <td><span class="neutral">↗ 可能下降</span></td>
+</tr>
+<tr>
+  <td colspan="5"><strong>🇪🇺 欧洲</strong></td>
+</tr>
+<tr>
+  <td>认为停火不可持续</td>
+  <td>—</td><td>—</td><td>~69%</td><td>~45%*（MOU增加信心）</td>
+  <td><span class="positive">↗ 信心增强</span></td>
+</tr>
+<tr>
+  <td>支持派遣军舰</td>
+  <td>基线</td><td>29%</td><td>~25%</td><td>~20%*（冲突结束预期）</td>
+  <td><span class="neutral">↘ 继续下降</span></td>
+</tr>
+</table>
+<p style="font-size:12px;color:#6e7681;">* 注：6月21日数据为推断值（基于MOU签署后的舆情趋势外推），并非正式民调结果。正式民调通常有1-2周滞后。</p>
+
+<h3>2.2 美国民众"MOU怀疑主义"</h3>
+
+<div class="card">
+<p>MOU签署后，美国社交媒体（Twitter/X、Reddit）情绪分析显示：</p>
+<ul style="color:#c9d1d9; font-size:14px; margin-left:20px; margin-top:8px;">
+  <li><strong class="positive">短期乐观</strong>：6月17-18日约25%的推文表达"终于结束了"的宽慰</li>
+  <li><strong class="negative">快速转为怀疑</strong>：48小时后，多数讨论转向"60天后又会怎样？"和"伊朗不可信"</li>
+  <li><strong>核心情绪</strong>："我只需要油价降下来"仍为主流诉求</li>
+  <li><strong>党派分歧</strong>：民主党普遍质疑特朗普的外交能力；约30%的共和党人仍对协议持怀疑态度</li>
+</ul>
+</div>
+
+<h3>2.3 欧洲民众：怀疑消退但仍谨慎</h3>
+
+<div class="card">
+<p>MOU签署前，欧洲仅有31%的人相信5月28日停火能够持续。MOU签署后，这一比例预计上升至55-60%。但核心关切转向经济层面：</p>
+<ul style="color:#c9d1d9; font-size:14px; margin-left:20px; margin-top:8px;">
+  <li>86%仍对伊朗战争感到担忧（虽低于冲突高峰但仍高企）</li>
+  <li>44%将通胀列为首要关切——MOU后油价回落带来希望，但多数经济学家认为价格不会快速回到战前水平</li>
+  <li>支持派遣军舰的比例从29%降至约20%——冲突结束预期削弱了军事介入意愿</li>
+</ul>
+</div>
+
+<h3>2.4 阿拉伯世界民众：分裂加剧</h3>
+
+<table>
+<tr><th>国家/群体</th><th>态度特征</th></tr>
+<tr>
+  <td>🇸🇦 沙特民众</td><td>复杂心态——高油价利国但进口通胀伤民；MOU后期待地区稳定</td>
+</tr>
+<tr>
+  <td>🇶🇦 卡塔尔民众</td><td>更关注旅游业和航空业恢复</td>
+</tr>
+<tr>
+  <td>🇴🇲 阿曼民众</td><td>反美情绪仍在（5月27日特朗普威胁轰炸）；MOU"收费条款"受关注</td>
+</tr>
+<tr>
+  <td>🇰🇼 科威特民众</td><td>民族主义情绪上升（曾拦截伊朗导弹）；"不该为美国挡子弹"的质疑声存在</td>
+</tr>
+<tr>
+  <td>阿拉伯语社交媒体</td><td>#هرمز（霍尔木兹）标签80%+负面；"谈判中轰炸"成为网络迷因</td>
+</tr>
+</table>
+
+<h3>2.5 东亚民众：能源焦虑为主</h3>
+
+<table>
+<tr><th>国家</th><th>态度</th></tr>
+<tr><td>🇯🇵 日本</td><td>76%预期冲突持续至2027年（Ipsos 4月数据）；MOU后乐观但谨慎</td></tr>
+<tr><td>🇰🇷 韩国</td><td>关注半导体产业（高度依赖石化原料）的油价影响</td></tr>
+<tr><td>🇨🇳 中国</td><td>主流情绪："支持国家中立立场"、"反对美国单边主义"；MOU后对油价回落抱持期待</td></tr>
+</table>
+
+<!-- ==================== PART 3: GEOPOLITICAL ANALYSIS ==================== -->
+<h2>🌏 第三部分：推测分析 — 大国博弈下的趋势演变</h2>
+
+<h3>3.1 美国：从"战争总统"到"协议总统"的艰难转身</h3>
+
+<div class="card">
+<p>特朗普在MOU签署中面临的最深层矛盾是：<strong class="highlight">"强硬形象"与"和谈现实"的冲突</strong>。他曾以"取消奥巴马糟糕的伊核协议"为核心竞选口号，如今却签署了一个比JCPOA更广泛的协议（JCPOA仅有制裁缓解，MOU增加了石油豁免和全面制裁终止承诺）。</p>
+<p style="margin-top:8px;"><strong>政治算盘</strong>：</p>
+<ul style="color:#c9d1d9; font-size:14px; margin-left:20px; margin-top:4px;">
+  <li><span class="negative">−22.8%的战争净支持率</span>使特朗普急需外交胜利</li>
+  <li>SPR消耗5000万桶/月——经济持续能力有限</li>
+  <li>中期选举压力——需要向选民展示"战争结束了，油价降了"</li>
+  <li>但以色列和共和党强硬派的反对构成重大内部约束</li>
+</ul>
+</div>
+
+<p><strong>核心判断</strong>：MOU并非特朗普的"求和"，而是其在军事和经济双重压力下的"务实止损"。但协议执行面临三重挑战：</p>
+<ol style="color:#c9d1d9; margin-left:20px; font-size:14px;">
+  <li><strong>以色列因素</strong>：内塔尼亚胡可能在美国国内通过共和党渠道施压，破坏60天谈判</li>
+  <li><strong>国内政治</strong>：2026年中期选举前，两党都可能将MOU作为竞选议题</li>
+  <li><strong>执行机制</strong>：MOU未明确规定违约惩罚机制，60天后如果谈判无果而终，重返冲突的代价更高</li>
+</ol>
+
+<h3>3.2 中国：最大"非战胜利者"</h3>
+
+<div class="card">
+<p>CNN在6月20日的分析标题直接点明：<strong class="highlight">"中国正在计算从伊朗战争中获得的收益"</strong>。多项分析认为，中国可能是这场冲突的最大受益者：</p>
+<ul style="color:#c9d1d9; font-size:14px; margin-left:20px; margin-top:8px;">
+  <li><strong class="positive">能源安全</strong>：海峡重新开放后，中国作为最大伊朗石油买家将获得稳定供应</li>
+  <li><strong class="positive">战略消耗</strong>：美国在冲突中消耗了大量武器储备和财政资源，从亚太转移了注意力</li>
+  <li><strong class="positive">叙事胜利</strong>：中国"主权不干涉"和"发展导向安全"的理念在全球南方更具吸引力</li>
+  <li><strong class="neutral">风险规避</strong>：中国明智地拒绝了伊朗要求的"担保人"角色，保持了战略灵活性</li>
+</ul>
+<p style="margin-top:8px;">但中国也面临挑战：如果60天后MOU未能落实、冲突重启，中国可能被迫升级介入；此外，美国在冲突后可能加强对华竞争作为"补偿"。</p>
+</div>
+
+<h3>3.3 俄罗斯：被边缘化的核担保人</h3>
+
+<div class="card">
+<p>俄罗斯在MOU进程中的角色可以概括为<strong class="highlight">"被排除在外的局内人"</strong>：</p>
+<ul style="color:#c9d1d9; font-size:14px; margin-left:20px; margin-top:8px;">
+  <li>普京5月9日"接收浓缩铀"的提议未被纳入MOU</li>
+  <li>巴基斯坦成为主要调解方（而非俄罗斯）</li>
+  <li>普京在喀山东盟峰会上的欢迎表态更多是出于"既然无法阻止，不如表示支持"的务实考量</li>
+  <li>MOU导致油价回落——减少了俄罗斯因高油价获得的额外能源收入</li>
+</ul>
+<p style="margin-top:8px;">俄罗斯的<strong>三种可能策略</strong>：(1) 接受现实，聚焦与伊朗的能源和军事技术合作；(2) 扮演"搅局者"——如果MOU破裂，重新以"不可或缺的调解方"身份介入；(3) 等待时机——利用60天谈判窗口寻找新的介入点。</p>
+</div>
+
+<h3>3.4 欧洲：从"战略自主"到"能源现实主义"的范式转换</h3>
+
+<div class="card">
+<p>欧洲的反应揭示了深层结构性转变：<strong class="highlight">"能源焦虑"压倒"战略自主"</strong>。</p>
+<p style="margin-top:8px;">MOU签署前，欧洲讨论的核心是"欧洲战略自主"和"核保护伞"；MOU签署后，焦点立刻转为"油价何时回落"和"通胀何时缓解"。马克龙在凡尔赛的欢迎表态、冯德莱恩关于"迅速执行"的呼吁——都透露出欧洲领袖在能源压力下的务实转向。</p>
+<p style="margin-top:6px;">但欧洲媒体（《世界报》《卫报》《明镜》）的尖锐批评表明，欧洲精英阶层对美国的战略信任已严重受损——即使MOU解决了短期能源危机，<span class="negative">"美国不可靠盟友"</span>的认知可能成为持久遗产。</p>
+</div>
+
+<h3>3.5 海湾国家：小国脆弱性的残酷暴露与战略对冲</h3>
+
+<div class="card">
+<p>5月27日特朗普威胁"轰炸阿曼"——这一事件对海湾国家的心理冲击可能超越MOU本身。</p>
+<ul style="color:#c9d1d9; font-size:14px; margin-left:20px; margin-top:8px;">
+  <li><strong>加速战略对冲</strong>：沙特、阿联酋、卡塔尔加速了与中国、俄罗斯、印度的能源合作谈判</li>
+  <li><strong>海湾合作委员会（GCC）凝聚力下降</strong>：科威特的安全利益与沙特/阿联酋的利益出现分化</li>
+  <li><strong>能源路线多元化</strong>：东西向管道扩建、富查伊拉港升级、红海替代航线投资的趋势将加速</li>
+  <li><strong>"不结盟"制度化</strong>：海湾国家可能在联合国等平台更频繁地投弃权票</li>
+</ul>
+</div>
+
+<h3>3.6 伊朗：在战术胜利与战略透支之间</h3>
+
+<div class="card">
+<p>从伊朗视角看，MOU是一次<strong class="highlight">"不对称谈判的战术成功"</strong>——通过封锁霍尔木兹海峡近4个月，伊朗迫使美国回到谈判桌并做出了包括石油豁免、制裁终止承诺在内的重大让步。但伊朗也付出了巨大代价：</p>
+<ul style="color:#c9d1d9; font-size:14px; margin-left:20px; margin-top:8px;">
+  <li><span class="negative">国际信誉受损</span>：5月疑似布设水雷和向科威特发射导弹消耗了国际信任</li>
+  <li><span class="negative">海峡封锁杠杆丧失</span>：MOU规定60天免费通行后，再用海峡做筹码的难度增大</li>
+  <li><span class="negative">核牌被部分没收</span>：虽未要求拆除核设施，但现场稀释浓缩铀将降低伊朗的核威慑力</li>
+  <li><span class="negative">内部权力斗争</span>：务实派（佩泽什基安）与强硬派（IRGC）的裂痕可能加剧</li>
+</ul>
+</div>
+
+<h3>3.7 四种情景展望</h3>
+
+<table class="scenario-table">
+<tr><th style="width:25%;">情景</th><th style="width:15%;">概率</th><th>核心假设</th><th>油价影响</th></tr>
+<tr>
+  <td><strong class="positive">A: 最低限度执行</strong></td>
+  <td><span class="tag tag-yellow">45%</span></td>
+  <td>60天内达成初步执行协议；海峡部分开放（50-80艘/天，战前的约1/2）；核谈判启动但无实质进展；停火60天后再次延期</td>
+  <td>$90-100/桶</td>
+</tr>
+<tr>
+  <td><strong class="negative">B: 谈判破裂</strong></td>
+  <td><span class="tag tag-red">25%</span></td>
+  <td>以色列/共和党强硬派施压特朗普退出；或伊朗强硬派否决协议；低强度冲突升级为有限军事打击</td>
+  <td>$130-150/桶</td>
+</tr>
+<tr>
+  <td><strong class="positive">C: 分阶段外交突破</strong></td>
+  <td><span class="tag tag-green">20%</span></td>
+  <td>MOU后巴基斯坦/卡塔尔继续调解；分阶段处理核问题：冻结高浓缩→讨论库存→全面制裁解除；需12-18个月</td>
+  <td>$80-90/桶</td>
+</tr>
+<tr>
+  <td><strong class="negative">D: 黑天鹅</strong></td>
+  <td><span class="tag tag-gray">10%</span></td>
+  <td>核设施遭袭导致放射性泄露；实际水雷造成长期封锁；区域外大国卷入</td>
+  <td>&gt;$200/桶</td>
+</tr>
+</table>
+
+<!-- ==================== PART 4: TIMELINE ==================== -->
+<h2>📅 第四部分：冲突时间线（2月28日 — 6月21日）</h2>
+
+<div class="timeline">
+
+<div class="timeline-item major">
+<div class="timeline-date">2026年2月28日</div>
+<div class="timeline-title">💥 冲突爆发：哈梅内伊遇袭身亡，美以发动大规模打击</div>
+<div class="timeline-desc">美国与以色列对伊朗发动代号"升旗之狮行动"和"午夜锤行动"的大规模空袭（200+飞机，100+目标）。伊朗最高领袖哈梅内伊在袭击中身亡，伊朗宣布封锁霍尔木兹海峡作为报复。</div>
+</div>
+
+<div class="timeline-item">
+<div class="timeline-date">3月初</div>
+<div class="timeline-title">全面升级：海峡封锁，油价飙升</div>
+<div class="timeline-desc">伊朗全面封锁霍尔木兹海峡，全球石油供应20%受阻。布伦特原油在数日内从$70飙升至$80+。全球股市暴跌。</div>
+</div>
+
+<div class="timeline-item">
+<div class="timeline-date">3月中下旬</div>
+<div class="timeline-title">中国撤侨，国际动员</div>
+<div class="timeline-desc">中国从伊朗撤侨3,000+人。美国组建海上联盟试图保障海峡航行。欧洲多国向塞浦路斯部署军事力量。</div>
+</div>
+
+<div class="timeline-item">
+<div class="timeline-date">4月8日</div>
+<div class="timeline-title">首次停火协议达成</div>
+<div class="timeline-desc">在多方斡旋下，美伊达成首次停火协议。但核心问题（海峡封锁、核计划、制裁）均未解决。</div>
+</div>
+
+<div class="timeline-item">
+<div class="timeline-date">4月中下旬</div>
+<div class="timeline-title">停火脆弱维持，谈判启动</div>
+<div class="timeline-desc">停火名义上维持，但双方互相指责违反。间接谈判通过巴基斯坦、阿曼渠道进行。</div>
+</div>
+
+<div class="timeline-item">
+<div class="timeline-date">5月2日</div>
+<div class="timeline-title">中国首次激活"阻断法令"</div>
+<div class="timeline-desc">中国首次激活反外国制裁的"阻断法令"，但后续使用低调——暗示中国不愿过度刺激美国。</div>
+</div>
+
+<div class="timeline-item">
+<div class="timeline-date">5月6日</div>
+<div class="timeline-title">伊朗总统访华寻求担保</div>
+<div class="timeline-desc">伊朗总统佩泽什基安访华，希望中国成为和平协议的"担保人"，但中方态度谨慎。</div>
+</div>
+
+<div class="timeline-item">
+<div class="timeline-date">5月12日</div>
+<div class="timeline-title">伊朗威胁将铀浓缩至90%</div>
+<div class="timeline-desc">伊朗宣布有能力将铀浓缩至90%武器级——可能是谈判策略而非真实意图。</div>
+</div>
+
+<div class="timeline-item">
+<div class="timeline-date">5月14-15日</div>
+<div class="timeline-title">中美北京峰会</div>
+<div class="timeline-desc">中美领导人北京会晤。在伊朗问题上仅达成"霍尔木兹海峡应保持自由通行"的原则共识；中国未成为"担保人"，贸易问题是真正焦点。</div>
+</div>
+
+<div class="timeline-item">
+<div class="timeline-date">5月24日</div>
+<div class="timeline-title">特朗普称"基本谈妥"</div>
+<div class="timeline-desc">特朗普公开表示和平协议"基本完成"，市场乐观情绪达到顶峰。</div>
+</div>
+
+<div class="timeline-item major">
+<div class="timeline-date">5月25日深夜</div>
+<div class="timeline-title">⚡ 美国发动"自卫打击"</div>
+<div class="timeline-desc">美国以"伊朗秘密布设水雷"为由，对伊朗南部发动突袭，摧毁多枚导弹发射阵地，攻击伊朗船只。和平进程濒临崩溃。</div>
+</div>
+
+<div class="timeline-item">
+<div class="timeline-date">5月27日</div>
+<div class="timeline-title">特朗普威胁轰炸阿曼</div>
+<div class="timeline-desc">特朗普威胁"如果阿曼不听话就炸了它"，财长贝森特威胁制裁阿曼。小国脆弱性被残酷暴露。</div>
+</div>
+
+<div class="timeline-item">
+<div class="timeline-date">5月28日</div>
+<div class="timeline-title">📄 临时协议文本达成（但同日交火）</div>
+<div class="timeline-desc">美伊谈判代表达成临时协议文本：60天停火延期、海峡开放、核谈判启动。但同日伊朗向科威特发射导弹（被拦截）、美国击落5架伊朗无人机并摧毁阿巴斯港控制站。特朗普尚未签字，伊朗称文本未定稿。</div>
+</div>
+
+<div class="timeline-item">
+<div class="timeline-date">6月初</div>
+<div class="timeline-title">文本敲定阶段，巴基斯坦穿梭外交</div>
+<div class="timeline-desc">巴基斯坦外长在华盛顿、德黑兰之间穿梭。MOU文本在伊斯兰堡最终敲定，故名"伊斯兰堡备忘录"。</div>
+</div>
+
+<div class="timeline-item breakthrough">
+<div class="timeline-date">6月17-18日</div>
+<div class="timeline-title">✅ MOU正式签署：历史性突破</div>
+<div class="timeline-desc">特朗普与佩泽什基安在法国凡尔赛宫（马克龙见证下）电子签署《伊斯兰堡谅解备忘录》。14点文件明确：<br>
+- <span class="positive">立即永久停止所有战线军事行动（含黎巴嫩）</span><br>
+- <span class="positive">美国30天内解除海军封锁</span><br>
+- <span class="positive">伊朗30天内恢复海峡通航，60天免费通行</span><br>
+- <span class="positive">美国立即发放石油制裁豁免</span><br>
+- <span class="positive">伊朗承诺不发展核武器，现场稀释浓缩铀（IAEA监督）</span><br>
+- <span class="positive">60天内谈判最终协议（可延期）</span><br>
+巴基斯坦作为调解方共同签署。</div>
+</div>
+
+<div class="timeline-item">
+<div class="timeline-date">6月18-21日</div>
+<div class="timeline-title">🌍 全球反应密集释放</div>
+<div class="timeline-desc">联合国、欧盟、G7、中国、俄罗斯、海湾国家、日本等密集表态欢迎。欧洲媒体（《世界报》《卫报》《明镜》）尖锐批评。以色列公开谴责。油市反应：布伦特原油回落至$95-100/桶。霍尔木兹海峡航运开始逐步恢复。</div>
+</div>
+
+<div class="timeline-item">
+<div class="timeline-date">6月21日（本报告日）</div>
+<div class="timeline-title">状态：60天谈判窗口开启</div>
+<div class="timeline-desc">MOU已签署4天。伊朗首席谈判代表加利巴夫称"海峡不会回到战前状态，将收取服务费"。全球等待60天谈判的结果。本报告发布。</div>
+</div>
+
+</div>
+
+<!-- ==================== APPENDIX ==================== -->
+<h2>📎 附录</h2>
+
+<h3>A. MOU 14点核心条款速览</h3>
+<table>
+<tr><th>条款</th><th>内容</th><th>执行状态</th></tr>
+<tr><td>1</td><td>立即永久停止所有战线军事行动（含黎巴嫩）</td><td><span class="positive">已生效</span></td></tr>
+<tr><td>2</td><td>尊重主权和领土完整，互不干涉内政</td><td><span class="positive">已生效</span></td></tr>
+<tr><td>3</td><td>60天内达成最终协议（可延期）</td><td><span class="tag tag-yellow">进行中</span></td></tr>
+<tr><td>4</td><td>美国30天内解除海军封锁</td><td><span class="tag tag-yellow">进行中</span></td></tr>
+<tr><td>5</td><td>伊朗30天内恢复海峡通航，60天免费；与阿曼协商未来管理</td><td><span class="tag tag-yellow">进行中</span></td></tr>
+<tr><td>6</td><td>停止针对对方及其盟友的网络攻击</td><td><span class="positive">已生效</span></td></tr>
+<tr><td>7</td><td>美国按商定时间表终止所有制裁（含联合国、IAEA、单边）</td><td><span class="tag tag-yellow">待谈判</span></td></tr>
+<tr><td>8</td><td>伊朗不发展核武器；现场稀释浓缩铀（IAEA监督）</td><td><span class="tag tag-yellow">待谈判</span></td></tr>
+<tr><td>9</td><td>维持核计划现状；美国不增加新制裁和军事部署</td><td><span class="positive">已生效</span></td></tr>
+<tr><td>10</td><td>美国财政部立即发放石油出口豁免</td><td><span class="positive">已生效</span></td></tr>
+<tr><td>11</td><td>美国解冻伊朗海外资产（韩国、伊拉克等）</td><td><span class="tag tag-yellow">待执行</span></td></tr>
+<tr><td>12</td><td>释放囚犯</td><td><span class="tag tag-yellow">待执行</span></td></tr>
+<tr><td>13</td><td>伊朗不承认以色列并维持现有立场</td><td><span class="neutral">无变化</span></td></tr>
+<tr><td>14</td><td>最终协议需联合国安理会决议背书</td><td><span class="tag tag-yellow">待60天后</span></td></tr>
+</table>
+
+<h3>B. 冲突经济影响数据汇总</h3>
+<table>
+<tr><th>指标</th><th>战前（2026.2）</th><th>冲突高峰</th><th>MOU后（2026.6.21）</th></tr>
+<tr><td>布伦特原油</td><td>~$70/桶</td><td>$107/桶（5月）</td><td>$95-100/桶</td></tr>
+<tr><td>美国汽油价格</td><td>$2.98/加仑</td><td>$4.60/加仑</td><td>~$4.20/加仑</td></tr>
+<tr><td>美国战略石油储备消耗</td><td>—</td><td>5000万桶（月消耗1700万桶）</td><td>消耗放缓</td></tr>
+<tr><td>霍尔木兹海峡航运量</td><td>正常（1700万桶/日）</td><td>近乎停滞</td><td>逐步恢复中</td></tr>
+<tr><td>冲突持续天数（截至6月21日）</td><td>—</td><td>—</td><td>113天</td></tr>
+</table>
+
+<h3>C. 主要信息来源</h3>
+<table>
+<tr><th>领域</th><th>来源</th></tr>
+<tr><td>官方文本</td><td>白宫声明、CNN/BBC/纽约时报全文发布、Foreign Policy</td></tr>
+<tr><td>能源数据</td><td>EIA、彭博社、路透社</td></tr>
+<tr><td>民意调查</td><td>Silver Bulletin、Ipsos、Reuters/Ipsos、Pew Research、Marist</td></tr>
+<tr><td>外交动态</td><td>中国外交部、美国国务院、伊朗外交部、巴基斯坦外交部公开声明</td></tr>
+<tr><td>媒体分析</td><td>CNN、BBC、Al Jazeera、Le Monde、Der Spiegel、The Guardian、新华社、环球网</td></tr>
+<tr><td>战略分析</td><td>Atlantic Council、Time Magazine、Foreign Policy</td></tr>
+</table>
+
+<p style="text-align:center; color:#6e7681; margin-top:40px; padding-top:20px; border-top:1px solid #30363d; font-size:12px;">
+报告完成日期：2026年6月21日 | 基于前期报告（5月29日版）更新 | 报告基于公开来源分析，仅供研究参考
+</p>
+
+</body>
+</html>

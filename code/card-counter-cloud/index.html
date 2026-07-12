@@ -50,6 +50,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .sort-btn.active{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
 .empty-state{text-align:center;padding:40px 20px;color:var(--text-2)}
 .empty-state .icon{font-size:40px;margin-bottom:12px}
+/* Progress bars */
+.progress-bar{height:8px;background:#eee;border-radius:4px;overflow:hidden;margin:4px 0}
+.progress-bar .fill{height:100%;border-radius:4px;transition:width .3s}
+.progress-bar .fill.green{background:var(--green)}
+.progress-bar .fill.orange{background:var(--orange)}
+.progress-bar .fill.red{background:var(--red)}
+.progress-bar .fill.blue{background:var(--primary)}
 
 /* Modal */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;justify-content:center;align-items:center}
@@ -384,15 +391,21 @@ async function syncFromCloud() {
         Object.assign(local, cloudQuota); changed = true;
       }
     }
-    // Merge checkins
+    // Merge checkins (updatedAt comparison for existing records)
     for (const cloudCi of cRes.data) {
-      const local = localData.checkins.find(c => c.localId === cloudCi.localId);
-      if (!local) { localData.checkins.push(cloudCi); changed = true; }
+      const local = localData.checkins.findIndex(c => c.localId === cloudCi.localId);
+      if (local === -1) { localData.checkins.push(cloudCi); changed = true; }
+      else if ((cloudCi.updatedAt || 0) > (localData.checkins[local].updatedAt || 0)) {
+        localData.checkins[local] = cloudCi; changed = true;
+      }
     }
-    // Merge ratings
+    // Merge ratings (updatedAt comparison for existing records)
     for (const cloudR of rRes.data) {
-      const local = localData.ratings.find(r => r.localId === cloudR.localId);
-      if (!local) { localData.ratings.push(cloudR); changed = true; }
+      const local = localData.ratings.findIndex(r => r.localId === cloudR.localId);
+      if (local === -1) { localData.ratings.push(cloudR); changed = true; }
+      else if ((cloudR.updatedAt || 0) > (localData.ratings[local].updatedAt || 0)) {
+        localData.ratings[local] = cloudR; changed = true;
+      }
     }
     if (changed) saveLocal();
     updateSyncStatus('connected', '已同步 ' + new Date().toLocaleTimeString());
@@ -601,11 +614,20 @@ function renderStatsTab() {
     if (merchantStats[r.merchant]) merchantStats[r.merchant].rating = r.score;
   });
 
-  let html = '<h3 style="font-size:14px;margin:16px 0 8px">📊 商家统计</h3>';
+  let html = '<h3 style="font-size:14px;margin:16px 0 8px">📊 商家使用进度</h3>';
   html += Object.values(merchantStats).map(m => {
-    return `<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--surface);border-radius:8px;margin-bottom:4px;font-size:13px">
-      <span>${esc(m.merchant)} ${m.rating ? renderStars(m.rating, false) : ''}</span>
-      <span>已用 ${m.used}/${m.total} · 剩余 ${m.remaining}</span>
+    const pct = m.total > 0 ? Math.round((m.used / m.total) * 100) : 0;
+    const barColor = pct >= 80 ? 'green' : pct >= 50 ? 'orange' : 'blue';
+    return `<div style="padding:8px 12px;background:var(--surface);border-radius:8px;margin-bottom:6px;font-size:13px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+        <span>${esc(m.merchant)} ${m.rating ? renderStars(m.rating, false) : ''}</span>
+        <span>${m.used}/${m.total} 次</span>
+      </div>
+      <div class="progress-bar"><div class="fill ${barColor}" style="width:${pct}%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-2)">
+        <span>已用 ${pct}%</span>
+        <span>剩余 ${m.remaining} 次</span>
+      </div>
     </div>`;
   }).join('');
 

@@ -29,9 +29,9 @@
     "id": "70946f7a-6f1a-43a6-8ee5-bc2358bf1f19",
     "merchant": "游泳馆",
     "item": "游泳次卡",
-    "amount": 800.0,
+    "amount": 850.0,
     "total_count": 30,
-    "remaining_count": 22,
+    "remaining_count": 21,
     "expiration": "2026-12-31",
     "notes": "",
     "preferences": {
@@ -46,10 +46,65 @@
         "date": "2026-07-12T19:21:53",
         "count": 3,
         "notes": "XX游泳馆"
+      },
+      {
+        "date": "2026-07-12T19:43:22",
+        "count": 1,
+        "notes": ""
+      }
+    ],
+    "rating": 5,
+    "created_at": "2026-07-12T19:21:36",
+    "updated_at": "2026-07-12T19:43:26"
+  },
+  {
+    "id": "1ca53b26-8ad5-41a1-b057-c050dd7201d7",
+    "merchant": "新商家",
+    "item": "新项目",
+    "amount": 0.0,
+    "total_count": 5,
+    "remaining_count": 5,
+    "expiration": "",
+    "notes": "",
+    "preferences": {
+      "days": [
+        "weekend"
+      ]
+    },
+    "checkins": [],
+    "rating": null,
+    "created_at": "2026-07-12T19:43:26",
+    "updated_at": "2026-07-12T19:43:26"
+  },
+  {
+    "id": "48df1109-781b-4abe-93ff-7e34f886c507",
+    "merchant": "武术课",
+    "item": "1",
+    "amount": 3200.0,
+    "total_count": 30,
+    "remaining_count": 28,
+    "expiration": "2026-12-31",
+    "notes": "",
+    "preferences": {
+      "days": [
+        "weekend",
+        "winter_summer"
+      ]
+    },
+    "checkins": [
+      {
+        "date": "2026-07-12T19:58:29",
+        "count": 1,
+        "notes": ""
+      },
+      {
+        "date": "2026-07-12T19:58:43",
+        "count": 1,
+        "notes": ""
       }
     ],
     "rating": 4,
-    "created_at": "2026-07-12T19:21:36",
-    "updated_at": "2026-07-12T19:22:09"
+    "created_at": "2026-07-12T19:58:04",
+    "updated_at": "2026-07-12T20:04:50"
   }
 ]

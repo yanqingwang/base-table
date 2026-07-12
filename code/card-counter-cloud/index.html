@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>次卡管家 — Card Counter</title>
+<!-- CloudBase JS SDK -->
+<script src="https://unpkg.com/@cloudbase/js-sdk@1.14.0/lib/cloudbase-js-sdk.umd.min.js"></script>
+<style>
+:root{--bg:#f5f5f7;--surface:#fff;--surface-2:#f8f8fa;--primary:#5b5fc7;--primary-light:#eef0ff;--primary-dark:#4347a0;--red:#e74c3c;--green:#27ae60;--orange:#f39c12;--gray:#999;--text:#1d1d1f;--text-2:#6e6e73;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.08)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding:0}
+.container{max-width:960px;margin:0 auto;padding:16px}
+.tab-bar{display:flex;background:var(--surface);border-bottom:1px solid #eee;position:sticky;top:0;z-index:50}
+.tab{flex:1;padding:12px;text-align:center;cursor:pointer;font-size:14px;font-weight:500;color:var(--text-2);border-bottom:2px solid transparent;transition:.2s}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.header h1{font-size:20px;font-weight:700}
+.btn{display:inline-flex;align-items:center;gap:4px;padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;transition:.2s}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-dark)}
+.btn-outline{background:transparent;border:1px solid var(--primary);color:var(--primary)}
+.btn-outline:hover{background:var(--primary-light)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-sm{padding:4px 10px;font-size:12px}
+.stats-bar{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.stat{padding:12px 16px;background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);flex:1;min-width:100px}
+.stat strong{font-size:24px;display:block;color:var(--primary)}
+.stat .label{font-size:12px;color:var(--text-2)}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:16px}
+.card-item{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;position:relative}
+.card-item.expired{opacity:.6;border-left:3px solid var(--red)}
+.card-item.low{background:#fff8f0;border-left:3px solid var(--orange)}
+.card-item.bad{border-left:3px solid var(--red)}
+.card-merchant{font-size:16px;font-weight:600}
+.card-merchant .badge{display:inline-block;background:var(--red);color:#fff;font-size:10px;padding:1px 6px;border-radius:8px;margin-left:6px;vertical-align:middle}
+.card-item-text{font-size:12px;color:var(--text-2);margin:4px 0}
+.card-count{font-size:26px;font-weight:700;color:var(--primary)}
+.card-count .total{font-size:14px;color:var(--text-2);font-weight:400}
+.card-exp{font-size:11px;color:var(--text-2);margin:4px 0}
+.card-exp.warning{color:var(--red);font-weight:500}
+.card-suggestion{font-size:11px;color:var(--text-2);background:var(--surface-2);padding:6px 8px;border-radius:6px;margin:8px 0;line-height:1.4}
+.card-actions{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.star{color:#ddd;font-size:16px;cursor:pointer}
+.star.active{color:#f1c40f}
+.sort-bar{display:flex;gap:4px;align-items:center;margin-bottom:12px;font-size:12px;flex-wrap:wrap}
+.sort-btn{padding:4px 10px;border:1px solid #ddd;border-radius:6px;background:var(--surface);cursor:pointer;font-size:12px}
+.sort-btn.active{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-2)}
+.empty-state .icon{font-size:40px;margin-bottom:12px}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;justify-content:center;align-items:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius);box-shadow:0 8px 40px rgba(0,0,0,.2);padding:24px;width:90%;max-width:500px;max-height:85vh;overflow-y:auto}
+.modal h2{font-size:18px;margin-bottom:16px}
+.modal-close{float:right;background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-2)}
+.form-group{margin-bottom:12px}
+.form-group label{display:block;font-size:12px;font-weight:500;color:var(--text-2);margin-bottom:4px}
+.form-group input,.form-group textarea,.form-group select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:14px;font-family:inherit}
+.form-group input:focus,.form-group textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light)}
+.form-row{display:flex;gap:8px}
+.form-row .form-group{flex:1}
+.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.cb-group{display:flex;gap:10px;flex-wrap:wrap;font-size:13px}
+.cb-group label{display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400;color:var(--text)}
+.cb-group input{width:14px;height:14px;accent-color:var(--primary)}
+
+/* Checkin counter */
+.checkin-counter{display:flex;align-items:center;gap:10px;justify-content:center;margin:12px 0}
+.checkin-counter button{width:36px;height:36px;border-radius:50%;border:1px solid #ddd;background:var(--surface);font-size:18px;cursor:pointer}
+.checkin-counter .count{font-size:28px;font-weight:700;min-width:36px;text-align:center;color:var(--primary)}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* Sync indicator */
+.sync-bar{display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:12px;font-size:12px}
+.sync-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.sync-dot.green{background:var(--green)}
+.sync-dot.red{background:var(--red)}
+.sync-dot.yellow{background:var(--orange)}
+
+@media(max-width:640px){.card-grid{grid-template-columns:1fr}.form-row{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<div class="tab-bar" id="tabBar">
+  <div class="tab active" data-tab="overview" onclick="switchTab('overview')">📊 总览</div>
+  <div class="tab" data-tab="checkin" onclick="switchTab('checkin')">✅ 签到</div>
+  <div class="tab" data-tab="stats" onclick="switchTab('stats')">📈 统计</div>
+  <div class="tab" data-tab="reviews" onclick="switchTab('reviews')">⭐ 评价</div>
+  <div class="tab" data-tab="settings" onclick="switchTab('settings')">⚙️ 我的</div>
+</div>
+
+<div class="container">
+
+<!-- ==================== OVERVIEW TAB ==================== -->
+<div class="tab-content active" id="tab-overview">
+  <div class="header">
+    <h1>📇 次卡管家</h1>
+    <button class="btn btn-primary btn-sm" onclick="openQuotaForm()">+ 新增配额</button>
+  </div>
+
+  <div class="stats-bar" id="statsBar">
+    <div class="stat"><strong id="statTotal">0</strong><span class="label">总配额</span></div>
+    <div class="stat"><strong id="statRemaining">0</strong><span class="label">剩余次数</span></div>
+    <div class="stat"><strong id="statExpiring">0</strong><span class="label">即将到期</span></div>
+  </div>
+
+  <div class="sort-bar">
+    <span style="color:var(--text-2);margin-right:4px">排序:</span>
+    <button class="sort-btn active" onclick="setSort('created')">最新</button>
+    <button class="sort-btn" onclick="setSort('expire')">到期</button>
+    <button class="sort-btn" onclick="setSort('remaining')">剩余</button>
+    <button class="sort-btn" onclick="setSort('rating')">评分</button>
+  </div>
+
+  <div id="overviewGrid" class="card-grid"></div>
+  <div id="overviewEmpty" class="empty-state" style="display:none">
+    <div class="icon">📭</div>
+    <p>还没有配额记录<br>点击上方"新增配额"开始使用</p>
+  </div>
+</div>
+
+<!-- ==================== CHECKIN TAB ==================== -->
+<div class="tab-content" id="tab-checkin">
+  <div class="header"><h1>✅ 签到</h1></div>
+  <div id="checkinQuotaList"></div>
+  <div id="checkinEmpty" class="empty-state" style="display:none">
+    <div class="icon">📭</div>
+    <p>没有进行中的配额<br>请先在总览页面添加配额</p>
+  </div>
+  <div style="margin-top:16px">
+    <h3 style="font-size:14px;margin-bottom:8px">📋 今日签到记录</h3>
+    <div id="todayCheckins"></div>
+  </div>
+</div>
+
+<!-- ==================== STATS TAB ==================== -->
+<div class="tab-content" id="tab-stats">
+  <div class="header"><h1>📈 统计</h1></div>
+  <div id="statsContent">
+    <div class="stats-bar" id="detailStatsBar">
+      <div class="stat"><strong id="statTotalQuota">0</strong><span class="label">总配额</span></div>
+      <div class="stat"><strong id="statUsed">0</strong><span class="label">已用次数</span></div>
+      <div class="stat"><strong id="statRemainTotal">0</strong><span class="label">剩余次数</span></div>
+    </div>
+    <div id="statsDetail"></div>
+  </div>
+</div>
+
+<!-- ==================== REVIEWS TAB ==================== -->
+<div class="tab-content" id="tab-reviews">
+  <div class="header"><h1>⭐ 评价</h1></div>
+  <div id="reviewList"></div>
+  <div id="reviewEmpty" class="empty-state" style="display:none">
+    <div class="icon">⭐</div>
+    <p>还没有评价<br>签到后可对商家评分</p>
+  </div>
+</div>
+
+<!-- ==================== SETTINGS TAB ==================== -->
+<div class="tab-content" id="tab-settings">
+  <div class="header"><h1>⚙️ 设置</h1></div>
+  <div class="sync-bar" id="syncBar">
+    <span class="sync-dot" id="syncDot"></span>
+    <span id="syncStatus">同步状态检查中...</span>
+    <button class="btn btn-sm btn-outline" onclick="manualSync()" style="margin-left:auto">手动同步</button>
+  </div>
+
+  <div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px">
+    <h3 style="font-size:14px;margin-bottom:12px">☁️ 云端配置</h3>
+    <div class="form-group"><label>CloudBase 环境ID</label>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="tcbEnvId" placeholder="如：my-app-123abc" style="flex:1">
+        <button class="btn btn-primary btn-sm" onclick="saveEnvId()">保存</button>
+      </div>
+    </div>
+    <p style="font-size:11px;color:var(--text-2);margin-top:4px">在腾讯云 CloudBase 控制台创建环境后，将环境ID填入此处启用云端同步</p>
+  </div>
+
+  <div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px">
+    <h3 style="font-size:14px;margin-bottom:12px">📅 学习规划配置</h3>
+    <div class="form-group"><label>周末时段</label><input type="text" id="prefWeekend" placeholder="如：周六上午9-11点，周日下午3-5点"></div>
+    <div class="form-group"><label>寒暑假时段</label><input type="text" id="prefHoliday" placeholder="如：每天上午9-11点，下午2-4点"></div>
+    <div class="form-row">
+      <div class="form-group"><label>工作日权重</label><input type="number" id="weightWeekday" value="1" min="0" step="0.5"></div>
+      <div class="form-group"><label>周末权重</label><input type="number" id="weightWeekend" value="2" min="0" step="0.5"></div>
+      <div class="form-group"><label>寒暑假权重</label><input type="number" id="weightHoliday" value="1.5" min="0" step="0.5"></div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="savePreferences()">保存偏好</button>
+  </div>
+
+  <div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px">
+    <h3 style="font-size:14px;margin-bottom:8px">💾 数据管理</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-outline btn-sm" onclick="exportData()">导出备份</button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('importFile').click()">导入恢复</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+      <button class="btn btn-danger btn-sm" onclick="resetData()">重置数据</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- ==================== MODALS ==================== -->
+
+<!-- Quota Form Modal -->
+<div class="modal-overlay" id="quotaModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('quotaModal')">&times;</button>
+    <h2 id="quotaFormTitle">新增配额</h2>
+    <form onsubmit="saveQuota(event)">
+      <input type="hidden" id="quotaFormId">
+      <div class="form-group"><label>商家名称 *</label><input type="text" id="fMerchant" required placeholder="如：超级健身工作室"></div>
+      <div class="form-group"><label>具体事项 *</label><input type="text" id="fItem" required placeholder="如：私教课（1小时）"></div>
+      <div class="form-row">
+        <div class="form-group"><label>金额 (元)</label><input type="number" id="fAmount" min="0" step="0.01"></div>
+        <div class="form-group"><label>总次数 *</label><input type="number" id="fTotalTimes" min="1" value="10" required></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>到期时间</label><input type="date" id="fExpireDate"></div>
+        <div class="form-group"><label>已用次数</label><input type="number" id="fUsedTimes" min="0" value="0"></div>
+      </div>
+      <div class="form-group"><label>学习偏好</label>
+        <div class="cb-group" id="fPrefDays">
+          <label><input type="checkbox" value="weekend" checked> 周末</label>
+          <label><input type="checkbox" value="weekday"> 工作日</label>
+          <label><input type="checkbox" value="holiday"> 假期</label>
+          <label><input type="checkbox" value="winter_summer"> 寒暑假</label>
+        </div>
+      </div>
+      <div class="form-group"><label>备注</label><textarea id="fNotes" rows="2"></textarea></div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('quotaModal')">取消</button>
+        <button type="submit" class="btn btn-primary">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Checkin Modal -->
+<div class="modal-overlay" id="checkinModal">
+  <div class="modal" style="max-width:380px">
+    <button class="modal-close" onclick="closeCheckin()">&times;</button>
+    <h2>✅ 签到</h2>
+    <p id="checkinInfo" style="font-size:13px;margin-bottom:12px;color:var(--text-2)"></p>
+    <div class="form-group"><label>商家名称（可选）</label><input type="text" id="checkinMerchant" placeholder="本次消费商家"></div>
+    <div class="checkin-counter">
+      <button onclick="adjCheckin(-1)">−</button>
+      <span class="count" id="checkinCount">1</span>
+      <button onclick="adjCheckin(1)">+</button>
+    </div>
+    <p style="text-align:center;font-size:11px;color:var(--text-2)">扣减次数</p>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeCheckin()">取消</button>
+      <button class="btn btn-primary" onclick="confirmCheckin()">确认签到</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('detailModal')">&times;</button>
+    <h2 id="detailTitle">详情</h2>
+    <div id="detailContent"></div>
+    <div class="form-actions"><button class="btn btn-primary" onclick="closeModal('detailModal')">关闭</button></div>
+  </div>
+</div>
+
+<!-- Review Modal -->
+<div class="modal-overlay" id="reviewModal">
+  <div class="modal" style="max-width:360px">
+    <button class="modal-close" onclick="closeModal('reviewModal')">&times;</button>
+    <h2>⭐ 评价商家</h2>
+    <p id="reviewMerchant" style="font-size:13px;margin-bottom:12px;color:var(--text-2)"></p>
+    <div style="text-align:center;font-size:32px;margin:16px 0">
+      <span class="star" data-v="1" onclick="setReviewStar(1)">★</span>
+      <span class="star" data-v="2" onclick="setReviewStar(2)">★</span>
+      <span class="star" data-v="3" onclick="setReviewStar(3)">★</span>
+      <span class="star" data-v="4" onclick="setReviewStar(4)">★</span>
+      <span class="star" data-v="5" onclick="setReviewStar(5)">★</span>
+    </div>
+    <div class="form-group"><label>评价内容（可选）</label><textarea id="reviewComment" rows="2"></textarea></div>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeModal('reviewModal')">取消</button>
+      <button class="btn btn-primary" onclick="confirmReview()">提交</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+const LOCAL_KEY = 'card_counter_data';
+let app = null;
+let db = null;
+let cloudEnabled = false;
+let localData = { quotas: [], checkins: [], ratings: [], preferences: {}, syncStatus: {} };
+let currentSort = 'created';
+let checkinTargetId = null;
+let reviewTargetId = null;
+let reviewStar = 0;
+
+// ═══════════════════════════════════════════════════════════
+// CLOUDBASE INIT
+// ═══════════════════════════════════════════════════════════
+function initCloudBase() {
+  // Configure these after creating CloudBase env
+  const envId = localStorage.getItem('tcb_envId') || '';
+  if (!envId) { updateSyncStatus('disconnected', '未配置云端'); return; }
+  try {
+    app = cloudbase.init({ env: envId });
+    app.auth({ persistence: 'local' }).anonymousAuthProvider().signIn().then(() => {
+      db = app.database();
+      cloudEnabled = true;
+      updateSyncStatus('connected', '云端已连接');
+      syncFromCloud();
+    }).catch(e => {
+      updateSyncStatus('disconnected', '云端认证失败: '+e.message);
+    });
+  } catch(e) {
+    updateSyncStatus('disconnected', 'SDK错误: '+e.message);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// LOCAL DATA
+// ═══════════════════════════════════════════════════════════
+function loadLocal() {
+  try {
+    const raw = localStorage.getItem(LOCAL_KEY);
+    if (raw) localData = JSON.parse(raw);
+  } catch(e) {}
+  if (!localData.quotas) localData.quotas = [];
+  if (!localData.checkins) localData.checkins = [];
+  if (!localData.ratings) localData.ratings = [];
+  if (!localData.preferences) localData.preferences = { weekendHours: '', holidayHours: '', weekdayWeight: 1, weekendWeight: 2, holidayWeight: 1.5 };
+  if (!localData.syncStatus) localData.syncStatus = { lastSyncTime: 0, hasPendingSync: false };
+}
+
+function saveLocal() {
+  localStorage.setItem(LOCAL_KEY, JSON.stringify(localData));
+}
+
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+// ═══════════════════════════════════════════════════════════
+// CLOUD SYNC
+// ═══════════════════════════════════════════════════════════
+function updateSyncStatus(status, msg) {
+  const dot = document.getElementById('syncDot');
+  const txt = document.getElementById('syncStatus');
+  dot.className = 'sync-dot ' + status;
+  txt.textContent = msg;
+}
+
+async function syncFromCloud() {
+  if (!cloudEnabled || !db) return;
+  try {
+    // Pull quotas
+    const qRes = await db.collection('quotas').get();
+    const cRes = await db.collection('checkins').get();
+    const rRes = await db.collection('ratings').get();
+
+    let changed = false;
+    // Merge quotas
+    for (const cloudQuota of qRes.data) {
+      const local = localData.quotas.find(q => q.localId === cloudQuota.localId);
+      if (!local) {
+        localData.quotas.push(cloudQuota); changed = true;
+      } else if ((cloudQuota.updatedAt || 0) > (local.updatedAt || 0)) {
+        Object.assign(local, cloudQuota); changed = true;
+      }
+    }
+    // Merge checkins
+    for (const cloudCi of cRes.data) {
+      const local = localData.checkins.find(c => c.localId === cloudCi.localId);
+      if (!local) { localData.checkins.push(cloudCi); changed = true; }
+    }
+    // Merge ratings
+    for (const cloudR of rRes.data) {
+      const local = localData.ratings.find(r => r.localId === cloudR.localId);
+      if (!local) { localData.ratings.push(cloudR); changed = true; }
+    }
+    if (changed) saveLocal();
+    updateSyncStatus('connected', '已同步 ' + new Date().toLocaleTimeString());
+    renderAll();
+  } catch(e) {
+    updateSyncStatus('yellow', '同步失败: '+e.message);
+  }
+}
+
+async function pushToCloud(collection, data) {
+  if (!cloudEnabled || !db) return;
+  try {
+    const existing = await db.collection(collection).where({ localId: data.localId }).get();
+    if (existing.data.length > 0) {
+      await db.collection(collection).doc(existing.data[0]._id).update(data);
+    } else {
+      await db.collection(collection).add(data);
+    }
+  } catch(e) {
+    localData.syncStatus.hasPendingSync = true;
+    saveLocal();
+  }
+}
+
+async function manualSync() {
+  updateSyncStatus('yellow', '同步中...');
+  // Push pending local changes
+  for (const q of localData.quotas) await pushToCloud('quotas', q);
+  for (const c of localData.checkins) await pushToCloud('checkins', c);
+  for (const r of localData.ratings) await pushToCloud('ratings', r);
+  await syncFromCloud();
+  toast('同步完成');
+}
+
+// ═══════════════════════════════════════════════════════════
+// QUOTA HELPERS
+// ═══════════════════════════════════════════════════════════
+function calcStatus(q) {
+  if (q.usedTimes >= q.totalTimes) return '已用完';
+  if (q.expireDate && q.expireDate < todayStr()) return '已过期';
+  return '进行中';
+}
+
+function todayStr() {
+  const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function remaining(q) { return q.totalTimes - (q.usedTimes || 0); }
+
+function daysUntil(exp) {
+  if (!exp) return null;
+  return Math.ceil((new Date(exp+'T23:59:59') - new Date()) / 86400000);
+}
+
+function calcSuggestion(q) {
+  const rem = remaining(q);
+  if (rem <= 0) return '已用完，无需安排';
+  const du = daysUntil(q.expireDate);
+  if (du !== null && du < 0) return '❌ 已过期' + Math.abs(du) + '天（剩余'+rem+'次）';
+  if (du !== null && du <= 7) return '⚠️ 即将到期！建议'+du+'天内用完剩余'+rem+'次（每天至少'+Math.ceil(rem/du)+'次）';
+  if (du !== null && du <= 30) {
+    const pw = Math.ceil(rem / Math.ceil(du/7));
+    return '⚠️ 距到期'+du+'天，建议每周至少'+pw+'次';
+  }
+  // Weighted calculation
+  const pref = localData.preferences;
+  const wDay = pref.weekdayWeight || 1;
+  const wEnd = pref.weekendWeight || 2;
+  const wHol = pref.holidayWeight || 1.5;
+  // Count days in next 30 days by type
+  let weekendDays = 0, holidayDays = 0, weekdayDays = 0;
+  const now = new Date();
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(now); d.setDate(d.getDate()+i);
+    const day = d.getDay();
+    if (day === 0 || day === 6) weekendDays++;
+    else weekdayDays++;
+  }
+  const weightedDays = weekdayDays * wDay + weekendDays * wEnd + holidayDays * wHol;
+  const interval = Math.ceil(weightedDays / rem);
+  return '建议每' + interval + '天参加一次（剩余'+rem+'次）';
+}
+
+function renderStars(rating, clickable, onChange) {
+  let h = '';
+  for (let i = 1; i <= 5; i++) {
+    const cls = 'star' + (i <= rating ? ' active' : '');
+    h += '<span class="'+cls+'" data-v="'+i+'"';
+    if (clickable) h += ' onclick="'+onChange+'('+i+')"';
+    h += '>★</span>';
+  }
+  return h;
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════
+function renderAll() { renderOverview(); renderCheckinTab(); renderStatsTab(); renderReviewTab(); }
+
+// ── Overview ──
+function renderOverview() {
+  const quotas = localData.quotas;
+  document.getElementById('statTotal').textContent = quotas.length;
+  document.getElementById('statRemaining').textContent = quotas.reduce((s,q) => s + remaining(q), 0);
+  document.getElementById('statExpiring').textContent = quotas.filter(q => {
+    const du = daysUntil(q.expireDate); return du !== null && du >= 0 && du <= 14;
+  }).length;
+
+  const empty = document.getElementById('overviewEmpty');
+  const grid = document.getElementById('overviewGrid');
+  if (quotas.length === 0) { empty.style.display = 'block'; grid.innerHTML = ''; return; }
+  empty.style.display = 'none';
+
+  const sorted = [...quotas].sort((a,b) => {
+    switch(currentSort) {
+      case 'expire': return (a.expireDate||'9999').localeCompare(b.expireDate||'9999');
+      case 'remaining': return remaining(a) - remaining(b);
+      case 'rating': {
+        const ra = localData.ratings.find(r => r.merchant === a.merchant);
+        const rb = localData.ratings.find(r => r.merchant === b.merchant);
+        return (ra ? ra.score : 999) - (rb ? rb.score : 999);
+      }
+      default: return 0; // created order
+    }
+  });
+
+  grid.innerHTML = sorted.map(q => {
+    const rem = remaining(q);
+    const status = calcStatus(q);
+    const du = daysUntil(q.expireDate);
+    const exp = q.expireDate ? `<div class="card-exp${du !== null && du <= 14 ? ' warning' : ''}">到期: ${q.expireDate}${du !== null ? ' ('+(du>0?du+'天后':'已过期')+')' : ''}</div>` : '';
+    const cls = status === '已过期' ? 'card-item expired' : (status === '已用完' ? 'card-item expired' : (rem <= Math.ceil(q.totalTimes*0.2) ? 'card-item low' : 'card-item'));
+    const rating = localData.ratings.find(r => r.merchant === q.merchant);
+    const isBad = rating && rating.score <= 2;
+    const finalCls = isBad ? cls + ' bad' : cls;
+    const badge = isBad ? '<span class="badge">⚠️ 避雷</span>' : '';
+    const suggestion = calcSuggestion(q);
+
+    return `<div class="${finalCls}">
+      <div class="card-merchant">${esc(q.merchant)}${badge}</div>
+      <div class="card-item-text">${esc(q.item)} ${q.amount ? '· ¥'+q.amount : ''}</div>
+      <div><span class="card-count">${rem}<span class="total">/${q.totalTimes}</span></span> 次 <span style="font-size:11px;color:var(--text-2)">(${status})</span></div>
+      ${exp}
+      <div class="card-suggestion">💡 ${suggestion}</div>
+      <div class="card-actions">
+        <button class="btn btn-primary btn-sm" onclick="openCheckin('${q.localId}')" ${rem<=0?'disabled':''}>✅ 签到</button>
+        <button class="btn btn-outline btn-sm" onclick="editQuota('${q.localId}')">✏️ 编辑</button>
+        <button class="btn btn-outline btn-sm" onclick="showDetail('${q.localId}')">📊 详情</button>
+        <button class="btn btn-outline btn-sm" onclick="openReview('${q.merchant}')">⭐ 评价</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteQuota('${q.localId}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Checkin Tab ──
+function renderCheckinTab() {
+  const active = localData.quotas.filter(q => calcStatus(q) === '进行中');
+  const el = document.getElementById('checkinQuotaList');
+  const empty = document.getElementById('checkinEmpty');
+  if (active.length === 0) { empty.style.display = 'block'; el.innerHTML = ''; } else {
+    empty.style.display = 'none';
+    el.innerHTML = active.map(q => {
+      const rem = remaining(q);
+      return `<div class="card-item" style="margin-bottom:8px;cursor:pointer" onclick="openCheckin('${q.localId}')">
+        <div class="card-merchant">${esc(q.merchant)}</div>
+        <div class="card-item-text">${esc(q.item)} · 剩余 <strong>${rem}</strong>/${q.totalTimes} 次</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Today's checkins
+  const today = todayStr();
+  const todays = localData.checkins.filter(c => c.checkinDate === today && !c.isRevoked);
+  const tcEl = document.getElementById('todayCheckins');
+  if (todays.length === 0) {
+    tcEl.innerHTML = '<div style="font-size:13px;color:var(--text-2)">暂无今日签到记录</div>';
+  } else {
+    tcEl.innerHTML = todays.map(c => {
+      const q = localData.quotas.find(q => q.localId === c.quotaId);
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--surface);border-radius:8px;margin-bottom:6px;font-size:13px">
+        <span>${q ? esc(q.merchant) : ''} · 扣${c.deductTimes}次${c.merchant ? ' @'+esc(c.merchant) : ''}</span>
+        <button class="btn btn-sm btn-outline" style="border-color:var(--red);color:var(--red)" onclick="revokeCheckin('${c.localId}')">撤销</button>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ── Stats Tab ──
+function renderStatsTab() {
+  const quotas = localData.quotas;
+  document.getElementById('statTotalQuota').textContent = quotas.length;
+  document.getElementById('statUsed').textContent = quotas.reduce((s,q) => s + (q.usedTimes||0), 0);
+  document.getElementById('statRemainTotal').textContent = quotas.reduce((s,q) => s + remaining(q), 0);
+
+  if (quotas.length === 0) { document.getElementById('statsDetail').innerHTML = '<div class="empty-state"><p>暂无数据</p></div>'; return; }
+
+  // Merchant satisfaction ranking
+  const merchantStats = {};
+  quotas.forEach(q => {
+    if (!merchantStats[q.merchant]) merchantStats[q.merchant] = { merchant: q.merchant, total: 0, used: 0, remaining: 0 };
+    merchantStats[q.merchant].total += q.totalTimes;
+    merchantStats[q.merchant].used += q.usedTimes || 0;
+    merchantStats[q.merchant].remaining += remaining(q);
+  });
+  localData.ratings.forEach(r => {
+    if (merchantStats[r.merchant]) merchantStats[r.merchant].rating = r.score;
+  });
+
+  let html = '<h3 style="font-size:14px;margin:16px 0 8px">📊 商家统计</h3>';
+  html += Object.values(merchantStats).map(m => {
+    return `<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--surface);border-radius:8px;margin-bottom:4px;font-size:13px">
+      <span>${esc(m.merchant)} ${m.rating ? renderStars(m.rating, false) : ''}</span>
+      <span>已用 ${m.used}/${m.total} · 剩余 ${m.remaining}</span>
+    </div>`;
+  }).join('');
+
+  // Schedule summary
+  const totalRem = quotas.reduce((s,q) => s + remaining(q), 0);
+  if (totalRem > 0) {
+    const pref = localData.preferences;
+    let interval = Math.ceil(30 / Math.max(totalRem/30, 1));
+    html += '<div style="margin-top:16px;padding:12px;background:var(--surface);border-radius:8px;font-size:13px">';
+    html += '📋 综合建议：剩余 <strong>'+totalRem+'</strong> 次，建议平均每 <strong>'+interval+'</strong> 天参加一次';
+    html += '</div>';
+  }
+  document.getElementById('statsDetail').innerHTML = html;
+}
+
+// ── Reviews Tab ──
+function renderReviewTab() {
+  const ratings = localData.ratings;
+  const el = document.getElementById('reviewList');
+  const empty = document.getElementById('reviewEmpty');
+  if (ratings.length === 0) { empty.style.display = 'block'; el.innerHTML = ''; return; }
+  empty.style.display = 'none';
+  ratings.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+  el.innerHTML = ratings.map(r => {
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--surface);border-radius:8px;margin-bottom:6px">
+      <div>
+        <div style="font-weight:500">${esc(r.merchant)}</div>
+        <div>${renderStars(r.score, false)}${r.comment ? ' · '+esc(r.comment) : ''}</div>
+      </div>
+      <button class="btn btn-sm btn-outline" onclick="deleteReview('${r.localId}')">删除</button>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// QUOTA CRUD
+// ═══════════════════════════════════════════════════════════
+function openQuotaForm() {
+  document.getElementById('quotaFormTitle').textContent = '新增配额';
+  document.getElementById('quotaFormId').value = '';
+  document.getElementById('fMerchant').value = '';
+  document.getElementById('fItem').value = '';
+  document.getElementById('fAmount').value = '';
+  document.getElementById('fTotalTimes').value = '10';
+  document.getElementById('fUsedTimes').value = '0';
+  document.getElementById('fExpireDate').value = '';
+  document.getElementById('fNotes').value = '';
+  document.querySelectorAll('#fPrefDays input').forEach(cb => cb.checked = cb.value === 'weekend');
+  document.getElementById('quotaModal').classList.add('open');
+}
+
+function editQuota(id) {
+  const q = localData.quotas.find(x => x.localId === id);
+  if (!q) return;
+  document.getElementById('quotaFormTitle').textContent = '编辑配额';
+  document.getElementById('quotaFormId').value = id;
+  document.getElementById('fMerchant').value = q.merchant || '';
+  document.getElementById('fItem').value = q.item || '';
+  document.getElementById('fAmount').value = q.amount || '';
+  document.getElementById('fTotalTimes').value = q.totalTimes || 1;
+  document.getElementById('fUsedTimes').value = q.usedTimes || 0;
+  document.getElementById('fExpireDate').value = q.expireDate || '';
+  document.getElementById('fNotes').value = q.note || '';
+  const prefDays = (q.preferences && q.preferences.days) || ['weekend'];
+  document.querySelectorAll('#fPrefDays input').forEach(cb => { cb.checked = prefDays.includes(cb.value); });
+  document.getElementById('quotaModal').classList.add('open');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+async function saveQuota(e) {
+  e.preventDefault();
+  const id = document.getElementById('quotaFormId').value;
+  const prefDays = Array.from(document.querySelectorAll('#fPrefDays input:checked')).map(cb => cb.value);
+  const totalTimes = parseInt(document.getElementById('fTotalTimes').value) || 1;
+  const usedTimes = Math.min(parseInt(document.getElementById('fUsedTimes').value) || 0, totalTimes);
+  const data = {
+    localId: id || genId(),
+    merchant: document.getElementById('fMerchant').value.trim(),
+    item: document.getElementById('fItem').value.trim(),
+    amount: parseFloat(document.getElementById('fAmount').value) || 0,
+    totalTimes, usedTimes,
+    expireDate: document.getElementById('fExpireDate').value,
+    note: document.getElementById('fNotes').value.trim(),
+    preferences: { days: prefDays },
+    updatedAt: Date.now(),
+  };
+  if (id) {
+    const idx = localData.quotas.findIndex(x => x.localId === id);
+    if (idx >= 0) localData.quotas[idx] = data;
+  } else {
+    localData.quotas.push(data);
+  }
+  saveLocal();
+  if (cloudEnabled) await pushToCloud('quotas', data);
+  closeModal('quotaModal');
+  renderAll();
+  toast(id ? '配额已更新' : '配额已添加');
+}
+
+async function deleteQuota(id) {
+  if (!confirm('确定删除该配额吗？')) return;
+  localData.quotas = localData.quotas.filter(q => q.localId !== id);
+  saveLocal();
+  if (cloudEnabled) {
+    try { const r = await db.collection('quotas').where({localId:id}).get(); if (r.data.length) await db.collection('quotas').doc(r.data[0]._id).remove(); } catch(e) {}
+  }
+  renderAll();
+  toast('已删除');
+}
+
+// ═══════════════════════════════════════════════════════════
+// CHECKIN
+// ═══════════════════════════════════════════════════════════
+function openCheckin(id) {
+  checkinTargetId = id;
+  const q = localData.quotas.find(x => x.localId === id);
+  if (!q || remaining(q) <= 0) { toast('该配额已用完'); return; }
+  document.getElementById('checkinInfo').textContent = q.merchant + ' · ' + q.item + '（剩余' + remaining(q) + '次）';
+  document.getElementById('checkinMerchant').value = '';
+  document.getElementById('checkinCount').textContent = '1';
+  document.getElementById('checkinModal').classList.add('open');
+}
+
+function closeCheckin() {
+  document.getElementById('checkinModal').classList.remove('open');
+  checkinTargetId = null;
+}
+
+function adjCheckin(delta) {
+  const el = document.getElementById('checkinCount');
+  let v = parseInt(el.textContent) + delta;
+  const q = localData.quotas.find(x => x.localId === checkinTargetId);
+  if (v < 1) v = 1;
+  if (q && v > remaining(q)) v = remaining(q);
+  el.textContent = v;
+}
+
+async function confirmCheckin() {
+  if (!checkinTargetId) return;
+  const q = localData.quotas.find(x => x.localId === checkinTargetId);
+  if (!q) return;
+  // Expired check
+  if (q.expireDate && q.expireDate < todayStr()) { toast('该配额已过期'); closeCheckin(); return; }
+  const count = parseInt(document.getElementById('checkinCount').textContent);
+  const now = new Date();
+  const ci = {
+    localId: genId(),
+    quotaId: checkinTargetId,
+    merchant: document.getElementById('checkinMerchant').value.trim() || q.merchant,
+    deductTimes: count,
+    checkinDate: todayStr(),
+    checkinTime: now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0'),
+    isRevoked: false,
+    updatedAt: Date.now(),
+  };
+  q.usedTimes = (q.usedTimes || 0) + count;
+  q.updatedAt = Date.now();
+  localData.checkins.push(ci);
+  saveLocal();
+  if (cloudEnabled) { await pushToCloud('quotas', q); await pushToCloud('checkins', ci); }
+  closeCheckin();
+  renderAll();
+  toast('✅ 签到成功，扣减'+count+'次');
+}
+
+async function revokeCheckin(id) {
+  if (!confirm('确定撤销该签到记录？')) return;
+  const ci = localData.checkins.find(c => c.localId === id);
+  if (!ci) return;
+  ci.isRevoked = true;
+  ci.updatedAt = Date.now();
+  const q = localData.quotas.find(x => x.localId === ci.quotaId);
+  if (q) { q.usedTimes = Math.max(0, (q.usedTimes||0) - ci.deductTimes); q.updatedAt = Date.now(); }
+  saveLocal();
+  if (cloudEnabled) { await pushToCloud('checkins', ci); if (q) await pushToCloud('quotas', q); }
+  renderAll();
+  toast('已撤销签到');
+}
+
+// ═══════════════════════════════════════════════════════════
+// DETAIL
+// ═══════════════════════════════════════════════════════════
+function showDetail(id) {
+  const q = localData.quotas.find(x => x.localId === id);
+  if (!q) return;
+  const checkins = localData.checkins.filter(c => c.quotaId === id && !c.isRevoked).sort((a,b) => b.checkinTime.localeCompare(a.checkinTime));
+  const rating = localData.ratings.find(r => r.merchant === q.merchant);
+  const prefDays = (q.preferences && q.preferences.days) || [];
+  const dayLabels = {weekend:'周末',weekday:'工作日',holiday:'假期',winter_summer:'寒暑假'};
+
+  let html = '<table style="width:100%;border-collapse:collapse;font-size:13px">';
+  html += '<tr><td style="padding:4px 8px;color:var(--text-2);width:70px">商家</td><td style="padding:4px 8px"><strong>'+esc(q.merchant)+'</strong></td></tr>';
+  html += '<tr><td style="padding:4px 8px;color:var(--text-2)">事项</td><td style="padding:4px 8px">'+esc(q.item)+'</td></tr>';
+  html += '<tr><td style="padding:4px 8px;color:var(--text-2)">金额</td><td style="padding:4px 8px">¥'+(q.amount||0)+'</td></tr>';
+  html += '<tr><td style="padding:4px 8px;color:var(--text-2)">次数</td><td style="padding:4px 8px">已用 <strong>'+(q.usedTimes||0)+'</strong> / '+q.totalTimes+' · 剩余 '+remaining(q)+'</td></tr>';
+  html += '<tr><td style="padding:4px 8px;color:var(--text-2)">状态</td><td style="padding:4px 8px">'+calcStatus(q)+'</td></tr>';
+  if (q.expireDate) html += '<tr><td style="padding:4px 8px;color:var(--text-2)">到期</td><td style="padding:4px 8px">'+q.expireDate+'</td></tr>';
+  html += '<tr><td style="padding:4px 8px;color:var(--text-2)">偏好</td><td style="padding:4px 8px">'+prefDays.map(d => dayLabels[d]||d).join('、')+'</td></tr>';
+  if (rating) html += '<tr><td style="padding:4px 8px;color:var(--text-2)">评分</td><td style="padding:4px 8px">'+renderStars(rating.score, false)+'</td></tr>';
+  if (q.note) html += '<tr><td style="padding:4px 8px;color:var(--text-2)">备注</td><td style="padding:4px 8px">'+esc(q.note)+'</td></tr>';
+  html += '</table>';
+  html += '<div style="margin-top:12px;padding:8px;background:var(--surface-2);border-radius:6px;font-size:12px">💡 '+calcSuggestion(q)+'</div>';
+
+  if (checkins.length > 0) {
+    html += '<div style="margin-top:12px"><strong style="font-size:13px">📝 签到记录</strong></div>';
+    checkins.slice(0,10).forEach(c => {
+      html += '<div style="font-size:12px;padding:4px 0;border-bottom:1px solid #eee">'+c.checkinDate+' 扣'+c.deductTimes+'次'+(c.merchant&&c.merchant!==q.merchant?' @'+esc(c.merchant):'')+'</div>';
+    });
+    if (checkins.length > 10) html += '<div style="font-size:11px;color:var(--text-2);margin-top:4px">共'+checkins.length+'条记录</div>';
+  }
+  document.getElementById('detailContent').innerHTML = html;
+  document.getElementById('detailTitle').textContent = '📋 '+q.merchant+' - '+q.item;
+  document.getElementById('detailModal').classList.add('open');
+}
+
+// ═══════════════════════════════════════════════════════════
+// REVIEWS
+// ═══════════════════════════════════════════════════════════
+function openReview(merchant) {
+  reviewTargetId = merchant;
+  const existing = localData.ratings.find(r => r.merchant === merchant);
+  reviewStar = existing ? existing.score : 0;
+  document.getElementById('reviewMerchant').textContent = '评价：'+merchant;
+  document.getElementById('reviewComment').value = existing ? (existing.comment||'') : '';
+  updateReviewStars();
+  document.getElementById('reviewModal').classList.add('open');
+}
+
+function setReviewStar(v) { reviewStar = v; updateReviewStars(); }
+
+function updateReviewStars() {
+  document.querySelectorAll('#reviewModal .star').forEach(el => {
+    el.classList.toggle('active', parseInt(el.dataset.v) <= reviewStar);
+  });
+}
+
+async function confirmReview() {
+  if (reviewStar < 1) { toast('请选择评分'); return; }
+  const idx = localData.ratings.findIndex(r => r.merchant === reviewTargetId);
+  const data = {
+    localId: idx >= 0 ? localData.ratings[idx].localId : genId(),
+    merchant: reviewTargetId,
+    score: reviewStar,
+    comment: document.getElementById('reviewComment').value.trim(),
+    createdAt: Date.now(),
+  };
+  if (idx >= 0) localData.ratings[idx] = data;
+  else localData.ratings.push(data);
+  saveLocal();
+  if (cloudEnabled) await pushToCloud('ratings', data);
+  closeModal('reviewModal');
+  renderAll();
+  toast('⭐ 评价已提交');
+}
+
+function deleteReview(id) {
+  if (!confirm('确定删除评价？')) return;
+  localData.ratings = localData.ratings.filter(r => r.localId !== id);
+  saveLocal();
+  renderAll();
+  toast('评价已删除');
+}
+
+// ═══════════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════════
+function savePreferences() {
+  localData.preferences = {
+    weekendHours: document.getElementById('prefWeekend').value,
+    holidayHours: document.getElementById('prefHoliday').value,
+    weekdayWeight: parseFloat(document.getElementById('weightWeekday').value) || 1,
+    weekendWeight: parseFloat(document.getElementById('weightWeekend').value) || 2,
+    holidayWeight: parseFloat(document.getElementById('weightHoliday').value) || 1.5,
+  };
+  saveLocal();
+  toast('偏好已保存');
+  renderAll();
+}
+
+function loadPreferences() {
+  const p = localData.preferences;
+  document.getElementById('prefWeekend').value = p.weekendHours || '';
+  document.getElementById('prefHoliday').value = p.holidayHours || '';
+  document.getElementById('weightWeekday').value = p.weekdayWeight || 1;
+  document.getElementById('weightWeekend').value = p.weekendWeight || 2;
+  document.getElementById('weightHoliday').value = p.holidayWeight || 1.5;
+}
+
+function saveEnvId() {
+  const envId = document.getElementById('tcbEnvId').value.trim();
+  if (!envId) { toast('请输入环境ID'); return; }
+  localStorage.setItem('tcb_envId', envId);
+  toast('环境ID已保存，正在连接...');
+  initCloudBase();
+}
+
+function loadEnvId() {
+  const envId = localStorage.getItem('tcb_envId') || '';
+  document.getElementById('tcbEnvId').value = envId;
+}
+
+function generateDemoData() {
+  const now = Date.now();
+  localData.quotas = [
+    { localId: genId(), merchant: '超级健身工作室', item: '私教课（1小时）', amount: 2000, totalTimes: 20, usedTimes: 3, expireDate: '2027-01-01', note: '每周两节', preferences: { days: ['weekend','holiday'] }, updatedAt: now },
+    { localId: genId(), merchant: '阳光琴行', item: '钢琴课（45分钟）', amount: 1500, totalTimes: 10, usedTimes: 2, expireDate: '2026-09-01', note: '周末上课', preferences: { days: ['weekend'] }, updatedAt: now },
+    { localId: genId(), merchant: '优学英语', item: '雅思一对一', amount: 5000, totalTimes: 30, usedTimes: 5, expireDate: '2026-12-31', note: '每周三次', preferences: { days: ['weekday','weekend'] }, updatedAt: now },
+  ];
+  // Add some check-in records
+  const today = todayStr();
+  localData.checkins = [
+    { localId: genId(), quotaId: localData.quotas[0].localId, merchant: '超级健身工作室', deductTimes: 1, checkinDate: '2026-07-05', checkinTime: '2026-07-05 10:30:00', isRevoked: false, updatedAt: now },
+    { localId: genId(), quotaId: localData.quotas[0].localId, merchant: '超级健身工作室', deductTimes: 2, checkinDate: '2026-07-10', checkinTime: '2026-07-10 15:00:00', isRevoked: false, updatedAt: now },
+    { localId: genId(), quotaId: localData.quotas[1].localId, merchant: '阳光琴行', deductTimes: 1, checkinDate: '2026-07-04', checkinTime: '2026-07-04 09:00:00', isRevoked: false, updatedAt: now },
+    { localId: genId(), quotaId: localData.quotas[1].localId, merchant: '阳光琴行', deductTimes: 1, checkinDate: '2026-07-11', checkinTime: '2026-07-11 09:00:00', isRevoked: false, updatedAt: now },
+    { localId: genId(), quotaId: localData.quotas[2].localId, merchant: '优学英语', deductTimes: 1, checkinDate: '2026-07-01', checkinTime: '2026-07-01 14:00:00', isRevoked: false, updatedAt: now },
+  ];
+  // Add some ratings
+  localData.ratings = [
+    { localId: genId(), merchant: '超级健身工作室', score: 4, comment: '教练很专业', createdAt: now },
+    { localId: genId(), merchant: '阳光琴行', score: 5, comment: '老师很有耐心', createdAt: now },
+  ];
+  saveLocal();
+}
+
+function checkFirstLaunch() {
+  // If no data and cloud not connected, inject demo data
+  if (localData.quotas.length === 0) {
+    // Check if cloud has backup (async, will trigger after init)
+    generateDemoData();
+    toast('已加载示例数据，可随时修改或删除');
+    // After cloud connects, check for cloud backup
+    setTimeout(checkCloudRestore, 2000);
+  }
+}
+
+async function checkCloudRestore() {
+  if (!cloudEnabled || !db) return;
+  try {
+    const qRes = await db.collection('quotas').count();
+    if (qRes.total > 0) {
+      // Cloud has data, ask user
+      if (confirm('发现云端备份数据，是否恢复？选择「确定」将下载云端数据覆盖本地，选择「取消」保留当前示例数据')) {
+        const data = await db.collection('quotas').get();
+        const ciRes = await db.collection('checkins').get();
+        const rRes = await db.collection('ratings').get();
+        // Clear and replace
+        localData.quotas = data.data;
+        localData.checkins = ciRes.data;
+        localData.ratings = rRes.data;
+        saveLocal();
+        renderAll();
+        toast('已从云端恢复数据');
+      }
+    }
+  } catch(e) {
+    // Cloud not available yet, skip
+  }
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(localData, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'card-counter-backup-'+todayStr()+'.json';
+  a.click();
+  toast('导出成功');
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.quotas && data.checkins && data.ratings) {
+        localData = data;
+        saveLocal();
+        renderAll();
+        toast('导入成功');
+      } else { toast('无效的备份文件'); }
+    } catch(e) { toast('文件解析失败'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function resetData() {
+  if (!confirm('确定重置所有数据？此操作不可撤销！')) return;
+  if (!confirm('再次确认：所有配额、签到和评价记录将被清除！')) return;
+  localData = { quotas: [], checkins: [], ratings: [], preferences: localData.preferences, syncStatus: {} };
+  saveLocal();
+  renderAll();
+  toast('数据已重置');
+}
+
+// ═══════════════════════════════════════════════════════════
+// SORT
+// ═══════════════════════════════════════════════════════════
+function setSort(mode) {
+  currentSort = mode;
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.sort-btn').forEach(b => {
+    const map = {created:'最新',expire:'到期',remaining:'剩余',rating:'评分'};
+    if (b.textContent.includes(map[mode])) b.classList.add('active');
+  });
+  renderOverview();
+}
+
+// ═══════════════════════════════════════════════════════════
+// TAB SWITCH
+// ═══════════════════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelector('.tab[data-tab="'+name+'"]').classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if (name === 'checkin') renderCheckinTab();
+  if (name === 'stats') renderStatsTab();
+  if (name === 'reviews') renderReviewTab();
+  if (name === 'settings') { loadPreferences(); loadEnvId(); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+function esc(s) { const d = document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+loadLocal();
+loadPreferences();
+checkFirstLaunch();
+initCloudBase();
+renderAll();
+</script>
+</body>
+</html>

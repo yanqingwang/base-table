@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>次卡管家 — Card Counter</title>
+<style>
+/* ── Reset & Base ─────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f5f7;--surface:#fff;--surface-2:#f8f8fa;
+  --primary:#5b5fc7;--primary-light:#eef0ff;--primary-dark:#4347a0;
+  --red:#e74c3c;--green:#27ae60;--orange:#f39c12;--gray:#999;--text:#1d1d1f;--text-2:#6e6e73;
+  --radius:12px;--shadow:0 2px 12px rgba(0,0,0,.08);--transition:.2s ease}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh;padding:20px}
+
+/* ── Layout ──────────────────────────────────────────────── */
+.container{max-width:960px;margin:0 auto}
+
+/* Header */
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.header h1{font-size:24px;font-weight:700;display:flex;align-items:center;gap:8px}
+.header h1 small{font-size:14px;font-weight:400;color:var(--text-2)}
+.stats-bar{display:flex;gap:16px;flex-wrap:wrap}
+.stat{padding:8px 16px;background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);font-size:14px}
+.stat strong{font-size:20px;display:block}
+.stat .label{color:var(--text-2);font-size:12px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;transition:var(--transition);text-decoration:none}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-dark)}
+.btn-outline{background:transparent;border:1px solid var(--primary);color:var(--primary)}
+.btn-outline:hover{background:var(--primary-light)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-danger:hover{opacity:.85}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-icon{padding:6px;min-width:32px;justify-content:center}
+
+/* ── Card Grid ───────────────────────────────────────────── */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:24px}
+.card-item{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;position:relative;transition:var(--transition)}
+.card-item:hover{box-shadow:0 4px 20px rgba(0,0,0,.12)}
+.card-item.expired{opacity:.6;border-left:3px solid var(--red)}
+.card-item.low{background:#fff8f0;border-left:3px solid var(--orange)}
+.card-item.bad-merchant{background:#fff0f0;border-left:3px solid var(--red)}
+
+/* Badge: 避雷 for low-rated merchants */
+.badge-avoid{display:inline-block;background:var(--red);color:#fff;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;margin-left:8px}
+
+.card-header{display:flex;justify-content:space-between;align-items:start;margin-bottom:12px}
+.card-merchant{font-size:18px;font-weight:600}
+.card-item-text{color:var(--text-2);font-size:13px;margin-bottom:8px}
+.card-counts{display:flex;gap:16px;margin-bottom:10px;font-size:14px}
+.card-counts span{display:flex;align-items:center;gap:4px}
+.count-remaining{font-size:28px;font-weight:700;color:var(--primary)}
+.count-total{color:var(--text-2)}
+.card-expiration{font-size:12px;color:var(--text-2);margin-bottom:12px}
+.card-expiration.warning{color:var(--red);font-weight:500}
+.card-suggestion{font-size:12px;color:var(--text-2);margin-top:6px;padding:6px 10px;background:var(--surface-2);border-radius:6px;line-height:1.4}
+.card-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.card-rating{margin-top:8px;font-size:13px}
+
+/* Rating stars */
+.stars{cursor:pointer;font-size:20px;letter-spacing:2px;display:inline-flex}
+.stars .star{color:#ddd;transition:var(--transition)}
+.stars .star.active{color:#f1c40f}
+.stars .star:hover,.stars .star.hover{color:#f1c40f}
+.star-readonly{font-size:16px;letter-spacing:1px}
+.star-readonly .star.active{color:#f1c40f}
+
+/* ── Modal ───────────────────────────────────────────────── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;justify-content:center;align-items:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius);box-shadow:0 8px 40px rgba(0,0,0,.2);padding:28px;width:90%;max-width:500px;max-height:90vh;overflow-y:auto}
+.modal h2{font-size:20px;margin-bottom:20px}
+.modal-close{float:right;background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-2);padding:0;line-height:1}
+
+/* ── Form ────────────────────────────────────────────────── */
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:13px;font-weight:500;color:var(--text-2);margin-bottom:4px}
+.form-group input,.form-group textarea,.form-group select{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;transition:var(--transition);background:var(--surface-2)}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light)}
+.form-group textarea{resize:vertical;min-height:60px}
+.form-row{display:flex;gap:12px}
+.form-row .form-group{flex:1}
+.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.checkbox-group{display:flex;gap:12px;flex-wrap:wrap}
+.checkbox-group label{display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer;font-weight:400;color:var(--text)}
+.checkbox-group input[type="checkbox"]{width:16px;height:16px;accent-color:var(--primary)}
+
+/* ── Checkin modal ───────────────────────────────────────── */
+.checkin-counter{display:flex;align-items:center;gap:12px;justify-content:center;margin:16px 0;font-size:24px}
+.checkin-counter button{width:40px;height:40px;border-radius:50%;border:1px solid #ddd;background:var(--surface);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.checkin-counter button:hover{background:var(--primary-light);border-color:var(--primary)}
+.checkin-counter .count{font-size:32px;font-weight:700;min-width:40px;text-align:center;color:var(--primary)}
+
+/* ── Empty state ─────────────────────────────────────────── */
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-2)}
+.empty-state .icon{font-size:48px;margin-bottom:16px}
+.empty-state p{font-size:15px;margin-bottom:20px}
+
+/* ── Toast ───────────────────────────────────────────────── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media(max-width:640px){
+  .card-grid{grid-template-columns:1fr}
+  .form-row{flex-direction:column}
+  .header{flex-direction:column;align-items:stretch;text-align:center}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>📇 次卡管家 <small>Card Counter</small></h1>
+    <div class="stats-bar" id="statsBar">
+      <div class="stat"><strong id="statTotal">0</strong><span class="label">总卡片</span></div>
+      <div class="stat"><strong id="statRemaining">0</strong><span class="label">剩余次数</span></div>
+      <div class="stat"><strong id="statExpiring">0</strong><span class="label">即将到期</span></div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn-primary" onclick="openForm()">+ 添加次卡</button>
+    <span style="flex:1"></span>
+    <span style="display:flex;gap:4px;align-items:center;font-size:13px;color:var(--text-2)">
+      <span>排序:</span>
+      <button class="btn btn-sm btn-outline" onclick="setSort('created')" id="sort-created" style="font-weight:600">最新</button>
+      <button class="btn btn-sm btn-outline" onclick="setSort('expiration')" id="sort-expiration">到期</button>
+      <button class="btn btn-sm btn-outline" onclick="setSort('remaining')" id="sort-remaining">剩余</button>
+      <button class="btn btn-sm btn-outline" onclick="setSort('rating')" id="sort-rating">评分</button>
+    </span>
+  </div>
+
+  <!-- Card Grid -->
+  <div id="cardGrid" class="card-grid"></div>
+
+  <!-- Empty State (shown via JS) -->
+  <div id="emptyState" class="empty-state" style="display:none">
+    <div class="icon">📭</div>
+    <p>还没有次卡记录<br>点击上方"添加次卡"开始使用</p>
+  </div>
+</div>
+
+<!-- ── Modal: Card Form ───────────────────────────────────────── -->
+<div class="modal-overlay" id="formModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeForm()">&times;</button>
+    <h2 id="formTitle">添加次卡</h2>
+    <form id="cardForm" onsubmit="saveCard(event)">
+      <input type="hidden" id="formId">
+      <div class="form-group">
+        <label>商家名称 *</label>
+        <input type="text" id="fMerchant" required placeholder="如：超级健身工作室">
+      </div>
+      <div class="form-group">
+        <label>具体事项 *</label>
+        <input type="text" id="fItem" required placeholder="如：私教课（1小时）">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>金额 (元)</label>
+          <input type="number" id="fAmount" min="0" step="0.01" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>总次数 *</label>
+          <input type="number" id="fTotalCount" min="1" value="10" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>到期时间</label>
+          <input type="date" id="fExpiration">
+        </div>
+        <div class="form-group">
+          <label>剩余次数</label>
+          <input type="number" id="fRemainingCount" min="0" placeholder="默认=总次数">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>学习偏好（建议使用时段）</label>
+        <div class="checkbox-group" id="fPrefDays">
+          <label><input type="checkbox" value="weekend" checked> 周末</label>
+          <label><input type="checkbox" value="weekday"> 工作日</label>
+          <label><input type="checkbox" value="holiday"> 假期</label>
+          <label><input type="checkbox" value="winter_summer"> 寒暑假</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>备注</label>
+        <textarea id="fNotes" placeholder="补充说明..."></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" onclick="closeForm()">取消</button>
+        <button type="submit" class="btn btn-primary">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── Modal: Check-in ────────────────────────────────────────── -->
+<div class="modal-overlay" id="checkinModal">
+  <div class="modal" style="max-width:400px">
+    <button class="modal-close" onclick="closeCheckin()">&times;</button>
+    <h2>✅ 签到消费</h2>
+    <p id="checkinInfo" style="margin-bottom:12px;color:var(--text-2)"></p>
+    <div class="checkin-counter">
+      <button onclick="adjustCheckin(-1)">−</button>
+      <span class="count" id="checkinCount">1</span>
+      <button onclick="adjustCheckin(1)">+</button>
+    </div>
+    <p style="text-align:center;font-size:13px;color:var(--text-2)">扣减次数</p>
+    <div class="form-group" style="margin-top:12px">
+      <label>商家名称（可选）</label>
+      <input type="text" id="checkinNotes" placeholder="记录本次消费的商家名称">
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeCheckin()">取消</button>
+      <button class="btn btn-primary" onclick="confirmCheckin()">确认签到</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Rating ──────────────────────────────────────────── -->
+<div class="modal-overlay" id="rateModal">
+  <div class="modal" style="max-width:380px">
+    <button class="modal-close" onclick="closeRate()">&times;</button>
+    <h2>⭐ 评价商家</h2>
+    <p style="margin-bottom:16px;color:var(--text-2)" id="rateMerchant"></p>
+    <div style="text-align:center;font-size:36px;margin:20px 0" id="rateStars">
+      <span class="stars" id="starPicker">
+        <span class="star" data-v="1" onclick="setRating(1)">★</span>
+        <span class="star" data-v="2" onclick="setRating(2)">★</span>
+        <span class="star" data-v="3" onclick="setRating(3)">★</span>
+        <span class="star" data-v="4" onclick="setRating(4)">★</span>
+        <span class="star" data-v="5" onclick="setRating(5)">★</span>
+      </span>
+    </div>
+    <p style="text-align:center;font-size:14px;color:var(--text-2)" id="ratingLabel">点击星星评分</p>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeRate()">取消</button>
+      <button class="btn btn-primary" onclick="confirmRate()">提交评分</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Card Detail ─────────────────────────────────────── -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeDetail()">&times;</button>
+    <h2 id="detailTitle">卡片详情</h2>
+    <div id="detailContent" style="line-height:1.8;font-size:14px"></div>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="closeDetail()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ─────────────────────────────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────
+let cards = [];
+let checkinCardId = null;
+let rateCardId = null;
+let currentRating = 0;
+let currentSort = 'created';
+
+// ── API ────────────────────────────────────────────────────────
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  return res.json();
+}
+
+// ── Load & Render ──────────────────────────────────────────────
+async function loadCards() {
+  cards = await api('/api/cards');
+  render();
+}
+
+function setSort(mode) {
+  currentSort = mode;
+  document.querySelectorAll('[id^=sort-]').forEach(el => el.style.fontWeight = 'normal');
+  const btn = document.getElementById('sort-' + mode);
+  if (btn) btn.style.fontWeight = '600';
+  renderGrid();
+}
+
+function sortedCards() {
+  const sorted = [...cards];
+  switch (currentSort) {
+    case 'expiration':
+      sorted.sort((a, b) => {
+        if (!a.expiration) return 1; if (!b.expiration) return -1;
+        return a.expiration.localeCompare(b.expiration);
+      });
+      break;
+    case 'remaining':
+      sorted.sort((a, b) => (a.remaining_count || 0) - (b.remaining_count || 0));
+      break;
+    case 'rating':
+      sorted.sort((a, b) => (a.rating || 999) - (b.rating || 999));
+      break;
+    default: // created - newest first by id (uuid timestamp prefix random enough)
+      sorted.reverse();
+      break;
+  }
+  return sorted;
+}
+
+function render() {
+  renderStats();
+  renderGrid();
+}
+
+// ── Stats ──────────────────────────────────────────────────────
+function renderStats() {
+  const total = cards.length;
+  const remaining = cards.reduce((s, c) => s + (c.remaining_count || 0), 0);
+  const now = new Date();
+  const expiring = cards.filter(c => {
+    if (!c.expiration) return false;
+    const d = new Date(c.expiration + 'T23:59:59');
+    const diff = Math.ceil((d - now) / (1000*86400));
+    return diff >= 0 && diff <= 14;
+  }).length;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statRemaining').textContent = remaining;
+  document.getElementById('statExpiring').textContent = expiring;
+
+  document.getElementById('emptyState').style.display = total === 0 ? 'block' : 'none';
+}
+
+// ── Card Grid ──────────────────────────────────────────────────
+function renderGrid() {
+  const grid = document.getElementById('cardGrid');
+  if (cards.length === 0) {
+    grid.innerHTML = '';
+    return;
+  }
+
+  const sorted = sortedCards();
+  grid.innerHTML = sorted.map(c => {
+    const remaining = c.remaining_count ?? 0;
+    const total = c.total_count ?? 0;
+    const expired = c.expiration && new Date(c.expiration + 'T23:59:59') < new Date();
+    const low = !expired && remaining > 0 && remaining <= Math.ceil(total * 0.2);
+    const bad = c.rating !== null && c.rating <= 2;
+    let cls = 'card-item';
+    if (expired) cls += ' expired';
+    else if (bad) cls += ' bad-merchant';
+    else if (low) cls += ' low';
+
+    const daysLeft = c.expiration ? daysUntil(c.expiration) : null;
+    const expHtml = c.expiration
+      ? `<div class="card-expiration${daysLeft !== null && daysLeft <= 14 ? ' warning' : ''}">
+          到期: ${c.expiration}${daysLeft !== null ? ` (${daysLeft > 0 ? daysLeft+'天后' : '已过期'})` : ''}
+         </div>`
+      : '';
+
+    const avoidBadge = bad ? `<span class="badge-avoid">⚠️ 避雷</span>` : '';
+
+    const ratingHtml = c.rating
+      ? `<div class="card-rating">评分: ${renderStars(c.rating)}${avoidBadge}</div>`
+      : `<div class="card-rating"><button class="btn btn-sm btn-outline" onclick="openRate('${c.id}')">⭐ 评价</button></div>`;
+
+    const suggestion = c.suggestion || '';
+
+    return `<div class="${cls}">
+      <div class="card-header">
+        <div>
+          <div class="card-merchant">${esc(c.merchant)}${avoidBadge}</div>
+          <div class="card-item-text">${esc(c.item)}${c.amount ? ' · ¥'+c.amount : ''}</div>
+        </div>
+      </div>
+      <div class="card-counts">
+        <span><span class="count-remaining">${remaining}</span><span class="count-total">/${total}</span> 次</span>
+      </div>
+      ${expHtml}
+      ${suggestion ? `<div class="card-suggestion">💡 ${esc(suggestion)}</div>` : ''}
+      <div class="card-actions">
+        <button class="btn btn-primary btn-sm" onclick="openCheckin('${c.id}')" ${remaining <= 0 ? 'disabled style="opacity:.4"' : ''}>✅ 签到</button>
+        <button class="btn btn-outline btn-sm" onclick="openEdit('${c.id}')">✏️ 编辑</button>
+        <button class="btn btn-outline btn-sm" onclick="viewCard('${c.id}')">📊 详情</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteCard('${c.id}')">🗑️ 删除</button>
+      </div>
+      ${ratingHtml}
+    </div>`;
+  }).join('');
+}
+
+function renderStars(rating) {
+  return Array.from({length:5}, (_,i) =>
+    `<span class="star ${i < rating ? 'active' : ''}" style="color:${i < rating ? '#f1c40f' : '#ddd'}">★</span>`
+  ).join('');
+}
+
+function daysUntil(dateStr) {
+  const now = new Date();
+  const d = new Date(dateStr + 'T23:59:59');
+  return Math.ceil((d - now) / (1000*86400));
+}
+
+// ── Card Form (Add / Edit) ─────────────────────────────────────
+function openForm() {
+  document.getElementById('formTitle').textContent = '添加次卡';
+  document.getElementById('formId').value = '';
+  document.getElementById('cardForm').reset();
+  document.getElementById('fTotalCount').value = '10';
+  document.getElementById('fRemainingCount').value = '';
+  // Reset checkboxes
+  document.querySelectorAll('#fPrefDays input').forEach(cb => cb.checked = cb.value === 'weekend');
+  document.getElementById('formModal').classList.add('open');
+}
+
+function openEdit(id) {
+  const c = cards.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('formTitle').textContent = '编辑次卡';
+  document.getElementById('formId').value = c.id;
+  document.getElementById('fMerchant').value = c.merchant || '';
+  document.getElementById('fItem').value = c.item || '';
+  document.getElementById('fAmount').value = c.amount || '';
+  document.getElementById('fTotalCount').value = c.total_count || 1;
+  document.getElementById('fRemainingCount').value = c.remaining_count ?? '';
+  document.getElementById('fExpiration').value = c.expiration || '';
+  document.getElementById('fNotes').value = c.notes || '';
+  const prefDays = (c.preferences && c.preferences.days) || ['weekend'];
+  document.querySelectorAll('#fPrefDays input').forEach(cb => {
+    cb.checked = prefDays.includes(cb.value);
+  });
+  document.getElementById('formModal').classList.add('open');
+}
+
+function closeForm() {
+  document.getElementById('formModal').classList.remove('open');
+}
+
+async function saveCard(e) {
+  e.preventDefault();
+  const id = document.getElementById('formId').value;
+  const prefDays = Array.from(document.querySelectorAll('#fPrefDays input:checked')).map(cb => cb.value);
+  const totalCount = parseInt(document.getElementById('fTotalCount').value) || 1;
+  const remainingRaw = document.getElementById('fRemainingCount').value;
+  const remainingCount = remainingRaw !== '' ? parseInt(remainingRaw) : totalCount;
+
+  const data = {
+    merchant: document.getElementById('fMerchant').value,
+    item: document.getElementById('fItem').value,
+    amount: parseFloat(document.getElementById('fAmount').value) || 0,
+    total_count: totalCount,
+    remaining_count: remainingCount,
+    expiration: document.getElementById('fExpiration').value,
+    notes: document.getElementById('fNotes').value,
+    preferences: { days: prefDays },
+  };
+
+  if (id) {
+    await api(`/api/cards/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    toast('次卡已更新');
+  } else {
+    await api('/api/cards', { method: 'POST', body: JSON.stringify(data) });
+    toast('次卡已添加');
+  }
+  closeForm();
+  await loadCards();
+}
+
+// ── Delete ──────────────────────────────────────────────────────
+async function deleteCard(id) {
+  const c = cards.find(x => x.id === id);
+  if (!confirm(`确定删除「${c.merchant} - ${c.item}」吗？`)) return;
+  await api(`/api/cards/${id}`, { method: 'DELETE' });
+  toast('已删除');
+  await loadCards();
+}
+
+// ── Check-in ────────────────────────────────────────────────────
+function openCheckin(id) {
+  checkinCardId = id;
+  const c = cards.find(x => x.id === id);
+  if (!c || c.remaining_count <= 0) { toast('该次卡已用完'); return; }
+  document.getElementById('checkinInfo').textContent = `${c.merchant} · ${c.item}（剩余${c.remaining_count}次）`;
+  document.getElementById('checkinCount').textContent = '1';
+  document.getElementById('checkinNotes').value = '';
+  document.getElementById('checkinModal').classList.add('open');
+}
+
+function closeCheckin() {
+  document.getElementById('checkinModal').classList.remove('open');
+  checkinCardId = null;
+}
+
+function adjustCheckin(delta) {
+  const el = document.getElementById('checkinCount');
+  let val = parseInt(el.textContent) + delta;
+  const c = cards.find(x => x.id === checkinCardId);
+  if (val < 1) val = 1;
+  if (c && val > c.remaining_count) val = c.remaining_count;
+  el.textContent = val;
+}
+
+async function confirmCheckin() {
+  if (!checkinCardId) return;
+  const count = parseInt(document.getElementById('checkinCount').textContent);
+  const notes = document.getElementById('checkinNotes').value;
+  const result = await api(`/api/cards/${checkinCardId}/checkin`, {
+    method: 'POST',
+    body: JSON.stringify({ count, notes }),
+  });
+  if (result.error) { toast(result.error); return; }
+  closeCheckin();
+  toast(`✅ 签到成功，扣减${count}次`);
+  await loadCards();
+}
+
+// ── Rating ──────────────────────────────────────────────────────
+function openRate(id) {
+  rateCardId = id;
+  const c = cards.find(x => x.id === id);
+  if (!c) return;
+  currentRating = c.rating || 0;
+  document.getElementById('rateMerchant').textContent = `评价：${c.merchant}`;
+  updateStarDisplay();
+  document.getElementById('rateModal').classList.add('open');
+}
+
+function closeRate() {
+  document.getElementById('rateModal').classList.remove('open');
+  rateCardId = null;
+  currentRating = 0;
+}
+
+function setRating(v) {
+  currentRating = v;
+  updateStarDisplay();
+}
+
+function updateStarDisplay() {
+  const labels = ['', '很差', '较差', '一般', '满意', '非常满意'];
+  document.querySelectorAll('#starPicker .star').forEach(el => {
+    el.classList.toggle('active', parseInt(el.dataset.v) <= currentRating);
+  });
+  document.getElementById('ratingLabel').textContent = currentRating > 0
+    ? labels[currentRating] : '点击星星评分';
+}
+
+async function confirmRate() {
+  if (!rateCardId || currentRating < 1) { toast('请选择评分'); return; }
+  await api(`/api/cards/${rateCardId}/rate`, {
+    method: 'POST',
+    body: JSON.stringify({ rating: currentRating }),
+  });
+  closeRate();
+  toast('⭐ 评分已提交');
+  await loadCards();
+}
+
+// ── View Card Detail ────────────────────────────────────────────
+function closeDetail() {
+  document.getElementById('detailModal').classList.remove('open');
+}
+
+async function viewCard(id) {
+  const data = await api(`/api/cards/${id}`);
+  if (data.error) { toast(data.error); return; }
+  const c = data;
+  const prefDays = (c.preferences && c.preferences.days) || [];
+  const dayLabels = {'weekend':'周末','weekday':'工作日','holiday':'假期','winter_summer':'寒暑假'};
+  const daysStr = prefDays.map(d => dayLabels[d]||d).join('、') || '未设置';
+
+  let html = `<table style="width:100%;border-collapse:collapse">`;
+  html += `<tr><td style="padding:6px 12px;color:var(--text-2);width:80px">商家</td><td style="padding:6px 12px"><strong>${esc(c.merchant)}</strong></td></tr>`;
+  html += `<tr><td style="padding:6px 12px;color:var(--text-2)">项目</td><td style="padding:6px 12px">${esc(c.item)}</td></tr>`;
+  html += `<tr><td style="padding:6px 12px;color:var(--text-2)">金额</td><td style="padding:6px 12px">¥${c.amount || 0}</td></tr>`;
+  html += `<tr><td style="padding:6px 12px;color:var(--text-2)">次数</td><td style="padding:6px 12px">剩余 <strong>${c.remaining_count}</strong> / ${c.total_count}</td></tr>`;
+  html += `<tr><td style="padding:6px 12px;color:var(--text-2)">到期</td><td style="padding:6px 12px">${c.expiration || '无期限'}</td></tr>`;
+  html += `<tr><td style="padding:6px 12px;color:var(--text-2)">偏好</td><td style="padding:6px 12px">${daysStr}</td></tr>`;
+  if (c.rating) html += `<tr><td style="padding:6px 12px;color:var(--text-2)">评分</td><td style="padding:6px 12px">${'★'.repeat(c.rating)}${'☆'.repeat(5-c.rating)}</td></tr>`;
+  html += `<tr><td style="padding:6px 12px;color:var(--text-2)">备注</td><td style="padding:6px 12px">${c.notes || '无'}</td></tr>`;
+  html += `</table>`;
+
+  html += `<div style="margin-top:16px;padding:10px 12px;background:var(--surface-2);border-radius:8px">💡 ${data.suggestion || ''}</div>`;
+
+  if (c.checkins.length > 0) {
+    html += `<div style="margin-top:16px"><strong>📝 签到记录 (最近${Math.min(5, c.checkins.length)}条)</strong></div>`;
+    c.checkins.slice(-5).reverse().forEach(ch => {
+      html += `<div style="font-size:13px;padding:4px 0;border-bottom:1px solid #eee">${ch.date.slice(5,16)} 扣${ch.count}次${ch.notes ? ' · '+esc(ch.notes) : ''}</div>`;
+    });
+    if (c.checkins.length > 5) html += `<div style="font-size:12px;color:var(--text-2);margin-top:4px">共${c.checkins.length}条记录</div>`;
+  } else {
+    html += `<div style="margin-top:12px;color:var(--text-2)">暂无签到记录</div>`;
+  }
+
+  document.getElementById('detailContent').innerHTML = html;
+  document.getElementById('detailTitle').textContent = `📋 ${c.merchant} - ${c.item}`;
+  document.getElementById('detailModal').classList.add('open');
+}
+
+// ── Toast ───────────────────────────────────────────────────────
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ── Helpers ─────────────────────────────────────────────────────
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+// ── Init ────────────────────────────────────────────────────────
+loadCards();
+</script>
+</body>
+</html>

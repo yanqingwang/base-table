@@ -1,0 +1,55 @@
+[
+  {
+    "id": "e83f8eae-0efa-4efa-a0c8-4d67090fab29",
+    "merchant": "测试健身",
+    "item": "私教课",
+    "amount": 2000.0,
+    "total_count": 10,
+    "remaining_count": 0,
+    "expiration": "2026-08-15",
+    "notes": "",
+    "preferences": {
+      "days": [
+        "weekend",
+        "winter_summer"
+      ]
+    },
+    "checkins": [
+      {
+        "date": "2026-07-12T19:17:33",
+        "count": 2,
+        "notes": "测试商家"
+      }
+    ],
+    "rating": 2,
+    "created_at": "2026-07-12T19:17:24",
+    "updated_at": "2026-07-12T19:21:02"
+  },
+  {
+    "id": "70946f7a-6f1a-43a6-8ee5-bc2358bf1f19",
+    "merchant": "游泳馆",
+    "item": "游泳次卡",
+    "amount": 800.0,
+    "total_count": 30,
+    "remaining_count": 22,
+    "expiration": "2026-12-31",
+    "notes": "",
+    "preferences": {
+      "days": [
+        "weekend",
+        "holiday",
+        "winter_summer"
+      ]
+    },
+    "checkins": [
+      {
+        "date": "2026-07-12T19:21:53",
+        "count": 3,
+        "notes": "XX游泳馆"
+      }
+    ],
+    "rating": 4,
+    "created_at": "2026-07-12T19:21:36",
+    "updated_at": "2026-07-12T19:22:09"
+  }
+]

@@ -42,9 +42,37 @@
               "icon": "eye",
               "title": "探寻工作的意义-2026-06-28"
             }
+          },
+          {
+            "id": "821150e6ce59b02c",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "AITasks/Product - Card_count.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Product - Card_count"
+            }
+          },
+          {
+            "id": "52c9cc7347273b55",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "AITasks/Product - Card_count.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Product - Card_count"
+            }
           }
         ],
-        "currentTab": 2
+        "currentTab": 4
       }
     ],
     "direction": "vertical"
@@ -101,8 +129,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 629.5,
-    "collapsed": true
+    "width": 629.5
   },
   "right": {
     "id": "df398ba2463bd268",
@@ -217,19 +244,39 @@
       "remotely-save:Remotely Save": false
     }
   },
-  "active": "2d135c403dd88d0d",
+  "active": "52c9cc7347273b55",
   "lastOpenFiles": [
+    "AITasks/小程序云托管开发.md",
+    "AITasks/Product - Card_count.md",
+    "0f6a599feaefec00c9e930fbc5d72183",
+    "code/card-counter-miniapp/0f6a599feaefec00c9e930fbc5d72183",
+    "code/card-counter-miniapp/private.key",
+    "private.wx9c5974ab24d057c3.key",
+    "docs/card-counter-deployment-2026-07-12.md",
+    "docs/card-counter-architecture-2026-07-12.md",
+    "AITasks/Product - Card_count - individual.md",
+    "code/card-counter-miniapp/pages/index/index.json",
+    "code/card-counter-miniapp/pages/index/index.js",
+    "code/card-counter-miniapp/pages/index/index.wxml",
+    "code/card-counter-miniapp/sitemap.json",
+    "code/card-counter-miniapp/app.js",
+    "code/card-counter-miniapp/app.json",
+    "tcb-login.png",
+    "tencent-login.png",
+    "code/card-counter/qa-screenshot-final.png",
+    "code/card-counter/qa-screenshot-1.png",
+    "code/card-counter/ULW-NOTEPAD.md",
+    "AITasks/Product - Card_count - company.md",
+    "AITasks/Product - Note 总结.md",
+    "code/noteforge/pkg/manjaro/src/target/release/build/noteforge-babb9fd625d3dd86/out/tauri-codegen-assets/e9fa09c38f96dcf7db6c59021f84325594de89f2efa7c1b5db9477918a00ef98.svg",
+    "code/noteforge/pkg/manjaro/src/target/release/build/noteforge-babb9fd625d3dd86/out/tauri-codegen-assets/e6818b1ebd8d480f75cd9200678d0dbc4b45690b4cf2963096a17b6a729b9488.svg",
+    "AITasks/Product - myjob.md",
+    "AITasks/Product - note_requirement - Markdown.md",
+    "AITasks/Product - note_requirement - 2.md",
+    "AIReports/docusign-keys-commercialization-review-2026-07-09.md",
     "AIReports/TrustMRR-HR-SaaS-创业机会分析报告-2026-07-10.md",
-    "code/noteforge/frontend/src/plugins/HEPlugin.ts",
-    "code/noteforge/frontend/src/plugins/PluginManager.ts",
-    "code/noteforge/frontend/src/plugins",
-    "code/noteforge/target/debug/deps/noteforge-4307e68643223b6e",
-    "code/noteforge/target/debug/incremental/noteforge-2u4koyes779bn/s-hkapp5few8-19pswo0-b160t7h2lmh2sjp06g7qb4vsd/work-products.bin",
-    "code/noteforge/target/debug/incremental/noteforge-2u4koyes779bn/s-hkapp5few8-19pswo0-b160t7h2lmh2sjp06g7qb4vsd/query-cache.bin",
-    "code/noteforge/target/debug/incremental/noteforge-2u4koyes779bn/s-hkapp5few8-19pswo0-b160t7h2lmh2sjp06g7qb4vsd/ez69gzwn7esrgu4shcrytgrul.o",
-    "code/noteforge/target/debug/incremental/noteforge-2u4koyes779bn/s-hkapp5few8-19pswo0-b160t7h2lmh2sjp06g7qb4vsd/eysfz0ogoejuxj8nb44d735b2.o",
-    "code/noteforge/target/debug/incremental/noteforge-2u4koyes779bn/s-hkapp5few8-19pswo0-b160t7h2lmh2sjp06g7qb4vsd/evyel7hzlt4i41ewlcrbfnx4i.o",
-    "code/noteforge/target/debug/incremental/noteforge-2u4koyes779bn/s-hkapp5few8-19pswo0-b160t7h2lmh2sjp06g7qb4vsd/et9a3y5jv3pbfeuyh33kmnjxx.o",
+    "AITasks/file.md",
+    "AITasks/Product - Note_Requirement 1.md",
     "code/html-to-md-effect-plugin/test-sample.md",
     "code/html-to-md-effect-plugin/README.md",
     "code/html-to-md-effect-plugin/test-小狗.md",
@@ -241,28 +288,9 @@
     "code/html-to-md-effect-plugin/node_modules/@codemirror/view/README.md",
     "code/html-to-md-effect-plugin/node_modules/@codemirror/view/CHANGELOG.md",
     "code/html-to-md-effect-plugin/node_modules/undici-types/README.md",
-    "code/html-to-md-effect-plugin/node_modules/@codemirror/state/README.md",
-    "code/html-to-md-effect-plugin/node_modules/@codemirror/state/CHANGELOG.md",
-    "code/html-to-md-effect-plugin/node_modules/esbuild/README.md",
-    "code/html-to-md-effect-plugin/node_modules/tslib/SECURITY.md",
-    "code/html-to-md-effect-plugin/node_modules/esbuild/LICENSE.md",
-    "code/html-to-md-effect-plugin/node_modules/tslib/README.md",
-    "code/html-to-md-effect-plugin/node_modules/style-mod/README.md",
-    "code/html-to-md-effect-plugin/node_modules/@marijn/find-cluster-break/README.md",
-    "code/html-to-md-effect-plugin/node_modules/crelt/README.md",
-    "code/html-to-md-effect-plugin/node_modules/w3c-keyname/README.md",
-    "code/html-to-md-effect-plugin/node_modules/builtin-modules/readme.md",
-    "code/html-to-md-effect-plugin/node_modules/style-mod/src/README.md",
-    "code/html-to-md-effect-plugin/node_modules/obsidian/README.md",
     "AIReports/zoom-test-100.png",
     "AIReports/zoom-test-110.png",
     "code/noteforge/frontend/node_modules/highlight.js/styles/brown-papersq.png",
-    "code/noteforge/frontend/node_modules/highlight.js/styles/pojoaque.jpg",
-    "code/noteforge/frontend/dist/icons.svg",
-    "code/noteforge/frontend/dist/favicon.svg",
-    "code/noteforge/frontend/src/assets/vite.svg",
-    "code/noteforge/frontend/src/assets/react.svg",
-    "code/noteforge/frontend/src/assets/hero.png",
-    "code/noteforge/frontend/public/favicon.svg"
+    "code/noteforge/frontend/node_modules/highlight.js/styles/pojoaque.jpg"
   ]
 }

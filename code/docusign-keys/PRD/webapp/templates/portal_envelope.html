@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="margin-bottom:16px;">
+    <a href="/portal/dashboard?sid={{ sid }}">← 返回首页</a>
+</div>
+
+<div class="card">
+    <h1>文件详情</h1>
+
+    <table>
+        <tr><th style="width:140px;">文件名称</th><td>{{ env.template_name or env.envelope_id }}</td></tr>
+        <tr><th>状态</th><td><span class="badge badge-{{ env.status }}">{{ env.status }}</span></td></tr>
+        <tr><th>创建日期</th><td>{{ env.created_at[:19] if env.created_at else '-' }}</td></tr>
+        <tr><th>完成日期</th><td>{{ env.completed_at[:19] if env.completed_at else '-' }}</td></tr>
+        <tr><th>发送日期</th><td>{{ env.sent_at[:19] if env.sent_at else '-' }}</td></tr>
+    </table>
+</div>
+
+{% if docs %}
+<div class="card">
+    <h3>文档列表</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>文档名称</th>
+                <th>类型</th>
+                <th>下载</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in docs %}
+            <tr>
+                <td>{{ d.name }}</td>
+                <td>{{ d.doc_type or 'attachment' }}</td>
+                <td>
+                    {% if d.file_path %}
+                    <a href="/docs/{{ d.file_path }}" class="btn btn-sm btn-outline" download>下载</a>
+                    {% else %}
+                    <span style="color:#999;">暂未下载</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<div class="card">
+    <h3>签署状态</h3>
+    <p style="padding:8px 0;">
+        当前状态: <span class="badge badge-{{ env.status }}">{{ env.status }}</span>
+    </p>
+    {% if env.status == 'sent' or env.status == 'delivered' %}
+    <p style="font-size:13px; color:#666;">
+        <em>开发环境：签署链接在 DocuSign 控制台中可用</em>
+    </p>
+    {% elif env.status == 'completed' %}
+    <p style="font-size:13px; color:#2e7d32;">✓ 文件已完成签署</p>
+    {% endif %}
+</div>
+{% endblock %}

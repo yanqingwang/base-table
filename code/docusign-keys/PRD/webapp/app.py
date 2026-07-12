@@ -20,6 +20,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import hashlib
+import random
+
 import flask
 
 _SCRIPT_DIR = Path(__file__).resolve().parent
@@ -582,6 +584,92 @@ def api_export_run():
         return flask.jsonify(result)
     except Exception as e:
         return flask.jsonify({"error": str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
+# Employee portal routes
+# ---------------------------------------------------------------------------
+
+
+@app.route("/portal/login")
+def portal_login():
+    return flask.render_template("portal_login.html")
+
+
+@app.route("/portal/send-code", methods=["POST"])
+def portal_send_code():
+    email = flask.request.form.get("email", "").strip()
+    if not email:
+        return flask.jsonify({"error": "Email required"}), 400
+    db = TrackingDb(get_tracking_db_path("dev"))
+    db.init_schema()
+    code = str(random.randint(100000, 999999))
+    session_id = db.create_portal_session(email, code)
+    # DEV: print code to console (no real email sending)
+    print(f"\n=== PORTAL LOGIN CODE for {email}: {code} ===\n")
+    db.close()
+    return flask.jsonify({"ok": True, "msg": f"验证码已发送到 {email}（开发环境: {code}）"})
+
+
+@app.route("/portal/verify", methods=["POST"])
+def portal_verify():
+    email = flask.request.form.get("email", "").strip()
+    code = flask.request.form.get("code", "").strip()
+    if not email or not code:
+        return flask.render_template("portal_login.html", error="请输入邮箱和验证码")
+    db = TrackingDb(get_tracking_db_path("dev"))
+    db.init_schema()
+    session_id = db.verify_portal_code(email, code)
+    db.close()
+    if session_id:
+        return flask.redirect(f"/portal/dashboard?sid={session_id}")
+    return flask.render_template("portal_login.html", error="验证码错误或已过期")
+
+
+@app.route("/portal/dashboard")
+def portal_dashboard():
+    sid = flask.request.args.get("sid", "")
+    if not sid:
+        return flask.redirect("/portal/login")
+    db = TrackingDb(get_tracking_db_path("dev"))
+    db.init_schema()
+    row = db.conn.execute(
+        "SELECT employee_email FROM portal_sessions WHERE session_id = ? AND verified = 1", (sid,)
+    ).fetchone()
+    if not row:
+        db.close()
+        return flask.redirect("/portal/login")
+    email = row[0]
+    envelopes = db.get_portal_envelopes(email)
+    contracts = db.get_contracts(email=email)
+    db.close()
+    return flask.render_template("portal_dashboard.html", email=email, envelopes=envelopes, contracts=contracts, sid=sid)
+
+
+@app.route("/portal/envelope/<envelope_id>")
+def portal_envelope(envelope_id):
+    sid = flask.request.args.get("sid", "")
+    if not sid:
+        return flask.redirect("/portal/login")
+    db = TrackingDb(get_tracking_db_path("dev"))
+    db.init_schema()
+    row = db.conn.execute(
+        "SELECT 1 FROM portal_sessions WHERE session_id = ? AND verified = 1", (sid,)
+    ).fetchone()
+    if not row:
+        db.close()
+        return flask.redirect("/portal/login")
+    env = db.get_envelope(envelope_id)
+    docs = db.get_documents(envelope_id) if env else []
+    db.close()
+    if not env:
+        return flask.render_template("portal_dashboard.html", error="未找到该文件")
+    return flask.render_template("portal_envelope.html", env=env, docs=docs, sid=sid)
+
+
+@app.route("/portal/logout")
+def portal_logout():
+    return flask.redirect("/portal/login")
 
 
 # ---------------------------------------------------------------------------

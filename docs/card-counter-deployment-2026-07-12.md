@@ -1,7 +1,8 @@
 # 次卡管家 — 部署文档
 
 > 日期：2026-07-12
-> 版本：v1.0
+> 版本：v1.1
+> 状态：V2 CloudBase SPA ✅ 已上线 | V3 小程序密钥 ✅ 已生成
 
 ---
 
@@ -30,7 +31,7 @@ python3 server.py
 
 适合本地测试和离线使用。
 
-### 方式 2：CloudBase 静态托管（V2）— 已部署
+### 方式 2：CloudBase 静态托管（V2）— ✅ 已部署
 
 ```bash
 # 前端代码
@@ -42,21 +43,36 @@ CloudBase 静态托管
 
 # 部署命令 (CLI)
 npx tcb hosting deploy . -e cardcount-d4gjfjexz3097d803
+
+# 当前状态：已上线，浏览器可直接访问
 ```
 
-### 方式 3：微信小程序（V3）— 需手动上传
+### 方式 3：微信小程序（V3）— web-view 包装版
 
 项目位置：`code/card-counter-miniapp/`
 
-**发布流程：**
-1. 下载 [微信开发者工具](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)
-2. 打开项目，选择 `code/card-counter-miniapp/` 目录
-3. 确认 AppID 自动填入 `wx9c5974ab24d057c3`
-4. 点击"上传"将代码提交至微信平台
-5. 登录 [mp.weixin.qq.com](https://mp.weixin.qq.com) → 版本管理 → 提交审核
-6. 审核通过后发布
+**架构说明：**
+- 小程序本身仅包含一个 `web-view` 页面，加载 CloudBase 静态托管 URL
+- 实际业务逻辑全部在 CloudBase SPA 中运行
+- 因此发布小程序 = 将 CloudBase URL 包装后提交微信审核
 
-**注意**：小程序备案（ICP 备案）还未完成，需先在控制台完成备案才能正式上架。
+**上传密钥状态：** ✅ 已生成并下载（`private.key`）
+
+**推荐部署方式（云端）：**
+1. 使用 [CloudBase 云端部署](https://cloud.tencent.com/solution/la) — 通过控制台直接管理
+2. 或使用 [微信开发者工具](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)：
+   - 打开项目，选择 `code/card-counter-miniapp/` 目录
+   - AppID：`wx9c5974ab24d057c3`
+   - 点击"上传"提交至微信平台
+3. 登录 [mp.weixin.qq.com](https://mp.weixin.qq.com) → 版本管理 → 提交审核
+4. 审核通过后发布
+
+**注意：**
+- ⚠️ 小程序备案（ICP 备案）还未完成，上架前必须先完成备案
+- 本地 `miniprogram-ci` CLI 上传需要将当前机器 IP 加入微信 IP 白名单
+  - 控制台路径：mp.weixin.qq.com → 开发管理 → 开发设置 → IP 白名单
+  - 当前机器 IPv4：`45.137.183.193`（已添加）
+  - 如 IP 变更需重新配置
 
 ---
 
@@ -83,9 +99,21 @@ npx tcb hosting deploy . -e cardcount-d4gjfjexz3097d803
 
 配置路径：mp.weixin.qq.com → 开发管理 → 开发设置 → 服务器域名
 
+## 五、IP 白名单（CLI 上传用）
+
+使用 `miniprogram-ci` CLI 上传时需将本机 IP 加入白名单：
+
+| IP | 类型 | 状态 |
+|-----|------|------|
+| `45.137.183.193` | IPv4 | ✅ 已添加 |
+
+路径：mp.weixin.qq.com → 开发管理 → 开发设置 → IP 白名单
+
+**注意**：微信管理后台仅支持 IPv4 格式。如机器 IPv6 优先，上传时需强制走 IPv4（CLI 需 `--proxy` 或配置 `HTTPS_PROXY` 环境变量）。推荐直接使用微信开发者工具 GUI 上传或 CloudBase 云端部署。
+
 ---
 
-## 五、本地开发环境
+## 六、本地开发环境
 
 ### 前置要求
 
@@ -112,7 +140,7 @@ code/
 
 ---
 
-## 六、注意事项
+## 七、注意事项
 
 1. **费用**：当前使用体验版（免费），2027-01-12 到期
 2. **数据安全**：体验版数据库无自动备份，建议定期导出数据

@@ -989,14 +989,6 @@ var HEExtPlugin = class extends import_obsidian.Plugin {
     this.registerEvent(this.app.workspace.on("layout-change", () => {
       this.views = this.views.filter((v) => v.leaf.view !== null);
     }));
-    this.registerEvent(this.app.workspace.on("file-open", (file) => {
-      if (file && file instanceof import_obsidian.TFile && file.extension === "html") {
-        const leaf = this.app.workspace.getLeaf(false);
-        if (leaf && leaf.view instanceof HEHTMLView) {
-          void leaf.view.setFile(file);
-        }
-      }
-    }));
     this.registerEvent(this.app.vault.on("modify", (file) => {
       if (file instanceof import_obsidian.TFile && file.extension === "html") {
         for (const view of this.views) {

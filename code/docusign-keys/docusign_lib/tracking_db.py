@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS schema_version (
@@ -74,6 +74,43 @@ CREATE TABLE IF NOT EXISTS export_tracking (
     form_data_exported INTEGER DEFAULT 0,
     attachments_count  INTEGER DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS contracts (
+    contract_id      TEXT PRIMARY KEY,
+    employee_name    TEXT NOT NULL,
+    employee_email   TEXT NOT NULL,
+    department       TEXT DEFAULT '',
+    position         TEXT DEFAULT '',
+    contract_type    TEXT DEFAULT 'permanent',
+    start_date       TEXT,
+    end_date         TEXT,
+    reminder_days    INTEGER DEFAULT 30,
+    status           TEXT DEFAULT 'active',
+    envelope_id      TEXT REFERENCES envelopes(envelope_id),
+    notes            TEXT DEFAULT '',
+    created_at       TEXT DEFAULT (datetime('now')),
+    updated_at       TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS portal_sessions (
+    session_id       TEXT PRIMARY KEY,
+    employee_email   TEXT NOT NULL,
+    verify_code      TEXT NOT NULL,
+    expires_at       TEXT NOT NULL,
+    verified         INTEGER DEFAULT 0,
+    created_at       TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS compliance_exports (
+    export_id        TEXT PRIMARY KEY,
+    export_type      TEXT NOT NULL,
+    date_from        TEXT,
+    date_to          TEXT,
+    envelope_count   INTEGER DEFAULT 0,
+    total_size_bytes INTEGER DEFAULT 0,
+    file_path        TEXT,
+    created_at       TEXT DEFAULT (datetime('now'))
+);
 """
 
 INDEXES_SQL = """
@@ -89,6 +126,11 @@ CREATE INDEX IF NOT EXISTS idx_export_batch       ON export_tracking(export_batc
 CREATE INDEX IF NOT EXISTS idx_envelopes_created_account ON envelopes(account_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_export_batch_exported ON export_tracking(export_batch, exported_at);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_documents_env_doc ON documents(envelope_id, document_id);
+CREATE INDEX IF NOT EXISTS idx_contracts_email    ON contracts(employee_email);
+CREATE INDEX IF NOT EXISTS idx_contracts_status   ON contracts(status);
+CREATE INDEX IF NOT EXISTS idx_contracts_end_date ON contracts(end_date);
+CREATE INDEX IF NOT EXISTS idx_portal_email       ON portal_sessions(employee_email);
+CREATE INDEX IF NOT EXISTS idx_compliance_date    ON compliance_exports(created_at);
 """
 
 MIGRATIONS: Dict[int, str] = {
@@ -102,6 +144,47 @@ ALTER TABLE envelopes ADD COLUMN updated_at TEXT DEFAULT (datetime('now'));
 CREATE INDEX IF NOT EXISTS idx_envelopes_created_account ON envelopes(account_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_export_batch_exported ON export_tracking(export_batch, exported_at);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_documents_env_doc ON documents(envelope_id, document_id);
+""",
+    4: """
+CREATE TABLE IF NOT EXISTS contracts (
+    contract_id      TEXT PRIMARY KEY,
+    employee_name    TEXT NOT NULL,
+    employee_email   TEXT NOT NULL,
+    department       TEXT DEFAULT '',
+    position         TEXT DEFAULT '',
+    contract_type    TEXT DEFAULT 'permanent',
+    start_date       TEXT,
+    end_date         TEXT,
+    reminder_days    INTEGER DEFAULT 30,
+    status           TEXT DEFAULT 'active',
+    envelope_id      TEXT REFERENCES envelopes(envelope_id),
+    notes            TEXT DEFAULT '',
+    created_at       TEXT DEFAULT (datetime('now')),
+    updated_at       TEXT DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS portal_sessions (
+    session_id       TEXT PRIMARY KEY,
+    employee_email   TEXT NOT NULL,
+    verify_code      TEXT NOT NULL,
+    expires_at       TEXT NOT NULL,
+    verified         INTEGER DEFAULT 0,
+    created_at       TEXT DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS compliance_exports (
+    export_id        TEXT PRIMARY KEY,
+    export_type      TEXT NOT NULL,
+    date_from        TEXT,
+    date_to          TEXT,
+    envelope_count   INTEGER DEFAULT 0,
+    total_size_bytes INTEGER DEFAULT 0,
+    file_path        TEXT,
+    created_at       TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_contracts_email    ON contracts(employee_email);
+CREATE INDEX IF NOT EXISTS idx_contracts_status   ON contracts(status);
+CREATE INDEX IF NOT EXISTS idx_contracts_end_date ON contracts(end_date);
+CREATE INDEX IF NOT EXISTS idx_portal_email       ON portal_sessions(employee_email);
+CREATE INDEX IF NOT EXISTS idx_compliance_date    ON compliance_exports(created_at);
 """,
 }
 
@@ -328,6 +411,90 @@ class TrackingDb:
             "SELECT form_data_json FROM envelopes WHERE envelope_id = ?", (envelope_id,)
         ).fetchone()
         return json.loads(row[0]) if row and row[0] else None
+
+    # ------------------------------------------------------------------
+    # Contracts CRUD
+    # ------------------------------------------------------------------
+
+    def upsert_contract(self, data: Dict[str, Any]) -> None:
+        data["updated_at"] = self._now()
+        cols = ["contract_id", "employee_name", "employee_email", "department", "position",
+                "contract_type", "start_date", "end_date", "reminder_days", "status",
+                "envelope_id", "notes", "created_at", "updated_at"]
+        placeholders = ", ".join(f":{c}" for c in cols)
+        update_set = ", ".join(f"{c} = excluded.{c}" for c in cols if c not in ("contract_id", "created_at"))
+        sql = f"INSERT INTO contracts ({', '.join(cols)}) VALUES ({placeholders}) ON CONFLICT(contract_id) DO UPDATE SET {update_set}"
+        row = {c: data.get(c, None) for c in cols}
+        self.conn.execute(sql, row)
+        self.conn.commit()
+
+    def get_contracts(self, status: Optional[str] = None, email: Optional[str] = None,
+                      expiring_days: Optional[int] = None, limit: int = 100) -> List[Dict[str, Any]]:
+        parts = ["SELECT * FROM contracts WHERE 1=1"]
+        params: list = []
+        if status:
+            parts.append("AND status = ?"); params.append(status)
+        if email:
+            parts.append("AND employee_email = ?"); params.append(email)
+        if expiring_days is not None:
+            parts.append("AND end_date IS NOT NULL AND end_date <= date('now', ?) AND end_date >= date('now')")
+            params.append(f"+{expiring_days} days")
+        parts.append("ORDER BY end_date ASC LIMIT ?"); params.append(int(limit))
+        return [dict(r) for r in self.conn.execute(" ".join(parts), params).fetchall()]
+
+    def get_contract(self, contract_id: str) -> Optional[Dict[str, Any]]:
+        row = self.conn.execute("SELECT * FROM contracts WHERE contract_id = ?", (contract_id,)).fetchone()
+        return dict(row) if row else None
+
+    # ------------------------------------------------------------------
+    # Portal sessions
+    # ------------------------------------------------------------------
+
+    def create_portal_session(self, email: str, code: str, ttl_minutes: int = 15) -> str:
+        import uuid
+        session_id = str(uuid.uuid4())
+        expires = self._now()  # simplified; actual expiry enforced in app
+        self.conn.execute(
+            "INSERT INTO portal_sessions (session_id, employee_email, verify_code, expires_at) VALUES (?, ?, ?, datetime('now', ?))",
+            (session_id, email, code, f"+{ttl_minutes} minutes"),
+        )
+        self.conn.commit()
+        return session_id
+
+    def verify_portal_code(self, email: str, code: str) -> Optional[str]:
+        row = self.conn.execute(
+            "SELECT session_id FROM portal_sessions WHERE employee_email = ? AND verify_code = ? AND verified = 0 AND expires_at > datetime('now') ORDER BY created_at DESC LIMIT 1",
+            (email, code),
+        ).fetchone()
+        if row:
+            self.conn.execute("UPDATE portal_sessions SET verified = 1 WHERE session_id = ?", (row[0],))
+            self.conn.commit()
+            return row[0]
+        return None
+
+    def get_portal_envelopes(self, email: str) -> List[Dict[str, Any]]:
+        return [dict(r) for r in self.conn.execute(
+            "SELECT envelope_id, template_name, status, created_at, completed_at FROM envelopes WHERE employee_email = ? ORDER BY created_at DESC LIMIT 50",
+            (email,),
+        ).fetchall()]
+
+    # ------------------------------------------------------------------
+    # Compliance exports
+    # ------------------------------------------------------------------
+
+    def record_compliance_export(self, export_id: str, export_type: str, date_from: str = "",
+                                  date_to: str = "", envelope_count: int = 0,
+                                  total_size_bytes: int = 0, file_path: str = "") -> None:
+        self.conn.execute(
+            "INSERT INTO compliance_exports (export_id, export_type, date_from, date_to, envelope_count, total_size_bytes, file_path) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (export_id, export_type, date_from, date_to, envelope_count, total_size_bytes, file_path),
+        )
+        self.conn.commit()
+
+    def get_compliance_exports(self, limit: int = 20) -> List[Dict[str, Any]]:
+        return [dict(r) for r in self.conn.execute(
+            "SELECT * FROM compliance_exports ORDER BY created_at DESC LIMIT ?", (int(limit),)
+        ).fetchall()]
 
     # ------------------------------------------------------------------
     # Batch

@@ -176,6 +176,8 @@
             <a href="/templates/download" class="{{ 'active' if 'templates/download' in request.path else '' }}">⬇️ <span>Template DL</span></a>
             <a href="/export" class="{{ 'active' if 'export' in request.path else '' }}">📦 <span>Export</span></a>
             <a href="/bulk-send" class="{{ 'active' if 'bulk-send' in request.path else '' }}">📨 <span>Bulk Send</span></a>
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.1); margin:8px 20px;">
+            <a href="/portal/login" class="{{ 'active' if 'portal' in request.path else '' }}" style="color:#4fc3f7;">🔑 <span>员工门户</span></a>
         </nav>
     </div>
     <div class="content">

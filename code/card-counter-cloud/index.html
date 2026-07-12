@@ -174,21 +174,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 <!-- ==================== SETTINGS TAB ==================== -->
 <div class="tab-content" id="tab-settings">
   <div class="header"><h1>⚙️ 设置</h1></div>
-  <div class="sync-bar" id="syncBar">
-    <span class="sync-dot" id="syncDot"></span>
-    <span id="syncStatus">同步状态检查中...</span>
-    <button class="btn btn-sm btn-outline" onclick="manualSync()" style="margin-left:auto">手动同步</button>
-  </div>
+
+  <!-- Auth section: rendered by renderAuthUI() -->
+  <div id="authSection"></div>
 
   <div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px">
     <h3 style="font-size:14px;margin-bottom:12px">☁️ 云端配置</h3>
     <div class="form-group"><label>CloudBase 环境ID</label>
       <div style="display:flex;gap:8px">
         <input type="text" id="tcbEnvId" placeholder="如：my-app-123abc" style="flex:1">
-        <button class="btn btn-primary btn-sm" onclick="saveEnvId()">保存</button>
+        <button class="btn btn-primary btn-sm" onclick="saveCloudConfig()">保存</button>
       </div>
     </div>
-    <p style="font-size:11px;color:var(--text-2);margin-top:4px">在腾讯云 CloudBase 控制台创建环境后，将环境ID填入此处启用云端同步</p>
+    <div class="form-group"><label>Publishable Key（可选）</label><input type="text" id="tcbPubKey" placeholder="在 CloudBase 控制台 > 认证设置中获取"></div>
+    <p style="font-size:11px;color:var(--text-2);margin-top:4px">在腾讯云 CloudBase 控制台创建环境并开启用户名密码认证后，填入环境ID和Publishable Key启用云端同步</p>
   </div>
 
   <div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px">
@@ -319,26 +318,131 @@ let currentSort = 'created';
 let checkinTargetId = null;
 let reviewTargetId = null;
 let reviewStar = 0;
+let currentUser = null; // { id, user_metadata: { username, ... } }
+
+function userId() { return currentUser && (currentUser.id || currentUser.uid || ''); }
 
 // ═══════════════════════════════════════════════════════════
-// CLOUDBASE INIT
+// CLOUDBASE INIT  (v2/v3 SDK)
 // ═══════════════════════════════════════════════════════════
 function initCloudBase() {
-  // Configure these after creating CloudBase env
   const envId = localStorage.getItem('tcb_envId') || '';
-  if (!envId) { updateSyncStatus('disconnected', '未配置云端'); return; }
+  const pubKey = localStorage.getItem('tcb_pubKey') || '';
+  if (!envId) {
+    updateSyncStatus('disconnected', '未配置云端');
+    renderAuthUI();
+    return;
+  }
   try {
-    app = cloudbase.init({ env: envId });
-    app.auth({ persistence: 'local' }).anonymousAuthProvider().signIn().then(() => {
-      db = app.database();
-      cloudEnabled = true;
-      updateSyncStatus('connected', '云端已连接');
-      syncFromCloud();
-    }).catch(e => {
-      updateSyncStatus('disconnected', '云端认证失败: '+e.message);
+    app = cloudbase.init({
+      env: envId,
+      region: 'ap-shanghai',
+      accessKey: pubKey || undefined,
+      auth: { detectSessionInUrl: true }
     });
+    // Listen for auth state: fires on init, login, logout
+    app.auth.onAuthStateChange(authStateHandler);
   } catch(e) {
     updateSyncStatus('disconnected', 'SDK错误: '+e.message);
+    renderAuthUI();
+  }
+}
+
+async function authStateHandler(event, session) {
+  if (session) {
+    try {
+      const uRes = await app.auth.getUser();
+      currentUser = (uRes.data && uRes.data.user) || uRes;
+    } catch(e) { currentUser = { uid: (session.user && session.user.id) || '' }; }
+    cloudEnabled = true;
+    db = app.database();
+    syncFromCloud();
+  } else {
+    currentUser = null;
+    cloudEnabled = false;
+    db = null;
+  }
+  renderAuthUI();
+}
+
+// ═══════════════════════════════════════════════════════════
+// AUTH UI & ACTIONS
+// ═══════════════════════════════════════════════════════════
+function renderAuthUI() {
+  const el = document.getElementById('authSection');
+  if (!el) return;
+  if (currentUser) {
+    const um = currentUser.user_metadata || {};
+    const name = um.username || um.name || um.nickName || currentUser.id || '用户';
+    el.innerHTML =
+      '<div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px">' +
+      '<h3 style="font-size:14px;margin-bottom:8px">👤 用户信息</h3>' +
+      '<p style="font-size:13px;margin-bottom:8px">已登录: <strong>' + esc(name) + '</strong></p>' +
+      '<div class="sync-bar" id="syncBar">' +
+      '  <span class="sync-dot" id="syncDot"></span>' +
+      '  <span id="syncStatus">检查中...</span>' +
+      '  <button class="btn btn-sm btn-outline" onclick="manualSync()" style="margin-left:auto">手动同步</button>' +
+      '</div>' +
+      '<div style="margin-top:8px;display:flex;gap:8px">' +
+      '  <button class="btn btn-danger btn-sm" onclick="handleLogout()">退出登录</button>' +
+      '</div></div>';
+    updateSyncStatus(
+      cloudEnabled ? 'connected' : 'disconnected',
+      '已登录: ' + esc(name) + (cloudEnabled ? '' : ' · 同步未就绪')
+    );
+  } else {
+    el.innerHTML =
+      '<div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px">' +
+      '<h3 style="font-size:14px;margin-bottom:8px">🔑 登录 / 注册</h3>' +
+      '<div class="form-group"><label>用户名</label><input type="text" id="loginUsername" placeholder="输入用户名" autocomplete="username"></div>' +
+      '<div class="form-group"><label>密码</label><input type="password" id="loginPassword" placeholder="输入密码" autocomplete="current-password"></div>' +
+      '<div style="display:flex;gap:8px">' +
+      '  <button class="btn btn-primary btn-sm" onclick="handleLogin()">登录</button>' +
+      '  <button class="btn btn-outline btn-sm" onclick="handleRegister()">注册</button>' +
+      '</div>' +
+      '<p id="authMessage" style="font-size:11px;color:var(--text-2);margin-top:4px"></p>' +
+      '</div>';
+  }
+}
+
+function authMsg(txt) {
+  const el = document.getElementById('authMessage');
+  if (el) el.textContent = txt;
+}
+
+async function handleLogin() {
+  if (!app) { authMsg('请先在「云端配置」中设置环境ID'); return; }
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!username || !password) { toast('请输入用户名和密码'); return; }
+  try {
+    await app.auth.signInWithPassword({ username, password });
+    toast('登录成功');
+  } catch(e) {
+    authMsg('登录失败: ' + e.message);
+  }
+}
+
+async function handleRegister() {
+  if (!app) { authMsg('请先在「云端配置」中设置环境ID'); return; }
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!username || !password) { toast('请输入用户名和密码'); return; }
+  try {
+    await app.auth.signUp({ username, password });
+    authMsg('注册成功，请登录');
+    toast('注册成功，请登录');
+  } catch(e) {
+    authMsg('注册失败: ' + e.message);
+  }
+}
+
+async function handleLogout() {
+  try {
+    await app.auth.signOut();
+    toast('已退出登录');
+  } catch(e) {
+    toast('退出失败: ' + e.message);
   }
 }
 
@@ -369,17 +473,17 @@ function genId() { return Date.now().toString(36) + Math.random().toString(36).s
 function updateSyncStatus(status, msg) {
   const dot = document.getElementById('syncDot');
   const txt = document.getElementById('syncStatus');
-  dot.className = 'sync-dot ' + status;
-  txt.textContent = msg;
+  if (dot) dot.className = 'sync-dot ' + status;
+  if (txt) { txt.textContent = msg; txt.dataset.lastMsg = msg; }
 }
 
 async function syncFromCloud() {
-  if (!cloudEnabled || !db) return;
+  if (!cloudEnabled || !db || !currentUser) return;
   try {
-    // Pull quotas
-    const qRes = await db.collection('quotas').get();
-    const cRes = await db.collection('checkins').get();
-    const rRes = await db.collection('ratings').get();
+    // Pull quotas scoped to current user
+    const qRes = await db.collection('quotas').where({ userId: userId() }).get();
+    const cRes = await db.collection('checkins').where({ userId: userId() }).get();
+    const rRes = await db.collection('ratings').where({ userId: userId() }).get();
 
     let changed = false;
     // Merge quotas
@@ -416,13 +520,14 @@ async function syncFromCloud() {
 }
 
 async function pushToCloud(collection, data) {
-  if (!cloudEnabled || !db) return;
+  if (!cloudEnabled || !db || !currentUser) return;
+  const payload = { ...data, userId: userId() };
   try {
-    const existing = await db.collection(collection).where({ localId: data.localId }).get();
+    const existing = await db.collection(collection).where({ localId: data.localId, userId: userId() }).get();
     if (existing.data.length > 0) {
-      await db.collection(collection).doc(existing.data[0]._id).update(data);
+      await db.collection(collection).doc(existing.data[0]._id).update(payload);
     } else {
-      await db.collection(collection).add(data);
+      await db.collection(collection).add(payload);
     }
   } catch(e) {
     localData.syncStatus.hasPendingSync = true;
@@ -732,8 +837,8 @@ async function deleteQuota(id) {
   if (!confirm('确定删除该配额吗？')) return;
   localData.quotas = localData.quotas.filter(q => q.localId !== id);
   saveLocal();
-  if (cloudEnabled) {
-    try { const r = await db.collection('quotas').where({localId:id}).get(); if (r.data.length) await db.collection('quotas').doc(r.data[0]._id).remove(); } catch(e) {}
+  if (cloudEnabled && currentUser) {
+    try { const r = await db.collection('quotas').where({localId:id, userId:userId()}).get(); if (r.data.length) await db.collection('quotas').doc(r.data[0]._id).remove(); } catch(e) {}
   }
   renderAll();
   toast('已删除');
@@ -917,17 +1022,19 @@ function loadPreferences() {
   document.getElementById('weightHoliday').value = p.holidayWeight || 1.5;
 }
 
-function saveEnvId() {
+function saveCloudConfig() {
   const envId = document.getElementById('tcbEnvId').value.trim();
+  const pubKey = document.getElementById('tcbPubKey').value.trim();
   if (!envId) { toast('请输入环境ID'); return; }
   localStorage.setItem('tcb_envId', envId);
-  toast('环境ID已保存，正在连接...');
+  localStorage.setItem('tcb_pubKey', pubKey);
+  toast('配置已保存，正在连接...');
   initCloudBase();
 }
 
-function loadEnvId() {
-  const envId = localStorage.getItem('tcb_envId') || '';
-  document.getElementById('tcbEnvId').value = envId;
+function loadCloudConfig() {
+  document.getElementById('tcbEnvId').value = localStorage.getItem('tcb_envId') || '';
+  document.getElementById('tcbPubKey').value = localStorage.getItem('tcb_pubKey') || '';
 }
 
 function generateDemoData() {
@@ -966,15 +1073,15 @@ function checkFirstLaunch() {
 }
 
 async function checkCloudRestore() {
-  if (!cloudEnabled || !db) return;
+  if (!cloudEnabled || !db || !currentUser) return;
   try {
-    const qRes = await db.collection('quotas').count();
+    const qRes = await db.collection('quotas').where({ userId: userId() }).count();
     if (qRes.total > 0) {
       // Cloud has data, ask user
       if (confirm('发现云端备份数据，是否恢复？选择「确定」将下载云端数据覆盖本地，选择「取消」保留当前示例数据')) {
-        const data = await db.collection('quotas').get();
-        const ciRes = await db.collection('checkins').get();
-        const rRes = await db.collection('ratings').get();
+        const data = await db.collection('quotas').where({ userId: userId() }).get();
+        const ciRes = await db.collection('checkins').where({ userId: userId() }).get();
+        const rRes = await db.collection('ratings').where({ userId: userId() }).get();
         // Clear and replace
         localData.quotas = data.data;
         localData.checkins = ciRes.data;
@@ -1050,7 +1157,7 @@ function switchTab(name) {
   if (name === 'checkin') renderCheckinTab();
   if (name === 'stats') renderStatsTab();
   if (name === 'reviews') renderReviewTab();
-  if (name === 'settings') { loadPreferences(); loadEnvId(); }
+  if (name === 'settings') { loadPreferences(); loadCloudConfig(); renderAuthUI(); }
 }
 
 // ═══════════════════════════════════════════════════════════

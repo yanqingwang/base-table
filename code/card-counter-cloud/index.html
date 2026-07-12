@@ -461,9 +461,8 @@ function calcSuggestion(q) {
   const pref = localData.preferences;
   const wDay = pref.weekdayWeight || 1;
   const wEnd = pref.weekendWeight || 2;
-  const wHol = pref.holidayWeight || 1.5;
-  // Count days in next 30 days by type
-  let weekendDays = 0, holidayDays = 0, weekdayDays = 0;
+  // ponytail: holidayWeight (1.5×) defined but unused — holiday detection needs external calendar API
+  let weekendDays = 0, weekdayDays = 0;
   const now = new Date();
   for (let i = 0; i < 30; i++) {
     const d = new Date(now); d.setDate(d.getDate()+i);
@@ -471,7 +470,7 @@ function calcSuggestion(q) {
     if (day === 0 || day === 6) weekendDays++;
     else weekdayDays++;
   }
-  const weightedDays = weekdayDays * wDay + weekendDays * wEnd + holidayDays * wHol;
+  const weightedDays = weekdayDays * wDay + weekendDays * wEnd;
   const interval = Math.ceil(weightedDays / rem);
   return '建议每' + interval + '天参加一次（剩余'+rem+'次）';
 }

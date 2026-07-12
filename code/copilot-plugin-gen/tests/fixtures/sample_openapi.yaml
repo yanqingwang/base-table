@@ -1,0 +1,34 @@
+openapi: 3.0.3
+info:
+  title: Contoso Budgets API
+  version: 1.0.0
+paths:
+  /budgets:
+    get:
+      operationId: listBudgets
+      summary: List all budgets
+      description: Returns all budgets in the org.
+      responses:
+        "200":
+          description: OK
+    post:
+      operationId: createBudget
+      summary: Create a budget
+      description: Creates a new budget.
+      responses:
+        "201":
+          description: Created
+  /budgets/{name}/charge:
+    post:
+      operationId: chargeBudget
+      summary: Charge a budget
+      description: Charges an amount to a named budget.
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK

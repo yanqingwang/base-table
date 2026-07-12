@@ -1,0 +1,19 @@
+agent:
+  name: Contoso Budgets
+  description: Query and manage Contoso budgets.
+  instructions: You are the Contoso budgets assistant.
+  conversation_starters:
+    - title: Check budget
+      text: How much is left in the travel budget?
+  namespace: contoso-budgets
+auth:
+  type: oauth2
+  entra:
+    tenant_id: 00000000-0000-0000-0000-000000000000
+    client_id: 11111111-1111-1111-1111-111111111111
+    scopes:
+      - api://contoso-budgets/.default
+source:
+  openapi: tests/fixtures/sample_openapi.yaml
+output:
+  format: folder

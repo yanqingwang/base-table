@@ -1,0 +1,16 @@
+openapi: 3.0.3
+info:
+  title: Bad
+  version: 1.0.0
+paths:
+  /budgets:
+    get:
+      # missing operationId on purpose
+      summary: List
+      responses:
+        "200":
+          description: OK
+  /budgets/{name}/charge:
+    post:
+      operationId: chargeBudget
+      responses: {}   # no 2xx -> warning

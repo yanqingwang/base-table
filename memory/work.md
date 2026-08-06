@@ -278,5 +278,18 @@ Obsidian ↔ Joplin Server 双向同步插件 `obsidian-joplin-server-sync`，�
 - SettingsTab：开关 toggle；关闭时密码框和 Load keys 按钮禁用
 - 逻辑测试 3/3 通过：开关OFF+密码→禁用 / 开关ON+空密码→禁用 / 开关ON+密码→启用
 - test/test1 data.json 已设 `e2eeEnabled: true` + 密码 qqqqqqqq
-WEOF
-echo "memory/work.md 已更新"
+
+### 资源 blob 解密修复（v0.3.62）
+- **Bug**：forcePull 收集阶段已解密 resource meta（`encryption_applied` 变 0），`downloadResource` 靠 meta 标志判断 blob 是否加密 → 误判为明文 → blob 以密文写入磁盘（PNG 文件头是 `JED01000` 而非 `\x89PNG`，sample.bin 从 2048 膨胀到 2870 字节）
+- **修复**：从 blob 内容本身判断（前 5 字节是否 `JED01`），与 meta 状态解耦
+- **验证**：隔离环境完整磁盘级校验通过——sample.bin 恢复 2048 字节、PNG 头 `\x89PNG`、push+verifycount+pull+verifycount 全部 PASS
+
+### 隔离环境完整磁盘级校验（不受 Obsidian 干扰）
+在 `/tmp/e2ee-vault-test` / `-test1`（同一服务器账号 + e2eeEnabled=True）完成：
+1. **push**：reset wiped 14 items → 3 notes + 2 files 加密上传
+2. **verifycount(test)**：3 notes/3 folders/2 metas/2 blobs 与本地 5 文件+3 目录完全匹配，E2EE 3/3 JED01 无明文泄漏 → PASS
+3. **test1 pull**：E2EE 解密拉取 5 文件（blob 解密修复生效）
+4. **verifycount(test1)**：数量一致 → PASS
+
+### 已知限制
+- Obsidian 运行中会删除 CLI 创建的测试文件、后台同步到同一服务器、覆盖 e2eeEnabled 配置（旧版插件不认识该字段）→ 磁盘级测试需在隔离环境或 Obsidian 关闭后进行

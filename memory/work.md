@@ -146,3 +146,137 @@ Obsidian ↔ Joplin Server 双向同步插件 `obsidian-joplin-server-sync`，�
 ### 发布
 - GitHub: https://github.com/yanqingwang/obsidian-joplin-server-sync
 - 最新版本: v0.3.54 (已推送 tag + release + Obsidian 市场)
+
+---
+
+## 2026-08-01 Card-Counter 小程序云开发版改造记录
+
+### 背景与根因
+小程序（奶爸的那些事，AppID `wx9c5974ab24d057c3`）原本用 **web-view** 加载 Flask 云托管（`https://flask-z9hh-281177-5-1453124923.sh.run.tcloudbase.com/`），线上 1.0.1 无法访问该链接。
+**根因**：web-view 的**业务域名必须 ICP 备案**，腾讯云托管共享域名（`*.tcloudbase.com`）无法备案，无法配置为业务域名。
+
+### 解决方案：云开发模式（v2.0.0）
+放弃 web-view，重写为**原生小程序 UI + `wx.cloud.callContainer` 调用 Flask 云托管**：
+- `wx.cloud.callContainer` 免配置业务域名，微信自动注入 `X-WX-OPENID` 头识别用户
+- Flask 后端 `/api/auth/wechat-login` 读取 `X-WX-OPENID` 自动登录（无需修改后端）
+
+### 关键配置
+| 项 | 值 |
+|----|-----|
+| 云托管环境 ID | `prod-d5gm4a2q00a7f9209` |
+| 云托管服务名 | `flask-z9hh` |
+| Flask 公网地址 | `https://flask-z9hh-281177-5-1453124923.sh.run.tcloudbase.com/` |
+| 调用方式 | `wx.cloud.callContainer({config:{env}, path, header:{'X-WX-SERVICE':'flask-z9hh'}, ...})` |
+| 请求域名白名单 | request: `https://card-counter.8.130.118.200.sslip.io` |
+| 代码上传 IP 白名单 | `5.226.50.86`、`103.190.179.55`、`117.185.175.253` |
+| 代码上传密钥 | private.key（本机 `/home/wang/wk/code/card-counter-miniapp/private.key`） |
+
+### 小程序代码结构（v2.0.0）
+- `app.js` — 云开发初始化 + `callApi()` 封装（401 自动重登录）+ 微信自动登录
+- `pages/index` — 配额列表（汇总卡片/进度条/下拉刷新/FAB 新增）
+- `pages/quota` — 新增/编辑/删除配额
+- `pages/checkin` — 签到消费（选次卡/扣减次数/最近记录）
+- `pages/profile` — 个人中心（用户信息/数据统计）
+
+### Flask 后端 API（wxcloudrun-flask）
+- `/api/auth/wechat-login`（GET，读 X-WX-OPENID）、`/api/auth/me`、register/login/profile/change-password
+- `/api/quotas`（CRUD，含 local_id 去重）、`/api/checkins`（+revoke）、`/api/ratings`
+- 认证：JWT Bearer token；数据模型：User/Quota/Checkin/Rating
+
+### 上传/发布经验
+1. **miniprogram-ci 上传**：`node upload_ci.js`（version 2.0.0），需 IP 白名单含本机出口 IP
+2. **IP 白名单坑**：本机 IPv6（`2409:8a1e:4d26:a631::e6a`）无法加入白名单 → **关闭路由器 IPv6** 后走 IPv4（`103.190.179.55`）成功
+3. **提交审核**：版本管理 → 开发版本 → 提交审核 → 勾选协议（React 受控 checkbox 需 click() 触发）→ 处理"接口未配置"+"安全测试"弹窗 → 审核中
+4. **体验版**：需在版本管理将开发版本"设为体验版"，体验成员微信扫码访问（非 URL）
+
+### 当前状态（2026-08-01）
+- 线上版本：1.0.1（旧 web-view 版）
+- 审核中：2.0.0（云开发版，2026-08-01 20:34 提交，预计 1-7 天）
+- 审核通过后需在"审核版本"点击发布
+
+### 相关文件
+- 小程序代码：`/home/wang/wk/code/card-counter-miniapp/`
+- Flask 后端：`/home/wang/wk/code/card-counter-flask/`
+- 上传脚本：`/tmp/upload_ci.js`
+- 任务文档：`AITasks/Product - Card_count*.md`、`AITasks/小程序云托管开发.md`
+
+## 2026-08-02 NoteForge ↔ Obsidian Joplin E2EE 兼容性（方案 A 覆盖）
+
+### 已验证（算法层通过）
+- NoteForge JoplinE2ee 完全符合 Joplin 标准（KeyV1 主密钥/StringV1 笔记/FileV1 资源/JED01 格式）
+- 加密→解密往返 roundtrip match=true（real server 配置测试）
+
+### 服务器协议边界（关键）
+- **裸 `<hex>.md` 名上传 → 服务器 500**（强制 JSON 校验）
+- **`nf-<id>.md` 前缀名上传 → 200 成功**
+- Obsidian discoverMasterKeys 正则只认 `<32hex>.md` → NoteForge 的 `nf-` 主密钥 Obsidian 无法发现
+
+### 互通结论
+| 操作 | 结果 |
+|------|------|
+| 下载 Obsidian 裸hex加密笔记+同密码解密 | ✅ 管线已实现（load_server_master_keys + decrypt_downloaded_body）|
+| 上传用 nf- 前缀 | ✅ |
+| nf- 主密钥给 Obsidian 用 | ❌ 正则限制 |
+
+### 方案 A（覆盖策略）
+- NoteForge 用自有 key + 明文覆盖服务器旧数据
+- 旧 Obsidian 加密数据（b0b25f2b key 缺失，服务器不存在该 key item）→ 无法解密，覆盖之
+- 覆盖上传 = 删除服务器对应旧 item + 用 nf- 重建；下载 = 清本地 + 重新拉取
+
+### 若要全兼容 Obsidian
+- 需改 Obsidian discoverMasterKeys 正则接受 `nf-` 前缀，或让 NoteForge 能裸hex上传（服务器需配合）
+- 文档：AIReports/NoteForge-Obsidian-Joplin-*.md
+
+## 2026-08-06 E2EE 协议重写 + forcePush 先删后传（v0.3.57-0.3.60）
+
+### E2EE 协议重写（v0.3.57）
+原实现与官方 Joplin 协议严重不符（enum 值 off-by-one、主密钥大小错误、块格式错误），与 Joplin 客户端完全不兼容。按 `laurent22/joplin` dev 分支重写：
+
+| 协议项 | 官方规范 | 修复 |
+|--------|---------|------|
+| enum | SJCL1a=5, KeyV1=**8**, FileV1=**9**, StringV1=**10** | ✅ 修正（原为 4/7/8/9） |
+| Header | `JED01` + 6-hex len + 2-hex method + 32-hex keyId | ✅ |
+| 主密钥 | 256 随机字节 → 512 hex，KeyV1 包裹（PBKDF2-SHA512 220000 次） | ✅ |
+| StringV1 | utf16le 编码，64k 块，PBKDF2-SHA512 3 次 | ✅ |
+| FileV1 | base64 编码，128k 块 | ✅ |
+| 块格式 | `[6-hex len][JSON{salt,iv,ct} base64]` | ✅ |
+
+### 验证（全部通过）
+- 自测 `test/e2ee.test.ts`：24/24（往返、多 chunk、篡改检测、emoji 代理对）
+- 互操作 `test/e2ee-interop.test.ts`：7/7（独立实现官方算法双向交叉验证）
+- `e2eeserver`：6/6（真实服务器主密钥/笔记/资源往返）
+- `e2eesync`：9/9（实时同步路径加密/解密）
+- verifycount 密文检查：3/3 JED01，无明文泄漏
+
+### forcePush 先删后传（v0.3.58）
+- **问题**：服务器累积 2321 个 item（历史垃圾），本地只有 30 个文件
+- **修复**：reset 阶段先删除服务器所有 item（保护 info.json + master key），清空 mapping，再重新上传
+- **walkDirs 修复**：只物化子树含可同步文件的目录，避免 `home/wang/文档/test` 嵌套（Obsidian 运行时产物）被当文件夹上传
+- **master key 保护**（v0.3.60）：enableE2EE 只缓存 id 不进 mapping，reset+cleanup 依赖 mapping 判断导致 master key 被误删 → 显式保护 `e2ee.availableMasterKeys` + `mapping.e2eeMasterKeyId`
+
+### CLI 验证命令
+- `verifycount <vault>`：fs 遍历本地 vs 服务器 item（笔记/文件夹/资源/密文）对比
+- `e2eeserver` / `e2eesync` / `verifyenc`：E2EE 服务器端验证
+- 一键脚本：`test/full-sync-verify.sh`（需先关闭 Obsidian）
+
+### 已知问题
+- **Obsidian 运行中无法磁盘级测试**：Obsidian 打开 test/test1 vault 时会删除 CLI 创建的测试文件、后台同步到同一服务器（同一账号）产生重复 item → 必须在 Obsidian 关闭后测试
+- 测试环境：test/test1 均配置同一服务器账号 289631530@qq.com + e2eePassword='qqqqqqqq'
+
+### 发布
+| 版本 | 内容 |
+|------|------|
+| v0.3.57 | E2EE 协议重写 |
+| v0.3.58 | forcePush 先删后传 + verifycount CLI |
+| v0.3.59 | walkDirs 过滤修复 |
+| v0.3.60 | master key 双阶段保护（reset + cleanup） |
+| v0.3.61 | E2EE 启用开关（e2eeEnabled toggle + password 双条件） |
+
+### E2EE 开关（v0.3.61）
+- 新增 `e2eeEnabled: boolean` 设置（默认 false）
+- 启用条件：**开关 ON + 密码非空**（此前密码非空即自动启用）
+- SettingsTab：开关 toggle；关闭时密码框和 Load keys 按钮禁用
+- 逻辑测试 3/3 通过：开关OFF+密码→禁用 / 开关ON+空密码→禁用 / 开关ON+密码→启用
+- test/test1 data.json 已设 `e2eeEnabled: true` + 密码 qqqqqqqq
+WEOF
+echo "memory/work.md 已更新"

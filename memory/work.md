@@ -299,3 +299,11 @@ Obsidian ↔ Joplin Server 双向同步插件 `obsidian-joplin-server-sync`，�
 - **DeltaPuller.applyDelete**：`"stat" in f` 对 TFolder 永远 false（无 stat 属性）→ 文件夹被 unmapped 但本地不删 → 改用 `instanceof TFile`（文件）+ `vault.remove()`（文件夹）
 - **forcePull 父目录过滤**：vault 在 /tmp 下时 `adapter.list('')` 返回父目录 `tmp` → 自底向上删除会误入 .obsidian 清配置 → 过滤含 `/` 的路径
 - **隔离验证**：删除文件夹B → push → pull → 文件夹B 消失、配置保留、其余 3 notes 完好
+
+### 文件/文件夹移动重命名同步修复（v0.3.67-0.3.68）
+- **移动/重命名不同步根因**：`upsertItem` 内容不变（hash 相同）直接跳过 → 服务器 `parent_id/title` 不更新；`renameItem` 先改 mapping 路径 → 移动对 upsertItem 不可见
+- **修复**：upsertItem 加 force 参数（路径变也强制上传）；renameItem 不预改 mapping；文件夹重命名时 PUT 更新服务器 title
+- **文件夹移动到新父目录**：新父目录无服务器映射时文件夹落到根 → renameItem 调 `ensureFolderChain` 确保新父映射存在（v0.3.68）
+- **空目录同步**：walkDirs 要求子树含可同步文件 → 真空目录被过滤 → 改为物化所有空目录，仅排除 home/Library/node_modules 系统目录（v0.3.67）
+- **同步日志明细**：SettingsTab 的 Sync history 表增加 新建/更新/删除 列（v0.3.69）
+- **验证**：真实 test → test1 增量同步 13/13 PASS（文件 修改/新建/删除/重命名/移动 + 文件夹 重命名/删除/移动）；全量 178 文件 + 31 目录 0 差异

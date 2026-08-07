@@ -293,3 +293,9 @@ Obsidian ↔ Joplin Server 双向同步插件 `obsidian-joplin-server-sync`，�
 
 ### 已知限制
 - Obsidian 运行中会删除 CLI 创建的测试文件、后台同步到同一服务器、覆盖 e2eeEnabled 配置（旧版插件不认识该字段）→ 磁盘级测试需在隔离环境或 Obsidian 关闭后进行
+
+### 文件夹删除同步修复（v0.3.64）
+- **DiskAdapter.rmdir**：`fs.rmSync(recursive:false)` 删目录报 `EISDIR` → 改用 `fs.rmdirSync`，forcePull 才能真删空目录
+- **DeltaPuller.applyDelete**：`"stat" in f` 对 TFolder 永远 false（无 stat 属性）→ 文件夹被 unmapped 但本地不删 → 改用 `instanceof TFile`（文件）+ `vault.remove()`（文件夹）
+- **forcePull 父目录过滤**：vault 在 /tmp 下时 `adapter.list('')` 返回父目录 `tmp` → 自底向上删除会误入 .obsidian 清配置 → 过滤含 `/` 的路径
+- **隔离验证**：删除文件夹B → push → pull → 文件夹B 消失、配置保留、其余 3 notes 完好

@@ -1,0 +1,27 @@
+<view class="page">
+  <!-- 筛选 -->
+  <view class="filter-bar" wx:if="{{merchants.length > 0}}">
+    <picker range="{{merchants}}" value="{{filterMerchant}}" bindchange="onFilterChange">
+      <view class="filter-btn">{{filterText}} ▾</view>
+    </picker>
+  </view>
+
+  <!-- 列表 -->
+  <view wx:if="{{loading}}" class="loading-box">加载中...</view>
+
+  <view wx:elif="{{filteredCheckins.length === 0}}" class="empty-box">
+    <text class="empty-icon">🕐</text>
+    <text class="empty-text">暂无签到记录</text>
+  </view>
+
+  <view wx:else class="list">
+    <view wx:for="{{filteredCheckins}}" wx:key="localId" class="item">
+      <view class="item-left">
+        <text class="item-merchant">{{item.merchantText}}</text>
+        <text class="item-date">{{item.checkinDate}} {{item.checkinTime}}</text>
+        <text wx:if="{{item.dateEditText}}" class="item-edit-log">📝 {{item.dateEditText}}</text>
+      </view>
+      <text class="item-deduct">-{{item.deductTimes}}次</text>
+    </view>
+  </view>
+</view>

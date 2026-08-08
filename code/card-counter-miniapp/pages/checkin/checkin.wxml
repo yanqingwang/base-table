@@ -1,0 +1,71 @@
+<view class="page">
+  <!-- 签到表单 -->
+  <view class="checkin-card">
+    <view class="card-header">
+      <text class="card-title">✍️ 签到消费</text>
+      <text class="history-link" bindtap="goHistory">历史记录 ›</text>
+    </view>
+
+    <!-- 选择次卡 -->
+    <scroll-view scroll-x class="quota-scroll" wx:if="{{quotas.length > 0}}">
+      <view
+        wx:for="{{quotas}}"
+        wx:key="localId"
+        class="quota-pill {{selectedId == item.localId ? 'selected' : ''}}"
+        data-id="{{item.localId}}"
+        bindtap="onSelectQuota"
+      >
+        <text class="pill-name">{{item.merchant}}</text>
+        <text class="pill-remain">{{item.remain}}次剩余</text>
+      </view>
+      <view class="quota-pill add" bindtap="goAddQuota">
+        <text class="pill-name">+ 新增</text>
+      </view>
+    </scroll-view>
+    <view wx:else class="no-quota" bindtap="goAddQuota">
+      <text>还没有进行中的次卡，点击添加 →</text>
+    </view>
+
+    <!-- 扣减次数 + 时间 + 日期 -->
+    <view class="form-row">
+      <view class="form-item half">
+        <text class="form-label">扣减次数</text>
+        <input class="form-input" type="number" value="{{deductTimes}}" bindinput="onDeductChange" />
+      </view>
+      <view class="form-item half">
+        <text class="form-label">时间</text>
+        <view class="form-input static">{{checkinTime}}</view>
+      </view>
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">日期（默认今天，可改前后30天）</text>
+      <picker mode="date" value="{{checkinDate}}" start="{{dateStart}}" end="{{dateEnd}}" bindchange="onDateChange">
+        <view class="form-input">{{checkinDate || '选择日期'}} ▾</view>
+      </picker>
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">商户（可手动改）</text>
+      <input class="form-input" value="{{merchant}}" placeholder="选择上方次卡自动填充" bindinput="onMerchantInput" />
+    </view>
+
+    <button class="checkin-btn" bindtap="doCheckin">确认签到</button>
+  </view>
+
+  <!-- 当日签到记录（按所选日期） -->
+  <view class="history-card" wx:if="{{todayCheckins.length > 0}}">
+    <text class="card-title">🕐 {{checkinDate}} 记录</text>
+    <view wx:for="{{todayCheckins}}" wx:key="localId" class="history-item">
+      <view class="history-left">
+        <text class="history-merchant">{{item.merchantText}}</text>
+        <text class="history-time">{{item.checkinDate}} {{item.checkinTime}}</text>
+      </view>
+      <view class="history-right">
+        <text class="history-deduct">-{{item.deductTimes}}次</text>
+        <text class="revoke-btn" data-id="{{item.localId}}" bindtap="changeCheckinDate">改期</text>
+        <text class="revoke-btn" data-id="{{item.localId}}" bindtap="revokeCheckin">撤销</text>
+      </view>
+    </view>
+  </view>
+</view>

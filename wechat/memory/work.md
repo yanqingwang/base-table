@@ -138,3 +138,31 @@
   - `onHide()` → `autoSync('push')`：关闭/切后台自动推送本地未同步数据
   - `autoSync(mode)`：幂等（syncing 标志防重入）+ 等云就绪 + 8s 超时兜底
 - **配合已有机制**：各页面 onShow 也 pull（详情/签到/历史/统计）+ bootstrap 初始同步
+- **已上传**：小程序 2.3.5 ✅（包含下方「签到记录全量同步修复」全部改动）
+### 2026-08-08 签到记录（消费明细）全量同步修复（后端 + 小程序 + 网页）
+- **问题**：网页总览→详情底部「签到记录」（日期/扣减次数/备注）初始化同步未上传服务器，历史记录（_synced=true）被增量推送跳过，同账号多端不一致
+- **根因**：
+  1. 网页 manualSync 只推 quotas，从不推 checkins/ratings；init/login/register 只拉不推
+  2. 网页 pushToServer 吞错误 + 无 _synced 标记 → 失败记录永久丢失
+  3. 网页 revoke 用 localId 调 `/api/checkins/<int:cid>/revoke` → 404，服务端记录未撤销
+  4. 小程序 push() 按 _synced 跳过历史记录（服务器重建后历史数据无法找回）
+  5. 后端 Checkin 无 note（备注）列；POST 硬编码 is_revoked=False（本地撤销记录重推后复活）
+  6. push() 先推配额再推签到 → 全新服务器上 quota usedTimes 被签到累加二次计数
+- **后端修复**（views.py / model.py / __init__.py）：
+  - Checkin 新增 note 列 + 自动迁移（MySQL information_schema + SQLite PRAGMA，统一用 text() 修复原 SQLAlchemy2 隐患）
+  - POST /api/checkins 接受 note + 尊重 isRevoked；仅新记录且未撤销时累加 used_times；existing 更新 note
+  - checkin_to_dict 输出 note
+- **小程序修复**：
+  - checkin.js 表单加「备注」输入 + doCheckin 记录/推送含 note + 成功后标记 _synced=true
+  - syncManager push(app, force=false)：force 忽略 _synced 全量上传（重建服务器/找回历史用）；推送顺序改为 签到→评价→配额（配额 usedTimes 最后权威覆盖，防二次计数）
+  - app.js bootstrap hasLocal 改为检查三类数据（原来只看 quotas）
+  - 详情/签到/历史页展示签到备注
+- **网页修复**（index.html）：
+  - 新增 pushLocalPending()：init/login/register/manualSync 推送三类本地数据（checkins→ratings→quotas 顺序）
+  - confirmCheckin 增加 note 输入 + await pushCheckin + _synced 标记；失败保留待推送
+  - revokeCheckin 改用服务端 id（ci.id），未推送过的走 POST isRevoked
+  - 新增「⬆️ 强制上传」按钮（forceUpload）：全量覆盖上传本地所有数据
+  - pushToServer 成功后回写服务端 id + _synced
+- **小程序 profile 页**：新增「强制上传」按钮（橙色，确认弹窗后全量上传）
+- **测试**：本地 SQLite 迁移验证 ✓；API 测试（note 持久化 / dedup 不重复扣减 / isRevoked 不扣减 / revoke 返还）✓；浏览器 E2E（历史记录 init 自动推送 + 强制上传 + 详情展示备注 + usedTimes 一致）✓；test_diff/test_merge 全过 ✓
+- **部署状态**：小程序 2.3.5 已上传 ✅（含本小节全部改动，待人工提交审核）；后端待 git push 云托管（网页随后端部署自动更新）

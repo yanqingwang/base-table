@@ -1,11 +1,32 @@
 {
   "pages": [
-    "pages/index/index"
+    "pages/index/index",
+    "pages/quota/quota",
+    "pages/quota/detail/detail",
+    "pages/checkin/checkin",
+    "pages/checkin/history/history",
+    "pages/rating/rating",
+    "pages/stats/stats",
+    "pages/profile/profile",
+    "pages/login/login"
   ],
   "window": {
     "navigationBarTitleText": "次卡管家",
     "navigationBarBackgroundColor": "#5b5fc7",
     "navigationBarTextStyle": "white"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#5b5fc7",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      { "pagePath": "pages/index/index", "text": "次卡" },
+      { "pagePath": "pages/checkin/checkin", "text": "签到" },
+      { "pagePath": "pages/stats/stats", "text": "统计" },
+      { "pagePath": "pages/rating/rating", "text": "评价" },
+      { "pagePath": "pages/profile/profile", "text": "我的" }
+    ]
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json",

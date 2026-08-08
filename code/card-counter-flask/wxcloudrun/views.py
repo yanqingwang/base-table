@@ -17,6 +17,7 @@ from wxcloudrun.dao import (
     list_checkins, get_checkin, get_checkin_by_local_id,
     create_checkin, update_checkin,
     list_ratings, get_rating_by_local_id, create_rating, delete_rating,
+    reset_user_data,
 )
 from wxcloudrun.model import User, Quota, Checkin, Rating
 from wxcloudrun.response import make_succ_empty_response, make_succ_response, make_err_response
@@ -90,6 +91,7 @@ def checkin_to_dict(c):
         'checkinTime': c.checkin_time or '',
         'isRevoked': bool(c.is_revoked),
         'dateEditLogs': c.date_edit_logs or [],
+        'note': c.note or '',
         'createdAt': c.created_at.timestamp() * 1000 if c.created_at else 0,
         'updatedAt': c.updated_at.timestamp() * 1000 if c.updated_at else 0,
     }
@@ -516,6 +518,7 @@ def checkins():
     # 同时更新对应 quota 的 used_times
     quota_local_id = data.get('quotaId', '')
     deduct = int(data.get('deductTimes', 1))
+    is_revoked = bool(data.get('isRevoked', False))
 
     # localId 去重：已存在则更新（防重复推送创建重复签到），仅当前用户
     existing = None
@@ -525,7 +528,8 @@ def checkins():
     quota = None
     if quota_local_id:
         quota = get_quota_by_local_id(quota_local_id, user.id)
-        if quota and quota.user_id == user.id and not existing:
+        # 仅新记录且未撤销时累加 used_times（重复推送/已撤销不重复扣减）
+        if quota and quota.user_id == user.id and not existing and not is_revoked:
             quota.used_times = (quota.used_times or 0) + deduct
             db.session.commit()
 
@@ -534,6 +538,9 @@ def checkins():
         existing.deduct_times = deduct
         existing.checkin_date = checkin_date
         existing.checkin_time = data.get('checkinTime', existing.checkin_time or '')
+        existing.note = data.get('note', existing.note or '')
+        if data.get('isRevoked') is not None:
+            existing.is_revoked = is_revoked
         existing.quota_local_id = quota_local_id
         existing.quota_id = quota.id if quota else existing.quota_id
         db.session.commit()
@@ -548,7 +555,8 @@ def checkins():
         'deduct_times': deduct,
         'checkin_date': checkin_date,
         'checkin_time': data.get('checkinTime', ''),
-        'is_revoked': False,
+        'note': data.get('note', ''),
+        'is_revoked': is_revoked,
     }
     ci = create_checkin(ci_data)
     if not ci.local_id:
@@ -677,3 +685,22 @@ def rating_detail(rid):
 
     delete_rating(r)
     return make_succ_empty_response()
+
+
+# ──────────────────────────────────────────────
+# Reset (清空当前用户业务数据 + 同步记录)
+# ──────────────────────────────────────────────
+
+@app.route('/api/reset', methods=['POST'])
+@require_auth
+def reset_data():
+    """重置当前用户的所有业务数据（次卡/签到/评价），并清空同步状态。
+
+    用于「重置数据，删除同步记录」：云端数据清空后，客户端本地数据
+    与 _synced 同步标记一并清除，下次打开将从空白重新同步。
+    仅删除当前登录用户的数据，不影响账号本身。
+    """
+    user = request.current_user
+    reset_user_data(user.id)
+    return make_succ_response({'reset': True})
+

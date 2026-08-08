@@ -50,19 +50,33 @@ from wxcloudrun import model as _model  # noqa: E402,F401
 with app.app_context():
     db.create_all()
 
-# 轻量迁移：MySQL 已有表补充新增列（SQLite 用 PRAGMA 检查）
-if os.environ.get('USE_MYSQL', '').lower() == 'true' and config.db_address:
-    try:
+# 轻量迁移：已有表补充新增列（MySQL 用 information_schema，SQLite 用 PRAGMA）
+try:
+    from sqlalchemy import text as _text
+    with app.app_context():
         with db.engine.connect() as _conn:
-            _cols = {r[0] for r in _conn.execute(
-                "SELECT COLUMN_NAME FROM information_schema.COLUMNS "
-                "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'checkins'")}
-            if 'date_edit_logs' not in _cols:
-                _conn.execute("ALTER TABLE checkins ADD COLUMN date_edit_logs JSON NULL")
-                _conn.commit()
-    except Exception as _e:  # noqa: BLE001 - 迁移失败不阻塞启动
-        import logging
-        logging.getLogger(__name__).warning('checkins 表迁移失败: %s', _e)
+            if os.environ.get('USE_MYSQL', '').lower() == 'true' and config.db_address:
+                _cols = {r[0] for r in _conn.execute(_text(
+                    "SELECT COLUMN_NAME FROM information_schema.COLUMNS "
+                    "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'checkins'"))}
+                if 'date_edit_logs' not in _cols:
+                    _conn.execute(_text("ALTER TABLE checkins ADD COLUMN date_edit_logs JSON NULL"))
+                    _conn.commit()
+                if 'note' not in _cols:
+                    _conn.execute(_text("ALTER TABLE checkins ADD COLUMN note TEXT NULL"))
+                    _conn.commit()
+            else:
+                # SQLite：PRAGMA 检查列，缺失则 ALTER TABLE 补列
+                _cols = {r[1] for r in _conn.execute(_text("PRAGMA table_info(checkins)"))}
+                if 'date_edit_logs' not in _cols:
+                    _conn.execute(_text("ALTER TABLE checkins ADD COLUMN date_edit_logs JSON NULL"))
+                    _conn.commit()
+                if 'note' not in _cols:
+                    _conn.execute(_text("ALTER TABLE checkins ADD COLUMN note TEXT NULL"))
+                    _conn.commit()
+except Exception as _e:  # noqa: BLE001 - 迁移失败不阻塞启动
+    import logging
+    logging.getLogger(__name__).warning('checkins 表迁移失败: %s', _e)
 
 # 加载控制器
 from wxcloudrun import views

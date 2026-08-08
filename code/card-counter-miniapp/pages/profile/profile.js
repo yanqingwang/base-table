@@ -11,6 +11,7 @@ Page({
     stats: { quotaCount: 0, checkinCount: 0, ratingCount: 0 },
     loading: true,
     syncing: false,
+    forceSyncing: false,
   },
 
   onShow() {
@@ -76,6 +77,40 @@ Page({
     } finally {
       this.setData({ syncing: false });
     }
+  },
+
+  // 强制上传：忽略 _synced 标记全量推送本地数据到云端（用于重建服务器 / 找回历史数据）
+  forceUpload() {
+    if (this.data.syncing || this.data.forceSyncing) return;
+    const total = this.data.stats.quotaCount + this.data.stats.checkinCount + this.data.stats.ratingCount;
+    if (total === 0) {
+      wx.showToast({ title: '本地暂无数据', icon: 'none' });
+      return;
+    }
+    wx.showModal({
+      title: '强制上传',
+      content: `将本地全部 ${total} 条数据（含历史签到记录）全量覆盖上传到云端，确定？`,
+      confirmColor: '#e67e22',
+      success: async (res) => {
+        if (!res.confirm) return;
+        this.setData({ forceSyncing: true });
+        wx.showLoading({ title: '上传中...', mask: true });
+        try {
+          if (!app.globalData.token) {
+            await app.wechatLogin();
+          }
+          const n = await syncManager.push(app, true);
+          wx.hideLoading();
+          wx.showToast({ title: '已上传 ' + n + ' 条', icon: 'success' });
+          this.loadProfile();
+        } catch (e) {
+          wx.hideLoading();
+          wx.showToast({ title: '上传失败', icon: 'none' });
+        } finally {
+          this.setData({ forceSyncing: false });
+        }
+      },
+    });
   },
 
   // 导出备份：写入本地文件并保存到系统文件（wx.saveFileToDisk）
@@ -152,10 +187,10 @@ Page({
     });
   },
 
-  // 清除所有数据
+  // 清除本地数据（云端保留）
   clearAllData() {
     wx.showModal({
-      title: '清除所有数据',
+      title: '清除本地数据',
       content: '将删除本地所有数据（云端数据保留），确定？',
       confirmColor: '#e74c3c',
       success: (res) => {
@@ -163,6 +198,39 @@ Page({
           storage.clearAll();
           wx.showToast({ title: '已清除', icon: 'success' });
           this.loadProfile();
+        }
+      },
+    });
+  },
+
+  // 重置全部数据（本地 + 云端）：清空业务数据并删除同步记录（_synced / syncStatus）
+  resetAllData() {
+    wx.showModal({
+      title: '重置全部数据',
+      content: '将清空本机与云端的所有次卡、签到、评价数据，并删除同步记录。此操作不可恢复，确定？',
+      confirmColor: '#e74c3c',
+      success: async (res) => {
+        if (!res.confirm) return;
+        wx.showLoading({ title: '重置中...', mask: true });
+        try {
+          if (!app.globalData.token) {
+            await app.wechatLogin();
+          }
+          // 1. 云端清空（失败也继续清本地）
+          try {
+            await app.callApi('/api/reset', 'POST');
+          } catch (e) {
+            console.warn('云端重置失败，仅清除本地:', e);
+          }
+          // 2. 清空本地数据 + 同步记录（_synced 标记随数据清除，syncStatus 一并清除）
+          storage.clearAll();
+          try { wx.removeStorageSync('pendingCheckinQuota'); } catch (e) {}
+          wx.hideLoading();
+          wx.showToast({ title: '已重置', icon: 'success' });
+          this.loadProfile();
+        } catch (e) {
+          wx.hideLoading();
+          wx.showToast({ title: '重置失败', icon: 'none' });
         }
       },
     });

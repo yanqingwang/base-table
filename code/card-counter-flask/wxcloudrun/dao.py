@@ -87,6 +87,14 @@ def delete_quota(q):
     db.session.commit()
 
 
+def reset_user_data(user_id):
+    """重置某用户的所有业务数据（次卡 / 签到 / 评价）。仅清数据，保留账号。"""
+    Checkin.query.filter(Checkin.user_id == user_id).delete()
+    Rating.query.filter(Rating.user_id == user_id).delete()
+    Quota.query.filter(Quota.user_id == user_id).delete()
+    db.session.commit()
+
+
 # ── Checkin ──
 
 def list_checkins(user_id):

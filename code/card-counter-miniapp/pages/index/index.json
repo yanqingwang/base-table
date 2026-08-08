@@ -1,4 +1,5 @@
 {
   "navigationBarTitleText": "次卡管家",
+  "enablePullDownRefresh": true,
   "usingComponents": {}
 }

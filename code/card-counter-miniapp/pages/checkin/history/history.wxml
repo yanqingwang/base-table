@@ -19,6 +19,7 @@
       <view class="item-left">
         <text class="item-merchant">{{item.merchantText}}</text>
         <text class="item-date">{{item.checkinDate}} {{item.checkinTime}}</text>
+        <text wx:if="{{item.note}}" class="item-note">💬 {{item.note}}</text>
         <text wx:if="{{item.dateEditText}}" class="item-edit-log">📝 {{item.dateEditText}}</text>
       </view>
       <text class="item-deduct">-{{item.deductTimes}}次</text>

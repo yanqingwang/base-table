@@ -137,7 +137,7 @@ class SyncManager {
       const compareFields = kind === 'quota'
         ? ['merchant', 'item', 'amount', 'totalTimes', 'usedTimes', 'expireDate', 'expire_date', 'note']
         : kind === 'checkin'
-          ? ['merchant', 'deductTimes', 'checkinDate', 'checkinTime', 'isRevoked']
+          ? ['merchant', 'deductTimes', 'checkinDate', 'checkinTime', 'isRevoked', 'note']
           : ['merchant', 'score', 'comment'];
       Object.keys(lMap).forEach(k => {
         const l = lMap[k], c = cMap[k];
@@ -220,17 +220,54 @@ class SyncManager {
   }
 
   /**
-   * 推送本地数据到云端（增量）
+   * 推送本地数据到云端
+   * @param {boolean} force 强制全量上传（忽略 _synced 标记，用于重建服务器数据 / 历史数据找回）
    */
-  async push(app) {
+  async push(app, force = false) {
     const localQuotas = storage.getQuotas();
     const localCheckins = storage.getCheckins();
     const localRatings = storage.getRatings();
 
-    // 配额推送
+    // 先推签到/评价（服务端会累加 quota usedTimes），最后推配额（本地 usedTimes 权威覆盖）
+    // 顺序关键：配额最后推，避免全量上传时 usedTimes 被签到累加二次计数
+    // 签到推送
+    let pushedCheckin = 0;
+    for (const c of localCheckins) {
+      if (!force && c._synced) continue;
+      try {
+        await app.callApi('/api/checkins', 'POST', {
+          localId: c.localId || c.local_id || c.id,
+          quotaId: c.quotaId || c.quota_id || '',
+          merchant: c.merchant || '',
+          deductTimes: c.deduct_times || c.deductTimes || 1,
+          checkinDate: c.checkin_date || c.checkinDate,
+          checkinTime: c.checkin_time || c.checkinTime || '',
+          note: c.note || '',
+          isRevoked: !!c.isRevoked,
+        });
+        c._synced = true;  // 推送成功标记已同步
+        pushedCheckin++;
+      } catch (e) {}
+    }
+    // 评价推送
+    let pushedRating = 0;
+    for (const r of localRatings) {
+      if (!force && r._synced) continue;
+      try {
+        await app.callApi('/api/ratings', 'POST', {
+          localId: r.localId || r.local_id || r.id,
+          merchant: r.merchant || '',
+          score: r.score || 5,
+          comment: r.comment || '',
+        });
+        r._synced = true;  // 推送成功标记已同步
+        pushedRating++;
+      } catch (e) {}
+    }
+    // 配额推送（最后推：usedTimes 以本地为准，覆盖签到累加结果）
     let pushedQuota = 0;
     for (const q of localQuotas) {
-      if (q._synced) continue;
+      if (!force && q._synced) continue;
       try {
         const payload = {
           localId: q.localId || q.local_id || q.id,
@@ -246,38 +283,6 @@ class SyncManager {
         q._synced = true;  // 推送成功标记已同步
         pushedQuota++;
       } catch (e) { /* 单条失败不阻塞 */ }
-    }
-    // 签到推送
-    let pushedCheckin = 0;
-    for (const c of localCheckins) {
-      if (c._synced) continue;
-      try {
-        await app.callApi('/api/checkins', 'POST', {
-          localId: c.localId || c.local_id || c.id,
-          quotaId: c.quotaId || c.quota_id || '',
-          merchant: c.merchant || '',
-          deductTimes: c.deduct_times || c.deductTimes || 1,
-          checkinDate: c.checkin_date || c.checkinDate,
-          checkinTime: c.checkin_time || c.checkinTime || '',
-        });
-        c._synced = true;  // 推送成功标记已同步
-        pushedCheckin++;
-      } catch (e) {}
-    }
-    // 评价推送
-    let pushedRating = 0;
-    for (const r of localRatings) {
-      if (r._synced) continue;
-      try {
-        await app.callApi('/api/ratings', 'POST', {
-          localId: r.localId || r.local_id || r.id,
-          merchant: r.merchant || '',
-          score: r.score || 5,
-          comment: r.comment || '',
-        });
-        r._synced = true;  // 推送成功标记已同步
-        pushedRating++;
-      } catch (e) {}
     }
 
     // 持久化 _synced 标记

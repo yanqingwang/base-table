@@ -55,6 +55,7 @@
       <view>
         <text class="history-date">{{item.checkinDate}}</text>
         <text class="history-time">{{item.checkinTime}}</text>
+        <text class="history-note" wx:if="{{item.note}}">{{item.note}}</text>
       </view>
       <text class="history-deduct">-{{item.deductTimes}}次</text>
     </view>

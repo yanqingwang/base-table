@@ -12,6 +12,7 @@ Page({
     selectedQuota: null,
     deductTimes: 1,
     merchant: '',
+    note: '',
     checkinTime: '',
     checkinDate: '',
     dateStart: '',
@@ -110,8 +111,12 @@ Page({
     this.setData({ merchant: e.detail.value });
   },
 
+  onNoteInput(e) {
+    this.setData({ note: e.detail.value });
+  },
+
   async doCheckin() {
-    const { selectedId, selectedQuota, deductTimes, merchant, checkinTime } = this.data;
+    const { selectedId, selectedQuota, deductTimes, merchant, checkinTime, note } = this.data;
     if (!selectedId && !merchant) {
       wx.showToast({ title: '请选择次卡或填写商户', icon: 'none' });
       return;
@@ -152,6 +157,7 @@ Page({
             deductTimes,
             checkinDate: dateStr,
             checkinTime,
+            note: note || '',
             isRevoked: false,
             updatedAt: Date.now(),
             _synced: false,
@@ -166,7 +172,16 @@ Page({
             deductTimes,
             checkinDate: dateStr,
             checkinTime,
+            note: note || '',
+            isRevoked: false,
           }).then(() => {
+            // 标记已同步，避免重复推送
+            const list = storage.getCheckins();
+            const idx = list.findIndex(x => x.localId === localId);
+            if (idx !== -1) {
+              list[idx]._synced = true;
+              storage.setCheckins(list);
+            }
             // 更新配额 usedTimes 到云端
             if (selectedQuota) {
               app.callApi('/api/quotas/' + (selectedQuota.id || ''), 'PUT', {

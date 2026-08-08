@@ -175,6 +175,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
     <h3 style="font-size:14px;margin-bottom:8px">💾 数据管理</h3>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
       <button class="btn btn-primary btn-sm" onclick="manualSync()" id="manualSyncBtn">🔄 手动同步</button>
+      <button class="btn btn-sm" style="background:var(--orange,#e67e22);color:#fff" onclick="forceUpload()" id="forceUploadBtn">⬆️ 强制上传</button>
       <button class="btn btn-outline btn-sm" onclick="exportData()">导出备份</button>
       <button class="btn btn-outline btn-sm" onclick="document.getElementById('importFile').click()">导入恢复</button>
       <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
@@ -235,6 +236,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
       <button onclick="adjCheckin(1)">+</button>
     </div>
     <p style="text-align:center;font-size:11px;color:var(--text-2)">扣减次数</p>
+    <div class="form-group"><label>备注（可选）</label><input type="text" id="checkinNote" placeholder="本次消费备注"></div>
     <div class="form-actions">
       <button class="btn btn-outline" onclick="closeCheckin()">取消</button>
       <button class="btn btn-primary" onclick="confirmCheckin()">确认签到</button>
@@ -334,6 +336,7 @@ async function init() {
   if (loggedIn()) {
     fetchUserInfo();
     syncFromServer();
+    pushLocalPending();
   }
 }
 
@@ -489,6 +492,7 @@ async function handleRegister() {
     renderAuthUI();
     fetchUserInfo();
     syncFromServer();
+    pushLocalPending();
     toast('注册成功！');
   } catch(e) {
     toast(e.message);
@@ -510,6 +514,7 @@ async function handleLogin() {
     renderAuthUI();
     fetchUserInfo();
     syncFromServer();
+    pushLocalPending();
     toast('登录成功！');
   } catch(e) {
     toast(e.message);
@@ -664,7 +669,39 @@ async function syncFromServer() {
   syncInProgress = false;
 }
 
-// 手动同步：拉取云端 + 推送本地，并显示状态
+// 推送本地数据到云端（仅推送云端没有的 localId；配额/签到/评价三类都推）
+async function pushLocalPending() {
+  if (!loggedIn()) return 0;
+  let pushed = 0;
+  try {
+    const [cloudQuotas, cloudCheckins, cloudRatings] = await Promise.all([
+      apiFetch('/api/quotas'),
+      apiFetch('/api/checkins'),
+      apiFetch('/api/ratings'),
+    ]);
+    const cqIds = new Set((cloudQuotas||[]).map(x => x.localId));
+    const ccIds = new Set((cloudCheckins||[]).map(x => x.localId));
+    const crIds = new Set((cloudRatings||[]).map(x => x.localId));
+    // 先推签到/评价，最后推配额：配额 usedTimes 以本地为准覆盖，避免被签到累加二次计数
+    for (const c of localData.checkins) {
+      if (!c.localId || ccIds.has(c.localId)) continue;
+      await pushToServer('checkins', c); pushed++;
+    }
+    for (const r of localData.ratings) {
+      if (!r.localId || crIds.has(r.localId)) continue;
+      await pushToServer('ratings', r); pushed++;
+    }
+    for (const q of localData.quotas) {
+      if (!q.localId || cqIds.has(q.localId)) continue;
+      await pushToServer('quotas', q); pushed++;
+    }
+  } catch(e) {
+    console.warn('push local pending failed:', e.message);
+  }
+  return pushed;
+}
+
+// 手动同步：推送本地 + 拉取云端，并显示状态
 async function manualSync() {
   if (!loggedIn()) { alert('请先登录'); return; }
   if (syncInProgress) return;
@@ -675,12 +712,8 @@ async function manualSync() {
   status.style.display = 'block';
   status.textContent = '同步中...';
   try {
-    // 1. 推送本地数据到云端（仅推送云端没有的 localId）
-    let pushed = 0;
-    for (const q of localData.quotas) {
-      const exists = (await apiFetch('/api/quotas')).some(x => x.localId === q.localId);
-      if (!exists) { await pushToServer('quotas', q); pushed++; }
-    }
+    // 1. 推送本地数据到云端（配额/签到/评价）
+    const pushed = await pushLocalPending();
     // 2. 拉取云端数据
     await syncFromServer();
     status.textContent = '✅ 同步完成，已推送 ' + pushed + ' 条，拉取云端最新数据';
@@ -693,10 +726,44 @@ async function manualSync() {
   }
 }
 
+// 强制上传：忽略服务器是否已有，全量覆盖上传本地所有数据（找回历史数据 / 重建服务器用）
+async function forceUpload() {
+  if (!loggedIn()) { alert('请先登录'); return; }
+  const total = localData.quotas.length + localData.checkins.length + localData.ratings.length;
+  if (total === 0) { toast('本地暂无数据'); return; }
+  if (!confirm('将本地全部 ' + total + ' 条数据（含历史签到记录）全量覆盖上传到云端，确定？')) return;
+  if (syncInProgress) return;
+  const btn = document.getElementById('forceUploadBtn');
+  const status = document.getElementById('syncStatus');
+  btn.disabled = true;
+  btn.textContent = '⏳ 上传中...';
+  status.style.display = 'block';
+  status.textContent = '上传中...';
+  try {
+    // 先推签到/评价，最后推配额（配额 usedTimes 权威覆盖，避免被签到累加二次计数）
+    for (const c of localData.checkins) { await pushToServer('checkins', c); }
+    for (const r of localData.ratings) { await pushToServer('ratings', r); }
+    for (const q of localData.quotas) { await pushToServer('quotas', q); }
+    status.textContent = '✅ 强制上传完成，共 ' + total + ' 条';
+  } catch(e) {
+    status.textContent = '❌ 上传失败: ' + (e.message || '网络错误');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⬆️ 强制上传';
+    setTimeout(() => { status.style.display = 'none'; }, 4000);
+  }
+}
+
 async function pushToServer(collection, data) {
   if (!loggedIn()) return;
   try {
-    await apiFetch('/api/' + collection, { method: 'POST', body: data });
+    const res = await apiFetch('/api/' + collection, { method: 'POST', body: data });
+    if (res && res.id && collection !== 'quotas') {
+      const list = collection === 'checkins' ? localData.checkins : localData.ratings;
+      const item = list.find(x => x.localId === data.localId);
+      if (item) { item.id = res.id; item._synced = true; }
+      saveLocal();
+    }
   } catch(e) {
     console.warn('push failed:', e.message);
   }
@@ -844,7 +911,7 @@ function renderCheckinTab() {
     tcEl.innerHTML = todays.map(c => {
       const q = localData.quotas.find(q => q.localId === c.quotaId);
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--surface);border-radius:8px;margin-bottom:6px;font-size:13px">
-        <span>${q ? esc(q.merchant) : ''} · 扣${c.deductTimes}次${c.merchant ? ' @'+esc(c.merchant) : ''}</span>
+        <span>${q ? esc(q.merchant) : ''} · 扣${c.deductTimes}次${c.merchant ? ' @'+esc(c.merchant) : ''}${c.note ? ' · '+esc(c.note) : ''}</span>
         <button class="btn btn-sm btn-outline" style="border-color:var(--red);color:var(--red)" onclick="revokeCheckin('${c.localId}')">撤销</button>
       </div>`;
     }).join('');
@@ -993,6 +1060,7 @@ function openCheckin(id) {
   if (!q || remaining(q) <= 0) { toast('该配额已用完'); return; }
   document.getElementById('checkinInfo').textContent = q.merchant + ' · ' + q.item + '（剩余' + remaining(q) + '次）';
   document.getElementById('checkinMerchant').value = '';
+  document.getElementById('checkinNote').value = '';
   document.getElementById('checkinCount').textContent = '1';
   document.getElementById('checkinModal').classList.add('open');
 }
@@ -1025,17 +1093,36 @@ async function confirmCheckin() {
     deductTimes: count,
     checkinDate: todayStr(),
     checkinTime: now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0'),
+    note: document.getElementById('checkinNote').value.trim(),
     isRevoked: false,
     updatedAt: Date.now(),
+    _synced: false,
   };
   q.usedTimes = (q.usedTimes || 0) + count;
   q.updatedAt = Date.now();
   localData.checkins.push(ci);
   saveLocal();
-  pushToServer('checkins', ci);
+  await pushCheckin(ci);
   closeCheckin();
   renderAll();
   toast('✅ 签到成功，扣减'+count+'次');
+}
+
+async function pushCheckin(ci) {
+  if (!loggedIn()) return false;
+  try {
+    const res = await apiFetch('/api/checkins', { method: 'POST', body: ci });
+    ci.id = res && res.id ? res.id : ci.id;
+    ci._synced = true;
+    ci.updatedAt = Date.now();
+    saveLocal();
+    return true;
+  } catch(e) {
+    console.warn('checkin push failed:', e.message);
+    ci._synced = false;
+    saveLocal();
+    return false;
+  }
 }
 
 async function revokeCheckin(id) {
@@ -1048,7 +1135,13 @@ async function revokeCheckin(id) {
   if (q) { q.usedTimes = Math.max(0, (q.usedTimes||0) - ci.deductTimes); q.updatedAt = Date.now(); }
   saveLocal();
   if (loggedIn()) {
-    apiFetch('/api/checkins/' + ci.localId + '/revoke', { method: 'POST' }).catch(() => {});
+    if (ci.id) {
+      apiFetch('/api/checkins/' + ci.id + '/revoke', { method: 'POST' })
+        .then(() => { ci._synced = true; saveLocal(); })
+        .catch(() => { ci._synced = false; saveLocal(); });
+    } else {
+      pushCheckin(ci); // 未推送过的记录：带 isRevoked 上传，服务端直接按已撤销创建
+    }
   }
   renderAll();
   toast('已撤销签到');
@@ -1079,7 +1172,7 @@ function showDetail(id) {
   if (checkins.length > 0) {
     html += '<div style="margin-top:12px"><strong style="font-size:13px">📝 签到记录</strong></div>';
     checkins.slice(0,10).forEach(c => {
-      html += '<div style="font-size:12px;padding:4px 0;border-bottom:1px solid #eee">'+c.checkinDate+' 扣'+c.deductTimes+'次'+(c.merchant&&c.merchant!==q.merchant?' @'+esc(c.merchant):'')+'</div>';
+      html += '<div style="font-size:12px;padding:4px 0;border-bottom:1px solid #eee">'+c.checkinDate+' 扣'+c.deductTimes+'次'+(c.merchant&&c.merchant!==q.merchant?' @'+esc(c.merchant):'')+(c.note?' · '+esc(c.note):'')+'</div>';
     });
     if (checkins.length > 10) html += '<div style="font-size:11px;color:var(--text-2);margin-top:4px">共'+checkins.length+'条记录</div>';
   }

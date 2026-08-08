@@ -59,7 +59,9 @@ App({
       // 清理旧版示例数据（example- 前缀），避免测试数据进入云端
       this.cleanupExampleData();
       // 拉取云端数据合并
-      const hasLocal = storage.get(storage.keys.QUOTAS) && storage.get(storage.keys.QUOTAS).length > 0;
+      const hasLocal = (storage.get(storage.keys.QUOTAS) || []).length > 0
+        || (storage.get(storage.keys.CHECKINS) || []).length > 0
+        || (storage.get(storage.keys.RATINGS) || []).length > 0;
       await syncManager.pull(this);
       // 若有本地数据未同步，推送
       if (hasLocal) {

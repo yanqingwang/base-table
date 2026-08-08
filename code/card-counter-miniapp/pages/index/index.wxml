@@ -1,1 +1,72 @@
-<web-view src="https://flask-z9hh-281177-5-1453124923.sh.run.tcloudbase.com/"></web-view>
+<view class="page">
+  <!-- 头部 -->
+  <view class="header">
+    <view class="header-left">
+      <image wx:if="{{userInfo && userInfo.avatar_url}}" class="avatar" src="{{userInfo.avatar_url}}" />
+      <view wx:else class="avatar avatar-ph">👤</view>
+      <view>
+        <text class="hello">{{userInfo ? (userInfo.nickname || '微信用户') : '你好'}}</text>
+        <text class="sync-time">{{syncText}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 全局建议 -->
+  <view wx:if="{{suggestion && suggestion.totalRemaining > 0}}" class="suggestion-card">
+    <text class="suggestion-num">{{suggestion.totalRemaining}}</text>
+    <text class="suggestion-label">次卡剩余次数</text>
+    <text class="suggestion-msg">{{suggestion.message}}</text>
+  </view>
+
+  <!-- 即将到期 -->
+  <view wx:if="{{expiring.length > 0}}" class="expiring-card">
+    <text class="card-title">⏰ 即将到期</text>
+    <view wx:for="{{expiring}}" wx:key="localId" class="expiring-item">
+      <view>
+        <text class="expiring-name">{{item.name}}</text>
+        <text class="expiring-sub">{{item.sub}}</text>
+      </view>
+      <text class="expiring-badge">{{item.daysLeft}}天</text>
+    </view>
+  </view>
+
+  <!-- 错误 -->
+  <view wx:if="{{error}}" class="error-box">{{error}}</view>
+
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading-box">加载中...</view>
+
+  <!-- 空状态 -->
+  <view wx:if="{{!loading && quotas.length === 0}}" class="empty-box">
+    <text class="empty-icon">🎫</text>
+    <text class="empty-text">还没有次卡，添加第一张吧</text>
+    <button class="empty-btn" bindtap="goAdd">+ 添加次卡</button>
+  </view>
+
+  <!-- 配额列表 -->
+  <view wx:if="{{!loading && quotas.length > 0}}" class="quota-section">
+    <text class="section-title">我的次卡（{{quotas.length}}）</text>
+    <view wx:for="{{quotas}}" wx:key="localId" class="quota-card" bindtap="goDetail" data-id="{{item.localId}}">
+      <view class="quota-header">
+        <view>
+          <text class="quota-merchant">{{item.merchant}}</text>
+          <text class="quota-item">{{item.item}}</text>
+        </view>
+        <text class="quota-remain">剩 {{item.remain}}</text>
+      </view>
+      <view class="progress-track">
+        <view class="progress-fill" style="width: {{item.progress}}%;"></view>
+      </view>
+      <view class="quota-footer">
+        <text class="quota-expire">{{item.expireText}}</text>
+        <text class="quota-amount">{{item.amountText}}</text>
+      </view>
+      <button class="quick-checkin-btn" catchtap="quickCheckin" data-id="{{item.localId}}">快速签到</button>
+    </view>
+  </view>
+
+  <!-- 新增 FAB -->
+  <view class="fab" bindtap="goAdd">
+    <text class="fab-icon">+</text>
+  </view>
+</view>

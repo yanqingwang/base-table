@@ -88,6 +88,17 @@
   margin: 0;
 }
 
+.sync-btn.force {
+  background: #fdf1e3;
+  color: #e67e22;
+}
+
+.sync-actions {
+  display: flex;
+  gap: 12rpx;
+  flex-shrink: 0;
+}
+
 .sync-btn::after { border: none; }
 
 /* 统计 */

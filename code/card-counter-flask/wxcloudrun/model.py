@@ -48,6 +48,7 @@ class Checkin(db.Model):
     checkin_time = db.Column(db.String(32), default='')
     is_revoked = db.Column(db.Boolean, default=False)
     date_edit_logs = db.Column(db.JSON, nullable=True)
+    note = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow,
                            onupdate=datetime.utcnow)

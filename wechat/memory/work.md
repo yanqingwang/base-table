@@ -376,3 +376,19 @@
   - 小程序：**v2.4.6 已上传（开发版本）**，**仍待人工提交审核+发布**（wujie 微前端无法脚本化提交审核）
   - 提交（父仓库 base-table python）：`78893457`（syncManager.js 同步增强）随本次 work.md 提交
 - **遗留提醒**：v2.4.6 仍待人工：版本管理→选 2.4.6 开发版本→提交审核→审核通过后发布（发布后 v2.4.5 的修改页空白修复一并生效）。
+
+### 2026-08-08 签到「修改」页打不开加固（v2.4.7）
+- **需求**：小程序签到界面点「修改」无法打开页面（网页版本正常），请检查并修正。
+- **排查结论**：
+  - 修改页三段式 wxml 兜底（v2.4.5）、页面注册（app.json）、`goEdit` 传 `localId`、`edit.js` 按 localId 查找——链路本身正确；**用户端持续复现主要系未发布所致**（v2.4.5/v2.4.6 均仅上传开发版）。
+  - 同时做四项加固，杜绝一切可能的「打不开/空白」成因：
+- **加固项**：
+  1. `pages/checkin/edit/edit.js`：新增 `_matchId(x, id)` 统一匹配 `localId`/`local_id`/`id` 三种键，`loadData`/`changeDate`/`revoke` 全部改用（兼容历史数据或跨端记录只有部分 id 键的情况）。
+  2. `checkin.wxml`/`history.wxml`：「修改」按钮 `data-id="{{item.localId || item.id}}"` 回退传 `id`，杜绝空 id。
+  3. `app.json`：移除 `lazyCodeLoading: "requiredComponents"`（v2.4.5 曾标记为空白/打不开的疑似诱因，去掉以排除懒加载竞态）。
+  4. 修改页 `edit.wxml` 保持 `wx:if loading / wx:elif checkin / wx:else 未找到` 三段式，任何状态都有渲染。
+- **验证**：`edit.js`/`checkin.js` `node --check` 过；`app.json` JSON 合法；miniprogram-ci 上传 **v2.4.7 成功** ✅（zip 87781B / 39 文件，size 129399B）
+- **部署**：
+  - 小程序：**v2.4.7 已上传（开发版本）**，**仍待人工提交审核+发布**（wujie 微前端无法脚本化提交审核）
+  - 提交（父仓库 base-table python）：`018abab2`（加固改动）随本次 work.md 提交
+- **遗留提醒**：**务必发布 v2.4.7 后该问题才会消失**（此前 v2.4.5 的修改页修复同样未发布）。版本管理→选 2.4.7 开发版→提交审核→审核通过后发布。

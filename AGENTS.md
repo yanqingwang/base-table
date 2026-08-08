@@ -44,6 +44,14 @@ When create code under /home/wang/wk/code/, make the main codes and test example
 	please follow rule work.md
 	/home/wang/wk/memory
 
+## WeChat Projects Workspace (微信项目)
+	微信云托管 / 小程序（次卡管家）相关工作日志、记忆、任务、产出统一存放于:
+	/home/wang/wk/wechat/
+	- 开发记录写入 wechat/memory/work.md（勿写入全局 memory/work.md）
+	- 任务文档在 wechat/tasks/，产出在 wechat/docs/，会话日志在 wechat/logs/
+	- 代码仓库保持原位: code/card-counter-flask（后端）、code/card-counter-miniapp（小程序）
+	- 详见 wechat/README.md
+
 ## Documentation
 
 This workspace includes comprehensive documentation to help you get started and troubleshoot issues:
@@ -75,6 +83,7 @@ The workspace follows a comprehensive documentation structure:
 - **AITasks/**: Obsidian vault with research tasks
 - **AIReports/**: Generated analysis reports
 - **Reports/Charts/**: Generated analysis attached images
+- **obplugin/**: Obsidian plugin memory copies + work results (`README.md`, `plugins.md`, `memory/`)
 
 ## Documentation Best Practices
 
@@ -167,6 +176,10 @@ The workspace follows a comprehensive documentation structure:
 │   └── *.md               # Task files (Chinese/English)
 ├── AIReports/               # Generated analysis reports (save outputs here)
 ├── Reports/Charts               # Generated analysis attached images (save outputs here)
+├── obplugin/                # Obsidian plugins: memory copies + work results (README/plugins.md)
+│   ├── README.md            # Plugin index + cross-vault data-loss lessons
+│   ├── plugins.md           # Release history per plugin
+│   └── memory/              # obsidian-plugins-work.md (copied from memory/work.md)
 
 
 ```

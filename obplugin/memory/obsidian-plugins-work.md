@@ -1,6 +1,3 @@
-
-> 📂 **obsidian 插件相关记忆已归档**：完整开发记录 → `obplugin/memory/obsidian-plugins-work.md`，插件清单与发布状态 → `obplugin/plugins.md`，索引与教训 → `obplugin/README.md`。源码保留在 `code/` 原位。下方是历史记录（与新记忆同步维护）。
-
 ## 2026-07-25 Joplin Sync: Force Push/Pull 修复记录
 
 ### 问题根因
@@ -150,57 +147,6 @@ Obsidian ↔ Joplin Server 双向同步插件 `obsidian-joplin-server-sync`，�
 - 最新版本: v0.3.54 (已推送 tag + release + Obsidian 市场)
 
 ---
-
-## 2026-08-01 Card-Counter 小程序云开发版改造记录
-
-### 背景与根因
-小程序（奶爸的那些事，AppID `wx9c5974ab24d057c3`）原本用 **web-view** 加载 Flask 云托管（`https://flask-z9hh-281177-5-1453124923.sh.run.tcloudbase.com/`），线上 1.0.1 无法访问该链接。
-**根因**：web-view 的**业务域名必须 ICP 备案**，腾讯云托管共享域名（`*.tcloudbase.com`）无法备案，无法配置为业务域名。
-
-### 解决方案：云开发模式（v2.0.0）
-放弃 web-view，重写为**原生小程序 UI + `wx.cloud.callContainer` 调用 Flask 云托管**：
-- `wx.cloud.callContainer` 免配置业务域名，微信自动注入 `X-WX-OPENID` 头识别用户
-- Flask 后端 `/api/auth/wechat-login` 读取 `X-WX-OPENID` 自动登录（无需修改后端）
-
-### 关键配置
-| 项 | 值 |
-|----|-----|
-| 云托管环境 ID | `prod-d5gm4a2q00a7f9209` |
-| 云托管服务名 | `flask-z9hh` |
-| Flask 公网地址 | `https://flask-z9hh-281177-5-1453124923.sh.run.tcloudbase.com/` |
-| 调用方式 | `wx.cloud.callContainer({config:{env}, path, header:{'X-WX-SERVICE':'flask-z9hh'}, ...})` |
-| 请求域名白名单 | request: `https://card-counter.8.130.118.200.sslip.io` |
-| 代码上传 IP 白名单 | `5.226.50.86`、`103.190.179.55`、`117.185.175.253` |
-| 代码上传密钥 | private.key（本机 `/home/wang/wk/code/card-counter-miniapp/private.key`） |
-
-### 小程序代码结构（v2.0.0）
-- `app.js` — 云开发初始化 + `callApi()` 封装（401 自动重登录）+ 微信自动登录
-- `pages/index` — 配额列表（汇总卡片/进度条/下拉刷新/FAB 新增）
-- `pages/quota` — 新增/编辑/删除配额
-- `pages/checkin` — 签到消费（选次卡/扣减次数/最近记录）
-- `pages/profile` — 个人中心（用户信息/数据统计）
-
-### Flask 后端 API（wxcloudrun-flask）
-- `/api/auth/wechat-login`（GET，读 X-WX-OPENID）、`/api/auth/me`、register/login/profile/change-password
-- `/api/quotas`（CRUD，含 local_id 去重）、`/api/checkins`（+revoke）、`/api/ratings`
-- 认证：JWT Bearer token；数据模型：User/Quota/Checkin/Rating
-
-### 上传/发布经验
-1. **miniprogram-ci 上传**：`node upload_ci.js`（version 2.0.0），需 IP 白名单含本机出口 IP
-2. **IP 白名单坑**：本机 IPv6（`2409:8a1e:4d26:a631::e6a`）无法加入白名单 → **关闭路由器 IPv6** 后走 IPv4（`103.190.179.55`）成功
-3. **提交审核**：版本管理 → 开发版本 → 提交审核 → 勾选协议（React 受控 checkbox 需 click() 触发）→ 处理"接口未配置"+"安全测试"弹窗 → 审核中
-4. **体验版**：需在版本管理将开发版本"设为体验版"，体验成员微信扫码访问（非 URL）
-
-### 当前状态（2026-08-01）
-- 线上版本：1.0.1（旧 web-view 版）
-- 审核中：2.0.0（云开发版，2026-08-01 20:34 提交，预计 1-7 天）
-- 审核通过后需在"审核版本"点击发布
-
-### 相关文件
-- 小程序代码：`/home/wang/wk/code/card-counter-miniapp/`
-- Flask 后端：`/home/wang/wk/code/card-counter-flask/`
-- 上传脚本：`/tmp/upload_ci.js`
-- 任务文档：`AITasks/Product - Card_count*.md`、`AITasks/小程序云托管开发.md`
 
 ## 2026-08-02 NoteForge ↔ Obsidian Joplin E2EE 兼容性（方案 A 覆盖）
 

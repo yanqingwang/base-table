@@ -73,18 +73,20 @@
       </view>
     </view>
     <text class="card-title">{{recordTitle}}</text>
-    <view wx:if="{{filteredCheckins.length > 0}}" wx:for="{{filteredCheckins}}" wx:key="localId" class="history-item">
-      <view class="history-left">
-        <text class="history-merchant">{{item.merchantText}}</text>
-        <text class="history-time">{{item.checkinDate}} {{item.checkinTime}}</text>
-        <text class="history-note" wx:if="{{item.note}}">{{item.note}}</text>
+    <block wx:if="{{filteredCheckins.length > 0}}">
+      <view wx:for="{{filteredCheckins}}" wx:key="localId" class="history-item">
+        <view class="history-left">
+          <text class="history-merchant">{{item.merchantText}}</text>
+          <text class="history-time">{{item.checkinDate}} {{item.checkinTime}}</text>
+          <text class="history-note" wx:if="{{item.note}}">{{item.note}}</text>
+        </view>
+        <view class="history-right">
+          <text class="history-deduct">-{{item.deductTimes}}次</text>
+          <text class="revoke-btn" data-id="{{item.localId}}" bindtap="changeCheckinDate">改期</text>
+          <text class="revoke-btn" data-id="{{item.localId}}" bindtap="revokeCheckin">撤销</text>
+        </view>
       </view>
-      <view class="history-right">
-        <text class="history-deduct">-{{item.deductTimes}}次</text>
-        <text class="revoke-btn" data-id="{{item.localId}}" bindtap="changeCheckinDate">改期</text>
-        <text class="revoke-btn" data-id="{{item.localId}}" bindtap="revokeCheckin">撤销</text>
-      </view>
-    </view>
+    </block>
     <view wx:else class="empty-records">
       <text>该时间范围内暂无签到记录</text>
     </view>

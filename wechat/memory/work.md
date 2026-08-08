@@ -5,6 +5,62 @@
 
 ---
 
+## 📌 快速开始（每次开工先看这里，最后更新 2026-08-08 v2.4.8）
+
+**当前状态**
+- 网页（云托管）：线上已含全部 v2.4.x 功能，最新 **v2.4.8**（修改签到支持备注+日期编辑）已上线
+- 小程序：**v2.4.0 ~ v2.4.8 均已上传开发版，但从未发布**（线上仍是旧版）。最新待发布 = **v2.4.8**
+- 待办（人工，无法脚本化）：微信公众平台 → 版本管理 → 选 **v2.4.8** 开发版 → 提交审核 → 审核通过后发布（wujie 微前端导致 CDP 无法脚本化提交）
+
+**部署命令**
+```bash
+# 网页/后端（云托管构建源）
+cd code/card-counter-flask
+git add wxcloudrun/views.py wxcloudrun/dao.py wxcloudrun/model.py wxcloudrun/__init__.py wxcloudrun/templates/index.html   # 勿 git add -A（card_counter.db/__pycache__ 被跟踪）
+git commit -m "..." && git push origin main
+# 若云托管未自动重建：追加空提交 git commit --allow-empty -m "chore: 触发云托管重建" && git push origin main
+# 线上验证：curl -s https://flask-z9hh-281177-5-1453124923.sh.run.tcloudbase.com/ | grep <特征串>
+
+# 小程序上传
+cd code/card-counter-miniapp
+# 上传前检查 private.key md5 = ff454fb9596f8e95d686acdd03878de2（被 joplin/obsidian 同步污染时从 ~/下载/private.wx9c5974ab24d057c3 (1).key 恢复）
+NODE_PATH=$(npm root -g) node scripts/upload_ci.js <version> <desc>
+```
+
+**仓库拓扑（两仓库陷阱）**
+- `code/card-counter-flask/` 是**独立 git 仓库**（`origin=github.com/yanqingwang/card-counter-flask.git`），云托管读它 `main` 分支自动构建；只推父仓库 `base-table` 的 `python` 分支**不会部署**。
+- 父仓库 `base-table`（python 分支）仅作版本记录，网页/小程序改动后补提交。
+- 小程序代码被父仓库跟踪（非独立仓库），部署 = miniprogram-ci 上传工作树。
+
+**关键环境**
+| 项 | 值 |
+|----|-----|
+| AppID | `wx9c5974ab24d057c3` |
+| 云托管环境 ID | `prod-d5gm4a2q00a7f9209` |
+| 云托管服务名 | `flask-z9hh` |
+| 公网地址 | `https://flask-z9hh-281177-5-1453124923.sh.run.tcloudbase.com/` |
+| 上传密钥 | `code/card-counter-miniapp/private.key`（md5 `ff454fb9...`） |
+
+**版本发布状态总览**
+| 版本 | 核心内容 | 网页 | 小程序 |
+|------|---------|------|--------|
+| 1.0.1 | web-view 旧版 | — | 线上旧版 |
+| 2.0.0 | 云开发原生改造 | — | 已上传，待发布 |
+| 2.3.0~2.3.5 | 登录/多用户/智能合并/全量同步/生命周期同步 | 已上线 | 已上传，待发布 |
+| 2.4.0 | 修复打不开 + 重置数据/删同步记录 | 已上线 | 已上传，待发布 |
+| 2.4.1 | 签到时间筛选+排序 + 谨慎操作区块 | 已上线 | 已上传，待发布 |
+| 2.4.2 | 最常去商家(配额名) + 已消费金额 | 已上线 | 已上传，待发布 |
+| 2.4.3 | 改期/撤销移入「修改」按钮 + 导出备份修复 | 已上线 | 已上传，待发布 |
+| 2.4.4 | 配额默认扣除次数 | 已上线 | 已上传，待发布 |
+| 2.4.5 | 备注同步小程序 + 修改页空白兜底 + 默认扣减 min=0 | 已上线 | 已上传，待发布 |
+| 2.4.6 | 撤销/删除配额同步小程序 + usedTimes 误覆盖修复 | 已上线 | 已上传，待发布 |
+| 2.4.7 | 修改页打不开加固 + 移除 lazyCodeLoading | —（仅小程序） | 已上传，待发布 |
+| 2.4.8 | **修改签到支持备注+日期编辑**（小程序+网页+后端 PUT） | **已上线** | **已上传，待发布** |
+
+---
+
+## 历史详情（按日期/版本，供回溯）
+
 ## 2026-08-01 Card-Counter 小程序云开发版改造记录
 
 ### 背景与根因

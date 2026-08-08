@@ -11,14 +11,21 @@
         <text class="edit-label">扣减</text>
         <text class="edit-value">-{{checkin.deductTimes}} 次</text>
       </view>
+
+      <!-- 日期：可修改（今天前后 30 天） -->
       <view class="edit-row">
         <text class="edit-label">日期</text>
-        <text class="edit-value {{dateModified ? 'date-small' : ''}}">{{checkin.checkinDate}} {{checkin.checkinTime}}{{dateModified ? '（已改期）' : ''}}</text>
+        <picker class="edit-value" mode="date" value="{{checkin.checkinDate}}" start="{{dateStart}}" end="{{dateEnd}}" bindchange="onDateChange">
+          <view class="date-picker {{dateModified ? 'date-small' : ''}}">{{checkin.checkinDate}} {{checkin.checkinTime}}{{dateModified ? '（已改期）' : ''}} ▾</view>
+        </picker>
       </view>
+
+      <!-- 备注：可修改 -->
       <view class="edit-row">
         <text class="edit-label">备注</text>
-        <text class="edit-value">{{checkin.note ? checkin.note : '—'}}</text>
+        <input class="edit-input" value="{{note}}" placeholder="输入备注" bindinput="onNoteInput" />
       </view>
+
       <view wx:if="{{editLogs.length > 0}}" class="edit-logs">
         <text class="edit-logs-title">改期记录</text>
         <text wx:for="{{editLogs}}" wx:key="*this" class="edit-log-item">{{item}}</text>
@@ -26,7 +33,7 @@
     </view>
 
     <view class="edit-actions">
-      <button class="act-btn date" bindtap="changeDate">📅 修改日期</button>
+      <button class="act-btn save" bindtap="saveChanges" disabled="{{!canSave}}">💾 保存修改</button>
       <button class="act-btn revoke" bindtap="revoke">↩️ 撤销签到</button>
     </view>
   </view>

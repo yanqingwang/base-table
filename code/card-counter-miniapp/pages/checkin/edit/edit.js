@@ -1,4 +1,4 @@
-// pages/checkin/edit/edit.js - 签到记录修改（改期/撤销）管理界面
+// pages/checkin/edit/edit.js - 签到记录修改管理界面（改期 / 备注编辑 / 撤销）
 const app = getApp();
 const storage = require('../../../utils/storage');
 const util = require('../../../utils/util');
@@ -11,6 +11,10 @@ Page({
     quotaId: '',
     dateModified: false,
     editLogs: [],
+    note: '',
+    dateStart: '',
+    dateEnd: '',
+    canSave: false,
   },
 
   onLoad(options) {
@@ -47,6 +51,14 @@ Page({
       const merchantText = (q && q.merchant) || c.merchant || '手动记录';
       const dateModified = !!(c.dateEditLogs && c.dateEditLogs.length);
       const editLogs = (c.dateEditLogs || []).map(l => (l.from || '') + ' → ' + (l.to || ''));
+      const now = new Date();
+      const d30 = (offset) => {
+        const t = new Date(now);
+        t.setDate(t.getDate() + offset);
+        return util.formatDate(t);
+      };
+      this._originalDate = c.checkinDate;
+      this._originalNote = c.note || '';
       this.setData({
         loading: false,
         checkin: c,
@@ -54,6 +66,10 @@ Page({
         quotaId: c.quotaId,
         dateModified,
         editLogs,
+        note: c.note || '',
+        dateStart: d30(-30),
+        dateEnd: d30(30),
+        canSave: false,
       });
     } catch (e) {
       this.setData({ loading: false });
@@ -61,55 +77,80 @@ Page({
     }
   },
 
-  // 修改签到日期（限定今天前后 30 天，记录更改日志）
-  changeDate() {
+  // 修改日期（picker 已限定前后 30 天）
+  onDateChange(e) {
     const c = this.data.checkin;
     if (!c) return;
-    const now = new Date();
-    const d30 = (offset) => {
-      const t = new Date(now);
-      t.setDate(t.getDate() + offset);
-      return util.formatDate(t);
-    };
-    wx.showModal({
-      title: '修改签到日期',
-      content: '',
-      editable: true,
-      placeholderText: '输入日期 YYYY-MM-DD（前后30天内）',
-      success: async (res) => {
-        if (!res.confirm || !res.content) return;
-        const newDate = String(res.content).trim();
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate)) {
-          wx.showToast({ title: '日期格式应为 YYYY-MM-DD', icon: 'none' });
-          return;
+    const newDate = e.detail.value;
+    if (!newDate) return;
+    this.setData({ 'checkin.checkinDate': newDate, dateModified: true }, () => this._updateCanSave());
+  },
+
+  onNoteInput(e) {
+    this.setData({ note: e.detail.value }, () => this._updateCanSave());
+  },
+
+  _updateCanSave() {
+    const c = this.data.checkin;
+    if (!c) return;
+    const dateChanged = c.checkinDate !== this._originalDate;
+    const noteChanged = this.data.note !== this._originalNote;
+    this.setData({ canSave: dateChanged || noteChanged });
+  },
+
+  // 保存备注 + 日期修改
+  async saveChanges() {
+    const c = this.data.checkin;
+    if (!c) return;
+    const dateChanged = c.checkinDate !== this._originalDate;
+    const noteChanged = this.data.note !== this._originalNote;
+    if (!dateChanged && !noteChanged) {
+      wx.showToast({ title: '没有修改', icon: 'none' });
+      return;
+    }
+    try {
+      const checkins = storage.getCheckins();
+      const idx = checkins.findIndex(x => this._matchId(x, this._id));
+      if (idx === -1) {
+        wx.showToast({ title: '记录不存在', icon: 'none' });
+        return;
+      }
+      const record = checkins[idx];
+      let synced = true;
+
+      // 1. 日期修改：记录改期日志并推送 /date
+      if (dateChanged) {
+        const oldDate = record.checkinDate;
+        const logs = record.dateEditLogs || [];
+        logs.push({ from: oldDate, to: c.checkinDate, changedAt: new Date().toISOString() });
+        record.checkinDate = c.checkinDate;
+        record.dateEditLogs = logs;
+        if (c.id) {
+          try {
+            await app.callApi('/api/checkins/' + c.id + '/date', 'PUT', { checkinDate: c.checkinDate });
+          } catch (e) { synced = false; }
         }
-        const diff = Math.round((new Date(newDate) - new Date(util.formatDate(now))) / 86400000);
-        if (Math.abs(diff) > 30) {
-          wx.showToast({ title: '只能在今天前后30天内修改', icon: 'none' });
-          return;
+      }
+
+      // 2. 备注修改：推送 /api/checkins/<id>
+      if (noteChanged) {
+        record.note = this.data.note.trim();
+        if (c.id) {
+          try {
+            await app.callApi('/api/checkins/' + c.id, 'PUT', { note: this.data.note.trim() });
+          } catch (e) { synced = false; }
         }
-        try {
-          const checkins = storage.getCheckins();
-          const idx = checkins.findIndex(x => this._matchId(x, this._id));
-          const oldDate = c.checkinDate;
-          if (idx !== -1) {
-            const logs = checkins[idx].dateEditLogs || [];
-            logs.push({ from: oldDate, to: newDate, changedAt: new Date().toISOString() });
-            checkins[idx].checkinDate = newDate;
-            checkins[idx].dateEditLogs = logs;
-            checkins[idx].updatedAt = Date.now();
-            storage.setCheckins(checkins);
-          }
-          if (c.id) {
-            await app.callApi('/api/checkins/' + c.id + '/date', 'PUT', { checkinDate: newDate }).catch(() => {});
-          }
-          wx.showToast({ title: '日期已修改', icon: 'success' });
-          this.loadData();
-        } catch (err) {
-          wx.showToast({ title: err.message || '修改失败', icon: 'none' });
-        }
-      },
-    });
+      }
+
+      record.updatedAt = Date.now();
+      if (!synced) record._synced = false; // 云端失败则待下次推送补齐
+      storage.setCheckins(checkins);
+
+      wx.showToast({ title: '已保存', icon: 'success' });
+      this.loadData();
+    } catch (err) {
+      wx.showToast({ title: err.message || '保存失败', icon: 'none' });
+    }
   },
 
   // 撤销签到（次数返还）

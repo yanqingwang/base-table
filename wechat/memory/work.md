@@ -259,3 +259,35 @@
 - **遗留提醒**：
   - 小程序 `profile.wxml` 版本号仍显示 `2.4.1`（非硬要求未改）；如需精确可改 `2.4.2`
   - v2.4.2 仍待人工：版本管理→选 2.4.2 开发版本→提交审核→审核通过后发布
+
+### 2026-08-08 签到记录改期/撤销移入修改按钮 + 修复导出备份（v2.4.3）
+- **需求**：① 次卡管理仍走管理界面（小程序现有方式不变，无需改）；② 小程序 改期/撤销 都通过一个「修改」按钮进入，默认签到页只显示 商户/日期/备注/扣减，改期后的日期变小字体；网页版也通过管理界面改期+撤销，保留当日撤销按钮；③ 签到历史记录显示备注；④ 小程序「导出备份」在体验版失败；⑤ 导入恢复无法测试（体验版），手机版备份文件默认从哪来。网页+小程序都更新；验证→发布→更新日志。
+- **现状核对**：
+  - req ③（历史显示备注）：小程序 `history.wxml` 已有 `💬 备注`（line 22），网页 `renderCheckinTab` 列表与 `showDetail` 详情均已含 `note` → 已满足，仅需在改版后保留
+  - req ①（次卡管理进管理界面）：小程序 `checkin.wxml` 新增/管理均 navigate 到 quota 页、`index` 页 FAB 管理 → 已满足，不改
+- **小程序（改期/撤销 → 修改按钮）**：
+  - 新增独立页 `pages/checkin/edit/edit`（管理界面）：展示 商家/扣减/日期/备注 + 改期记录；含「📅 修改日期」（`wx.showModal` editable 输入 YYYY-MM-DD，限前后30天，写 `dateEditLogs`）+「↩️ 撤销签到」（本地标记撤销+返还配额次数+云端 revoke/创建）；已改期日期标 `（已改期）`
+  - `checkin.wxml` 移除原内联 `改期`/`撤销` 两按钮，改为单个「修改」按钮（`goEdit` → navigate 到 edit 页）；列表保留 商户/日期/备注/扣减；`dateModified` 时日期用 `.date-small` 小字体
+  - `checkin.js`：`applyFilter` 增加 `c.dateModified = !!dateEditLogs.length`；新增 `goEdit`；移除已迁走的 `revokeCheckin`/`changeCheckinDate`（避免重复/死代码）
+  - `history.wxml`/`history.js`：每条记录加「修改」按钮（`goEdit`）；同样标记 `dateModified` 小字体；备注一直显示
+  - `app.json` 注册新页 `pages/checkin/edit/edit`
+- **网页（改期/撤销 → 修改弹窗，保留当日撤销）**：
+  - `renderCheckinTab` 每条记录改内联「撤销」为「修改」按钮（`openCheckinEdit`）；**仅当日记录保留内联「撤销」按钮**（`c.checkinDate === today`）；列表已含 备注 + `（已改期）`标记
+  - 新增 `openCheckinEdit(id)`：打开 `#checkinEditModal` 弹窗，展示 商家/扣减/备注 + 日期 `<input type=date>` + 改期记录，含「确认改期」(`submitCheckinDate`) + 「撤销」(`revokeCheckin`) 两个操作
+  - 新增 `submitCheckinDate(id)`：校验前后30天 → 更新 `checkinDate` + 写 `dateEditLogs` + `saveLocal()` + `PUT /api/checkins/<id>/date`（云端）
+  - 新增弹窗 HTML `#checkinEditModal`（复用 `.modal-overlay`/`.modal` 样式，`closeModal` 关闭）
+- **修复 ④ 导出备份失败（体验版）**：
+  - 根因：`exportData` 优先 `wx.saveFileToDisk`，仅当该 API **不存在**才回退 `wx.shareFileMessage`；体验版基础库 `saveFileToDisk` 存在但**运行失败**，fail 回调直接 toast「保存失败」且**不回退**，导致导出失败
+  - 修复：fail 回调（非用户取消）改走 `fallbackShare()` → `wx.shareFileMessage` 把备份文件分享到微信聊天（稳定且跨版本可用），文件名 `次卡管家备份_<时间戳>.json`
+- **解答 ⑤ 导入恢复来源（手机版）**：
+  - 小程序导入用 `wx.chooseMessageFile`，文件**取自微信聊天会话**（如「文件传输助手」），不是设备某个文件夹；故在 `profile.wxml` 导入按钮下加提示：「导入文件来自微信聊天（如文件传输助手），先把备份文件发到聊天，再点此处选择」
+  - 导出回退为 `shareFileMessage` 后，备份文件恰好落入聊天，形成「导出→聊天→导入」闭环，手机版可直接走通
+  - 版本号 `profile.wxml` 更新为 `2.4.3`
+- **验证**：
+  - 小程序改动 JS 全部 `node --check` 通过（checkin/checkin/edit/edit/history/profile）
+  - 网页 `py_compile` 通过；本地起 Flask curl `/` → 200，size **74619**，含 `openCheckinEdit`(2)/`checkinEditModal`(5)/`submitCheckinDate`(2)
+  - miniprogram-ci 上传 **v2.4.3 成功** ✅（首次即成功）
+- **部署**：
+  - 网页：嵌套仓库 commit `13cd828`（"feat(web): 签到记录改期/撤销移入修改弹窗(管理界面)，保留当日撤销按钮；列表显示备注与已改期标记"）→ `git push origin main` → 云托管构建；线上轮询至 probe 7 生效，size **74619**，含 `openCheckinEdit`(2) ✅
+  - 小程序：**v2.4.3 已上传（开发版本）**，**仍待人工提交审核+发布**（wujie 微前端无法脚本化提交审核）
+  - 提交（父仓库 base-table python）：待本次 work.md 提交

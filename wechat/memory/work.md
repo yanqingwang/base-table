@@ -206,3 +206,25 @@
 - **遗留提醒**：
   - 小程序 v2.4.0 已上传但**仍待人工提交审核+发布**（wujie 微前端无法脚本化提交审核）
   - 嵌套仓库 `card_counter.db`、`__pycache__/*` 被 git 跟踪（无 .gitignore），后续提交须 `git add` 指定文件，勿 `git add -A`
+
+### 2026-08-08 签到记录时间筛选 + 排序 + 谨慎操作区块（v2.4.1）
+- **需求**：签到页显示当天签到记录，增加时间筛选（默认今天，含最近一月/全部）；显示可按时间/配额排序；网页与小程序都更新；强制上传、重置数据单独作为谨慎操作区块。
+- **小程序（pages/checkin）**：
+  - 新增 `timeFilter`（today/month/all，默认 today）+ `sortBy`（time/quota，默认 time）
+  - `applyFilter()`：`_rawCheckins`（未撤销）按范围过滤（today=当天，month=近30天，all=全部），再按 time（日期↓时间↓）或 quota（商户名↑+时间↓）排序；`onTimeFilter`/`onSortBy` 仅前端重算（不重新拉取）
+  - `revokeCheckin`/`changeCheckinDate` 改为读 `filteredCheckins`（原 `todayCheckins`）
+  - WXML：`filter-bar`（seg 分段控件 今天/最近一月/全部 + 排序 时间/配额）+ `recordTitle`（含计数）；`<block wx:if>` 包 `wx:for` 列表，`wx:else` 空态（修复 wx:if+wx:for 同元素导致 wx:else 编译失败）
+- **网页（index.html checkin tab）**：
+  - 模块级 `checkinFilter`/`checkinSort` 状态 + `setCheckinFilter`/`setCheckinSort` 处理器 + `checkinMerchant`/`monthAgoStr` 辅助
+  - `renderCheckinTab` 改为按筛选+排序渲染，动态标题 `<h3 id="checkinRecordsTitle">` + seg 高亮；新增 `.seg`/`.seg-btn`/`.seg-label` 样式
+- **谨慎操作区块**（强制上传 + 重置数据 独立出来）：
+  - 网页 settings：从「数据管理」拆除，新建「⚠️ 谨慎操作」红框区块（含说明）；保留 `forceUploadBtn` id
+  - 小程序 profile：从同步区拆出「强制上传」、从「数据管理」拆出「重置全部数据（含云端）」，归入新「⚠️ 谨慎操作」红框区块（`.danger-zone`/`.menu-section-title`）；版本号显示更新为 2.4.1
+- **验证**：
+  - 小程序 18 个 JS `node --check` 全过；Flask `py_compile` 过
+  - 本地起 Flask curl `/` → 200，含 `setCheckinFilter`/`checkinFilterSeg`/`谨慎操作`/`forceUploadBtn`/`最近一月`/`排序`；`/api/reset` → 401
+  - miniprogram-ci 上传 **v2.4.1 成功** ✅（首次因 wx:if+wx:for 同元素编译失败，拆 `<block>` 后重试成功）
+- **部署**：
+  - 网页：嵌套仓库 commit `656e56b`（仅 `templates/index.html`）→ `git push origin main` → 云托管构建；线上验证 200，新控件已生效 ✅
+  - 小程序：**v2.4.1 已上传（开发版本）**，**仍待人工提交审核+发布**（wujie 微前端无法脚本化提交审核）
+- **提交（父仓库 base-table python）**：`5e391a3f`（功能）+ `4b386699`（wx:else 修复）

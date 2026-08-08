@@ -1010,6 +1010,33 @@ function renderStatsTab() {
     html += '<div style="margin-top:16px;padding:12px;background:var(--surface);border-radius:8px;font-size:13px">';
     html += '📋 综合建议：剩余 <strong>'+totalRem+'</strong> 次，建议平均每 <strong>'+interval+'</strong> 天参加一次</div>';
   }
+  // 最常去商家（按签到次数，商家=配额名称，经 quotaId 关联）
+  const freq = {};
+  localData.checkins.forEach(c => {
+    if (c.isRevoked) return;
+    const q = localData.quotas.find(q => q.localId === c.quotaId);
+    const name = (q && q.merchant) || c.merchant || '手动记录';
+    freq[name] = (freq[name] || 0) + 1;
+  });
+  const frequent = Object.entries(freq).sort((a,b) => b[1]-a[1]).slice(0,5);
+  if (frequent.length) {
+    html += '<h3 style="font-size:14px;margin:16px 0 8px">🏆 最常去商家</h3>';
+    html += frequent.map(([name,count],i) => `<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--surface);border-radius:8px;margin-bottom:6px;font-size:13px"><span><strong>${i+1}.</strong> ${esc(name)}</span><span>${count} 次</span></div>`).join('');
+  }
+  // 已消费金额（按商户，商家=配额名称）—— 每配额消费 = 金额 × 已用/总次数
+  const consumed = {};
+  quotas.forEach(q => {
+    const name = q.merchant || '未命名';
+    const c = q.totalTimes > 0 ? (q.amount||0) * (q.usedTimes||0) / q.totalTimes : 0;
+    consumed[name] = (consumed[name] || 0) + c;
+  });
+  const amountList = Object.entries(consumed).filter(([,v]) => v > 0).sort((a,b) => b[1]-a[1]);
+  if (amountList.length) {
+    const totalConsumed = amountList.reduce((s,[,v]) => s + v, 0);
+    html += '<h3 style="font-size:14px;margin:16px 0 8px">💰 已消费金额（按商户）</h3>';
+    html += amountList.map(([name,amt]) => `<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--surface);border-radius:8px;margin-bottom:6px;font-size:13px"><span>${esc(name)}</span><span style="color:var(--orange,#e67e22);font-weight:600">¥${amt.toFixed(2)}</span></div>`).join('');
+    html += `<div style="text-align:right;font-size:13px;font-weight:600;margin-top:4px">合计已消费 ¥${totalConsumed.toFixed(2)}</div>`;
+  }
   document.getElementById('statsDetail').innerHTML = html;
 }
 
@@ -1207,7 +1234,7 @@ async function revokeCheckin(id) {
 function showDetail(id) {
   const q = localData.quotas.find(x => x.localId === id);
   if (!q) return;
-  const checkins = localData.checkins.filter(c => c.quotaId === id && !c.isRevoked).sort((a,b) => b.checkinTime.localeCompare(a.checkinTime));
+  const checkins = localData.checkins.filter(c => c.quotaId === id && !c.isRevoked).sort((a,b) => (b.checkinDate + ' ' + (b.checkinTime||'')).localeCompare(a.checkinDate + ' ' + (a.checkinTime||'')));
   const rating = localData.ratings.find(r => r.merchant === q.merchant);
   const prefDays = (q.preferences && q.preferences.days) || [];
   const dayLabels = {weekend:'周末',weekday:'工作日',holiday:'假期',winter_summer:'寒暑假'};

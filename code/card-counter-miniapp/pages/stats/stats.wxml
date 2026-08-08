@@ -49,6 +49,16 @@
     </view>
   </view>
 
+  <!-- 消费金额（按商户） -->
+  <view class="amount-card" wx:if="{{merchantAmount.length > 0}}">
+    <text class="card-title">💰 已消费金额（按商户）</text>
+    <view wx:for="{{merchantAmount}}" wx:key="name" class="amount-item">
+      <text class="amount-name">{{item.name}}</text>
+      <text class="amount-value">¥{{item.amount}}</text>
+    </view>
+    <view class="amount-total">合计已消费 ¥{{totalConsumed}}</view>
+  </view>
+
   <!-- 满意度 -->
   <view class="rating-card" wx:if="{{ratings.length > 0}}">
     <text class="card-title">⭐ 商家满意度</text>

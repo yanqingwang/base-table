@@ -24,18 +24,25 @@ Page({
         await app.wechatLogin();
       }
       await syncManager.pull(app);
+      const quotas = storage.getQuotas() || [];
+      const quotaByName = {};
+      quotas.forEach(q => { const n = util.normalizeQuota(q); quotaByName[n.localId] = n; });
+      const merchantOf = (c) => {
+        const q = quotaByName[c.quotaId] || quotas.map(util.normalizeQuota).find(q => String(q.id) === String(c.quotaId));
+        return (q && q.merchant) || c.merchant || '手动记录';
+      };
       const checkins = storage.getCheckins() || [];
       const normalized = checkins
         .map(util.normalizeCheckin)
         .filter(c => !c.isRevoked)
         .sort((a, b) => (b.checkinDate + ' ' + (b.checkinTime || '')).localeCompare(a.checkinDate + ' ' + (a.checkinTime || '')));
       normalized.forEach(c => {
-        c.merchantText = c.merchant || '手动记录';
+        c.merchantText = merchantOf(c);
         c.dateEditText = (c.dateEditLogs || []).map(l => l.from + ' → ' + l.to).join('；');
       });
 
-      // 商家列表
-      const merchants = [...new Set(normalized.map(c => c.merchant).filter(Boolean))];
+      // 商家列表（按配额名称）
+      const merchants = [...new Set(normalized.map(c => c.merchantText).filter(Boolean))];
 
       this.setData({ checkins: normalized, merchants, loading: false });
       this.applyFilter();
@@ -52,7 +59,7 @@ Page({
 
   applyFilter() {
     const { checkins, filterMerchant } = this.data;
-    const filtered = filterMerchant ? checkins.filter(c => c.merchant === filterMerchant) : checkins;
+    const filtered = filterMerchant ? checkins.filter(c => c.merchantText === filterMerchant) : checkins;
     this.setData({ filteredCheckins: filtered });
   },
 

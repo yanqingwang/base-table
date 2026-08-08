@@ -9,6 +9,8 @@ Page({
   data: {
     summary: { totalCheckins: 0, weekCheckins: 0, avgPerDay: 0, usageRate: 0 },
     merchantRank: [],
+    merchantAmount: [],
+    totalConsumed: '0.00',
     ratings: [],
     suggestion: null,
     weekData: [],
@@ -55,17 +57,35 @@ Page({
       const totalTimes = nQuotas.reduce((s, q) => s + (q.totalTimes || 0), 0);
       const usageRate = totalTimes > 0 ? Math.round(totalUsed / totalTimes * 100) : 0;
 
-      // 商家签到排行（前3）
+      // 商家签到排行（前3）—— 商家=配额名称（按 quotaId 关联，回退 checkin.merchant）
+      const quotaByName = {};
+      nQuotas.forEach(q => { quotaByName[q.localId] = q; });
+      const merchantOf = (c) => {
+        const q = quotaByName[c.quotaId] || nQuotas.find(q => String(q.id) === String(c.quotaId));
+        return (q && q.merchant) || c.merchant || '手动记录';
+      };
       const merchantCount = {};
       nCheckins.forEach(c => {
-        if (c.merchant) {
-          merchantCount[c.merchant] = (merchantCount[c.merchant] || 0) + 1;
-        }
+        const name = merchantOf(c);
+        merchantCount[name] = (merchantCount[name] || 0) + 1;
       });
       const merchantRank = Object.entries(merchantCount)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
         .map(([name, count]) => ({ name, count }));
+
+      // 已消费金额（按商户，商家=配额名称）—— 每配额消费 = 金额 × 已用/总次数
+      const merchantAmount = {};
+      nQuotas.forEach(q => {
+        const name = q.merchant || '未命名';
+        const consumed = q.totalTimes > 0 ? (q.amount || 0) * (q.usedTimes || 0) / q.totalTimes : 0;
+        merchantAmount[name] = (merchantAmount[name] || 0) + consumed;
+      });
+      const amountRank = Object.entries(merchantAmount)
+        .filter(([, v]) => v > 0)
+        .sort((a, b) => b[1] - a[1])
+        .map(([name, amount]) => ({ name, amount: amount.toFixed(2) }));
+      const totalConsumed = Object.values(merchantAmount).reduce((s, v) => s + v, 0).toFixed(2);
 
       // 学习建议
       const suggestion = learningPlan.calculateGlobalSuggestion(nQuotas);
@@ -87,6 +107,8 @@ Page({
       this.setData({
         summary: { totalCheckins, weekCheckins, avgPerDay, usageRate },
         merchantRank,
+        merchantAmount: amountRank,
+        totalConsumed,
         ratings: nRatings,
         suggestion,
         weekData,

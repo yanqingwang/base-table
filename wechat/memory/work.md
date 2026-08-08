@@ -26,6 +26,7 @@ cd code/card-counter-miniapp
 # 上传前检查 private.key md5 = ff454fb9596f8e95d686acdd03878de2（被 joplin/obsidian 同步污染时从 ~/下载/private.wx9c5974ab24d057c3 (1).key 恢复）
 NODE_PATH=$(npm root -g) node scripts/upload_ci.js <version> <desc>
 ```
+> 详细部署流程 / 坑 / 提交审核 → `docs/部署手册.md`；环境与密钥 → `docs/环境配置.md`；版本状态表亦见 `docs/版本状态.md`
 
 **仓库拓扑（两仓库陷阱）**
 - `code/card-counter-flask/` 是**独立 git 仓库**（`origin=github.com/yanqingwang/card-counter-flask.git`），云托管读它 `main` 分支自动构建；只推父仓库 `base-table` 的 `python` 分支**不会部署**。

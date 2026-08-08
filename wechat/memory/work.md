@@ -319,3 +319,29 @@
 - **遗留提醒**：
   - 旧配额（未设置过 defaultDeduct）在 `quota_to_dict`/`normalizeQuota` 均回退为 1，向后兼容，无需迁移数据
   - v2.4.4 仍待人工：版本管理→选 2.4.4 开发版本→提交审核→审核通过后发布
+
+### 2026-08-08 网页备注同步小程序 + 修改页空白修复 + 默认扣除次数最小0（v2.4.5）
+- **需求**：① 网页版本在详情中可见的「备注」，没有同步到小程序，检查并修正；② 小程序签到管理中，点某次签到「修改」后页面空白（未弹出修改数据界面，也无改期/撤销选择），请修正；③（追加）增加次卡配额时「默认扣除次数」最小为 0、默认为 1。网页 + 小程序都更新；验证→发布→更新日志。
+- **修复 ① 网页备注未同步小程序（根因：字段级 LWW 被时间戳遮蔽）**：
+  - 根因：`syncManager.js` 的 `mergeQuota` 逐字段比较 `updatedAt` 取最新（`cloudTs > localTs ? cv : lv`）。小程序本地一次签到会 `bump` 该配额 `updatedAt`，使本地时间戳新于网页；而此过程不动 `note`。于是合并时 `note` 用本地（空）值，网页编辑过的备注被本地空值覆盖 → 小程序始终看不到网页备注。
+  - 修复：改为**空感知 LWW**——字段双方皆空跳过；云端空保留本地；**本地空且云端有值→采用云端（补齐网页备注/偏好等）**；仅当本地非空且云端非空且值不同才按时间戳裁决（冲突标记取云端）。`QUOTA_FIELDS` 已含 `note`。
+  - 影响：网页改备注/偏好后下拉同步，小程序即时补齐；不破坏本地优先写入（本地非空仍以时间戳为准）。
+- **修复 ② 修改页空白（根因：缺 `wx:else` 兜底 + 疑似陈旧构建）**：
+  - 现象：点「修改」进入 `pages/checkin/edit/edit` 后整页空白，无 商家/日期/备注，也无 改期/撤销 按钮。
+  - 核对：`app.json` 已注册该页；`goEdit` 经 `edit?id=<localId>` navigate；`edit.js` 以 `localId` 查找并 `normalizeCheckin`，逻辑正确；`checkin.wxml` 列表 `data-id="{{item.localId}}"` 与查找键一致 → 数据通道无误。
+  - 旧 `edit.wxml` 用 `<block wx:elif="{{checkin}}">` 且**无 `wx:else`**：当 `loading=false` 且 `checkin` 未命中（或短暂未加载）时，整页无任何渲染 → 表现为空白。
+  - 修复：重写为 `wx:if loading` / `wx:elif checkin`（独立 `<view>`）/ `wx:else 未找到该签到记录` 三段式，确保任何状态下都渲染可见内容，永不空白；找不到记录时给出明确提示而非空白。
+  - 结论：空白主因为陈旧构建未含此页/旧 wxml 无兜底，加固 + 重新上传 v2.4.5 为根本解决。
+- **修复 ③ 默认扣除次数最小为 0（默认仍 1）**：
+  - 小程序 `pages/quota/quota.js` `save`：`dd=parseInt(form.defaultDeduct); defaultDeduct = isNaN(dd)?1:Math.max(0,dd)`（原 `:dd` 未夹 0，现夹最小值 0，允许填 0）
+  - 网页 `index.html` `saveQuota`：同源 `Math.max(0, dd)`（空值回退默认 1）
+  - `quota.wxml` 输入加 `min="0"`（与网页 `min="0"` 一致）；后端 `int(data.get('defaultDeduct', 1))` 本就接受 0，`quota_to_dict` 中 `0 is not None` 正确保留 0
+- **验证**：
+  - 小程序 JS 全 `node --check` 过（`syncManager`/`quota`/`checkin/edit/edit`/`util`）；`quota.wxml` 加 `min` 合法
+  - Flask `py_compile` 过；嵌套仓库 commit `501759e`（"fix(web): 配额默认扣除次数最小为0（Math.max(0,dd)）"）→ `git push origin main`，线上轮询待生效（验证 `Math.max(0, dd)` 出现）
+  - miniprogram-ci 上传 **v2.4.5 成功** ✅（首次即成功，desc 含三项修复）
+- **部署**：
+  - 网页：嵌套仓库 `501759e` → `git push origin main` → 云托管构建（线上待轮询确认 `Math.max(0, dd)` 生效）
+  - 小程序：**v2.4.5 已上传（开发版本）**，**仍待人工提交审核+发布**（wujie 微前端无法脚本化提交审核）
+  - 提交（父仓库 base-table python）：随本次 work.md 提交
+- **遗留提醒**：v2.4.5 仍待人工：版本管理→选 2.4.5 开发版本→提交审核→审核通过后发布；网页构建若迟迟未生效，于云托管控制台确认构建日志。

@@ -12,19 +12,20 @@ Page({
     loading: true,
   },
 
-  onLoad() {
+  onShow() {
     this.loadData();
   },
 
   async loadData() {
     this.setData({ loading: true });
     try {
-      let checkins = storage.getCheckins();
-      if (!checkins || checkins.length === 0) {
-        await syncManager.pull(app);
-        checkins = storage.getCheckins();
+      // 每次进入先同步云端，确保历史记录完整
+      if (!app.globalData.token) {
+        await app.wechatLogin();
       }
-      const normalized = (checkins || [])
+      await syncManager.pull(app);
+      const checkins = storage.getCheckins() || [];
+      const normalized = checkins
         .map(util.normalizeCheckin)
         .filter(c => !c.isRevoked)
         .sort((a, b) => (b.checkinDate + ' ' + (b.checkinTime || '')).localeCompare(a.checkinDate + ' ' + (a.checkinTime || '')));

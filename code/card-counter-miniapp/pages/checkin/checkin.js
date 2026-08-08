@@ -36,16 +36,13 @@ Page({
   async loadData() {
     this.setData({ loading: true });
     try {
-      let quotas = storage.getQuotas();
-      let checkins = storage.getCheckins();
-      if (!quotas || quotas.length === 0) {
-        if (!app.globalData.token) {
-          await app.wechatLogin();
-        }
-        await syncManager.pull(app);
-        quotas = storage.getQuotas();
-        checkins = storage.getCheckins();
+      // 每次进入签到页先同步云端，确保次卡和签到记录最新
+      if (!app.globalData.token) {
+        await app.wechatLogin();
       }
+      await syncManager.pull(app);
+      const quotas = storage.getQuotas() || [];
+      const checkins = storage.getCheckins() || [];
 
       const normalizedQuotas = (quotas || []).map(util.normalizeQuota);
       // 只显示进行中的

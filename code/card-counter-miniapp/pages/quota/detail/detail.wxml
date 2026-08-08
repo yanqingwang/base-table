@@ -1,0 +1,64 @@
+<view class="page" wx:if="{{quota}}">
+  <!-- 配额信息 -->
+  <view class="info-card">
+    <view class="info-header">
+      <text class="info-merchant">{{quota.merchant}}</text>
+      <text class="status-tag status-{{quota.statusClass}}">{{quota.status}}</text>
+    </view>
+    <text wx:if="{{quota.item}}" class="info-item">{{quota.item}}</text>
+
+    <view class="info-grid">
+      <view class="grid-cell">
+        <text class="grid-num">{{quota.remain}}</text>
+        <text class="grid-label">剩余次数</text>
+      </view>
+      <view class="grid-cell">
+        <text class="grid-num">{{quota.totalTimes}}</text>
+        <text class="grid-label">总次数</text>
+      </view>
+      <view class="grid-cell">
+        <text class="grid-num">{{quota.amount}}</text>
+        <text class="grid-label">金额(元)</text>
+      </view>
+    </view>
+
+    <view class="info-detail">
+      <text>到期日期：{{quota.expireText}}</text>
+      <text wx:if="{{quota.note}}">备注：{{quota.note}}</text>
+    </view>
+
+    <!-- 冲突提示 -->
+    <view wx:if="{{quota.conflict}}" class="conflict-tip">
+      ⚠️ 该次卡存在同步冲突（{{quota.conflictFields.length}} 个字段），已保留较新的值，请检查确认
+    </view>
+  </view>
+
+  <!-- 学习建议 -->
+  <view class="suggest-card">
+    <text class="card-title">📝 学习建议</text>
+    <text class="suggest-msg">{{suggestion.message}}</text>
+    <text wx:if="{{suggestion.daysLeft !== undefined}}" class="suggest-sub">
+      剩余 {{suggestion.remaining}} 次，{{suggestion.daysLeft}} 天到期
+    </text>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="action-row">
+    <button class="action-btn primary" bindtap="goCheckin">签到</button>
+    <button class="action-btn secondary" bindtap="goEdit">编辑</button>
+  </view>
+
+  <!-- 签到历史 -->
+  <view class="history-card" wx:if="{{checkins.length > 0}}">
+    <text class="card-title">🕐 签到历史</text>
+    <view wx:for="{{checkins}}" wx:key="localId" class="history-item">
+      <view>
+        <text class="history-date">{{item.checkinDate}}</text>
+        <text class="history-time">{{item.checkinTime}}</text>
+      </view>
+      <text class="history-deduct">-{{item.deductTimes}}次</text>
+    </view>
+  </view>
+</view>
+
+<view wx:elif="{{error}}" class="error-box">{{error}}</view>

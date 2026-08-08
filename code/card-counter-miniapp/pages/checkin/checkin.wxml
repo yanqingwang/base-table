@@ -58,10 +58,22 @@
     <button class="checkin-btn" bindtap="doCheckin">确认签到</button>
   </view>
 
-  <!-- 当日签到记录（按所选日期） -->
-  <view class="history-card" wx:if="{{todayCheckins.length > 0}}">
-    <text class="card-title">🕐 {{checkinDate}} 记录</text>
-    <view wx:for="{{todayCheckins}}" wx:key="localId" class="history-item">
+  <!-- 签到记录（时间筛选 + 排序） -->
+  <view class="history-card">
+    <view class="filter-bar">
+      <view class="seg">
+        <text class="seg-item {{timeFilter == 'today' ? 'active' : ''}}" data-f="today" bindtap="onTimeFilter">今天</text>
+        <text class="seg-item {{timeFilter == 'month' ? 'active' : ''}}" data-f="month" bindtap="onTimeFilter">最近一月</text>
+        <text class="seg-item {{timeFilter == 'all' ? 'active' : ''}}" data-f="all" bindtap="onTimeFilter">全部</text>
+      </view>
+      <view class="sort-sel">
+        <text class="sort-label">排序</text>
+        <text class="sort-item {{sortBy == 'time' ? 'active' : ''}}" data-s="time" bindtap="onSortBy">时间</text>
+        <text class="sort-item {{sortBy == 'quota' ? 'active' : ''}}" data-s="quota" bindtap="onSortBy">配额</text>
+      </view>
+    </view>
+    <text class="card-title">{{recordTitle}}</text>
+    <view wx:if="{{filteredCheckins.length > 0}}" wx:for="{{filteredCheckins}}" wx:key="localId" class="history-item">
       <view class="history-left">
         <text class="history-merchant">{{item.merchantText}}</text>
         <text class="history-time">{{item.checkinDate}} {{item.checkinTime}}</text>
@@ -72,6 +84,9 @@
         <text class="revoke-btn" data-id="{{item.localId}}" bindtap="changeCheckinDate">改期</text>
         <text class="revoke-btn" data-id="{{item.localId}}" bindtap="revokeCheckin">撤销</text>
       </view>
+    </view>
+    <view wx:else class="empty-records">
+      <text>该时间范围内暂无签到记录</text>
     </view>
   </view>
 </view>

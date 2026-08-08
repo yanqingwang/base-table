@@ -19,7 +19,6 @@
     </view>
     <view class="sync-actions">
       <button class="sync-btn" bindtap="manualSync" loading="{{syncing}}" disabled="{{syncing}}">手动同步</button>
-      <button class="sync-btn force" bindtap="forceUpload" loading="{{forceSyncing}}" disabled="{{syncing || forceSyncing}}">强制上传</button>
     </view>
   </view>
 
@@ -67,6 +66,16 @@
       <text class="menu-text danger">清除本地数据</text>
       <text class="menu-arrow">›</text>
     </view>
+  </view>
+
+  <!-- ⚠️ 谨慎操作 -->
+  <view class="menu-card danger-zone">
+    <view class="menu-section-title">⚠️ 谨慎操作</view>
+    <view class="menu-item" bindtap="forceUpload">
+      <text class="menu-icon">⬆️</text>
+      <text class="menu-text">强制上传（全量覆盖云端）</text>
+      <text class="menu-arrow">›</text>
+    </view>
     <view class="menu-item" bindtap="resetAllData">
       <text class="menu-icon">♻️</text>
       <text class="menu-text danger">重置全部数据（含云端）</text>
@@ -87,7 +96,7 @@
     <view class="menu-item">
       <text class="menu-icon">ℹ️</text>
       <text class="menu-text">版本</text>
-      <text class="menu-value">2.2.0</text>
+      <text class="menu-value">2.4.1</text>
     </view>
     <view class="menu-item">
       <text class="menu-icon">🔒</text>

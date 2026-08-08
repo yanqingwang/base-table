@@ -18,7 +18,49 @@ Page({
     dateStart: '',
     dateEnd: '',
     todayCheckins: [],
+    filteredCheckins: [],
+    recordTitle: '📋 今天签到记录',
+    timeFilter: 'today', // today | month | all
+    sortBy: 'time', // time | quota
     loading: true,
+  },
+
+  // ══ 时间筛选 + 排序 ══
+  applyFilter() {
+    const raw = this._rawCheckins || [];
+    const now = new Date();
+    const today = util.formatDate(now);
+    const m = new Date(now);
+    m.setDate(m.getDate() - 30);
+    const monthAgo = util.formatDate(m);
+    const quotas = this.data.quotas || [];
+    const merchantOf = (c) => {
+      const q = quotas.find(q => String(q.localId) === String(c.quotaId));
+      return q ? q.merchant : (c.merchant || '');
+    };
+    let list = raw.slice();
+    if (this.data.timeFilter === 'today') list = list.filter(c => c.checkinDate === today);
+    else if (this.data.timeFilter === 'month') list = list.filter(c => (c.checkinDate || '') >= monthAgo);
+    // 'all' 不做日期过滤
+    if (this.data.sortBy === 'time') {
+      list.sort((a, b) => (b.checkinDate || '').localeCompare(a.checkinDate || '') || (b.checkinTime || '').localeCompare(a.checkinTime || ''));
+    } else {
+      list.sort((a, b) => merchantOf(a).localeCompare(merchantOf(b)) || (b.checkinDate || '').localeCompare(a.checkinDate || '') || (b.checkinTime || '').localeCompare(a.checkinTime || ''));
+    }
+    const labels = { today: '今天', month: '最近一月', all: '全部' };
+    list.forEach(c => { c.merchantText = merchantOf(c) || '手动记录'; });
+    this.setData({
+      filteredCheckins: list,
+      recordTitle: `📋 ${labels[this.data.timeFilter]}签到记录（${list.length}）`,
+    });
+  },
+
+  onTimeFilter(e) {
+    this.setData({ timeFilter: e.currentTarget.dataset.f }, () => this.applyFilter());
+  },
+
+  onSortBy(e) {
+    this.setData({ sortBy: e.currentTarget.dataset.s }, () => this.applyFilter());
   },
 
   onShow() {
@@ -54,30 +96,25 @@ Page({
       const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
       const todayStr = util.formatDate(now);
 
-      // 日期范围：今天前后 30 天
+      // 日期范围：今天前后 30 天（用于新建签到的日期选择）
       const d30 = (offset) => {
         const t = new Date(now);
         t.setDate(t.getDate() + offset);
         return util.formatDate(t);
       };
 
-      // 今日签到记录（按选择的日期过滤）
-      const selectedDate = this.data.checkinDate || todayStr;
-      const todayCheckins = (checkins || [])
-        .map(util.normalizeCheckin)
-        .filter(c => c.checkinDate === selectedDate)
-        .sort((a, b) => (b.checkinTime || '').localeCompare(a.checkinTime || ''));
-      todayCheckins.forEach(c => { c.merchantText = c.merchant || '手动记录'; });
+      // 全量签到记录（未撤销），供时间筛选 + 排序使用
+      this._rawCheckins = (checkins || []).map(util.normalizeCheckin).filter(c => !c.isRevoked);
 
       this.setData({
         quotas: activeQuotas,
-        todayCheckins,
         checkinTime: timeStr,
-        checkinDate: selectedDate,
+        checkinDate: this.data.checkinDate || todayStr,
         dateStart: d30(-30),
         dateEnd: d30(30),
         loading: false,
       });
+      this.applyFilter();
 
       // 若有默认选中
       const selectedId = this.data.selectedId;
@@ -203,7 +240,7 @@ Page({
 
   async revokeCheckin(e) {
     const id = e.currentTarget.dataset.id;
-    const ci = this.data.todayCheckins.find(c => c.localId === id);
+    const ci = this.data.filteredCheckins.find(c => c.localId === id);
     if (!ci) return;
     wx.showModal({
       title: '撤销签到',
@@ -251,7 +288,7 @@ Page({
   // 修改签到日期（限定今天前后 30 天，记录更改日志）
   changeCheckinDate(e) {
     const id = e.currentTarget.dataset.id;
-    const ci = this.data.todayCheckins.find(c => c.localId === id);
+    const ci = this.data.filteredCheckins.find(c => c.localId === id);
     if (!ci) return;
     const now = new Date();
     const d30 = (offset) => {

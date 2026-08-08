@@ -176,6 +176,18 @@
   color: #ccc;
 }
 
+/* ⚠️ 谨慎操作区块 */
+.danger-zone {
+  border: 2rpx solid #e74c3c;
+}
+
+.menu-section-title {
+  font-size: 24rpx;
+  color: #e74c3c;
+  font-weight: 600;
+  padding: 20rpx 0 4rpx;
+}
+
 .tip {
   text-align: center;
   padding: 40rpx 0;

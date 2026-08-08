@@ -392,3 +392,24 @@
   - 小程序：**v2.4.7 已上传（开发版本）**，**仍待人工提交审核+发布**（wujie 微前端无法脚本化提交审核）
   - 提交（父仓库 base-table python）：`018abab2`（加固改动）随本次 work.md 提交
 - **遗留提醒**：**务必发布 v2.4.7 后该问题才会消失**（此前 v2.4.5 的修改页修复同样未发布）。版本管理→选 2.4.7 开发版→提交审核→审核通过后发布。
+
+### 2026-08-08 小程序+网页「修改签到」支持编辑备注+日期（v2.4.8）
+- **需求**：小程序、网页在修改签到（改期/撤销管理）时，都可修改**备注**和**日期**两个字段；改后重新发布部署。
+- **后端**（`wxcloudrun/views.py`）：
+  - 新增 `PUT /api/checkins/<int:cid>`：更新 `note`（`db.session.commit()` 触发 `updated_at` 模型 `onupdate=utcnow` 自动刷新 → 跨端 LWW 同步生效）。
+- **小程序**（`pages/checkin/edit/`）：
+  - `edit.wxml`：日期改为 `<picker mode="date">`（start/end=今天±30天，改期后显示「（已改期）」），备注改为输入框，新增「💾 保存修改」按钮（无改动时禁用），保留「↩️ 撤销签到」。
+  - `edit.js`：`onDateChange`/`onNoteInput`/`_updateCanSave`/`saveChanges`——本地更新 + 云端推送（日期走 `PUT /api/checkins/<id>/date` 记录改期日志；备注走 `PUT /api/checkins/<id>`）；云端失败置 `_synced=false` 待下次推送补齐；`_matchId` 兼容 `localId/local_id/id`。
+  - `edit.wxss`：新增 `.date-picker/.edit-input/.act-btn.save` 样式。
+- **网页**（`templates/index.html`）：
+  - `openCheckinEdit`：备注改为可编辑输入框 `id="editCheckinNote"`，保留日期输入，按钮统一为「保存修改」+「撤销」。
+  - 新增 `saveCheckinEdit`：日期/备注任一变化才保存；日期走 `PUT /api/checkins/<id>/date`（含±30天校验与改期日志），备注走 `PUT /api/checkins/<id>`；本地 `updatedAt` 刷新 + `_synced` 回写；替换原 `submitCheckinDate`。
+- **验证**：
+  - Flask `py_compile` 过；`index.html` 内联 JS `node --check` 过；`submitCheckinDate` 零残留引用
+  - 小程序 `edit.js` `node --check` 过；miniprogram-ci 上传 **v2.4.8 成功** ✅（zip 88768B / 39 文件，size 130666B）
+  - 网页线上轮询 probe 5：size **69830**，`saveCheckinEdit`(2) / `editCheckinNote`(1) 出现，`PUT /api/checkins/1` 由 **404→401**（路由已上线且鉴权生效）✅
+- **部署**：
+  - 网页/后端：嵌套仓库 `4eb3546`（views.py + index.html）→ `git push origin main` → 空提交 `05a3efc` 触发云托管重建；**线上已生效** ✅
+  - 小程序：**v2.4.8 已上传（开发版本）**，**仍待人工提交审核+发布**（wujie 微前端无法脚本化提交审核）
+  - 提交（父仓库 base-table python）：`c354d3b2`（edit 页改造）随本次 work.md 提交
+- **遗留提醒**：v2.4.8 仍待人工：版本管理→选 2.4.8 开发版→提交审核→审核通过后发布（发布后小程序端备注/日期编辑才可见）。

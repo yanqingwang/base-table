@@ -70,6 +70,48 @@ App({
     }
   },
 
+  /**
+   * 打开/回到前台：自动拉取云端最新（保持一致性）
+   */
+  onShow() {
+    this.autoSync('pull');
+  },
+
+  /**
+   * 关闭/切后台：自动推送本地未同步数据（防止数据丢失）
+   */
+  onHide() {
+    this.autoSync('push');
+  },
+
+  // 生命周期自动同步（幂等，isSyncing 防重入）
+  autoSync(mode) {
+    if (this.globalData.syncing) return;
+    this.globalData.syncing = true;
+    const finish = () => { this.globalData.syncing = false; };
+    const doSync = async () => {
+      try {
+        if (!this.globalData.token) {
+          await this.wechatLogin();
+        }
+        if (mode === 'push') {
+          await syncManager.push(this);
+        } else {
+          await syncManager.pull(this);
+        }
+      } catch (e) {
+        console.error('自动' + mode + '失败:', e);
+      } finally {
+        finish();
+      }
+    };
+    // 等待云就绪后执行，超时 8s 放弃
+    this.waitCloudReady().then(ready => {
+      if (ready) doSync(); else finish();
+    });
+    setTimeout(finish, 8000);
+  },
+
   cleanupExampleData() {
     const isExample = (item) => item && item.localId && String(item.localId).indexOf('example-') === 0;
     const quotas = (storage.getQuotas() || []).filter(q => !isExample(q));

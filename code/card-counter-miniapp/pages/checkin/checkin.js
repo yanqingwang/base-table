@@ -154,6 +154,7 @@ Page({
             checkinTime,
             isRevoked: false,
             updatedAt: Date.now(),
+            _synced: false,
           });
           storage.setCheckins(checkins);
 

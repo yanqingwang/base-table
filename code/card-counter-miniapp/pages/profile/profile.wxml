@@ -1,0 +1,116 @@
+<view class="page">
+  <!-- 用户信息 -->
+  <view class="user-card">
+    <image wx:if="{{userInfo && userInfo.avatar_url}}" class="avatar" src="{{userInfo.avatar_url}}" />
+    <view wx:else class="avatar avatar-placeholder">👤</view>
+    <view class="user-info">
+      <text class="user-name">{{userInfo ? userInfo.nickname : '微信用户'}}</text>
+      <text class="user-desc">次卡管家 · 云端同步</text>
+    </view>
+    <view class="edit-btn" bindtap="openEdit">编辑</view>
+  </view>
+
+  <!-- 同步状态 -->
+  <view class="sync-card">
+    <view class="sync-left">
+      <text class="sync-label">🔄 数据同步</text>
+      <text class="sync-time">{{syncText}}</text>
+      <text wx:if="{{syncStatus.hasPendingSync}}" class="sync-pending">有未同步数据</text>
+    </view>
+    <button class="sync-btn" bindtap="manualSync" loading="{{syncing}}" disabled="{{syncing}}">手动同步</button>
+  </view>
+
+  <!-- 同步差异报告 -->
+  <view class="sync-card" wx:if="{{syncStatus.lastDiff && syncStatus.lastDiff.total > 0}}">
+    <view class="sync-left">
+      <text class="sync-label">📊 最近同步差异</text>
+      <text class="sync-time">待推送 {{syncStatus.lastDiff.localOnly}} 条 | 待拉取 {{syncStatus.lastDiff.cloudOnly}} 条 | 字段差异 {{syncStatus.lastDiff.fieldDiffs}} 处</text>
+      <text wx:if="{{syncStatus.lastDiff.conflicts > 0}}" class="sync-pending">⚠️ {{syncStatus.lastDiff.conflicts}} 处冲突需确认</text>
+    </view>
+  </view>
+
+  <!-- 统计 -->
+  <view class="stats-card" wx:if="{{!loading}}">
+    <view class="stat-item">
+      <text class="stat-num">{{stats.quotaCount}}</text>
+      <text class="stat-label">次卡</text>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-item">
+      <text class="stat-num">{{stats.checkinCount}}</text>
+      <text class="stat-label">签到</text>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-item">
+      <text class="stat-num">{{stats.ratingCount}}</text>
+      <text class="stat-label">评价</text>
+    </view>
+  </view>
+
+  <!-- 数据管理 -->
+  <view class="menu-card">
+    <view class="menu-item" bindtap="exportData">
+      <text class="menu-icon">📤</text>
+      <text class="menu-text">导出备份</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="importData">
+      <text class="menu-icon">📥</text>
+      <text class="menu-text">导入恢复</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="clearAllData">
+      <text class="menu-icon">🗑️</text>
+      <text class="menu-text danger">清除所有数据</text>
+      <text class="menu-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 关于 -->
+  <view class="menu-card">
+    <view class="menu-item" bindtap="logout">
+      <text class="menu-icon">🚪</text>
+      <text class="menu-text danger">退出登录</text>
+      <text class="menu-arrow">›</text>
+    </view>
+  </view>
+
+  <view class="menu-card">
+    <view class="menu-item">
+      <text class="menu-icon">ℹ️</text>
+      <text class="menu-text">版本</text>
+      <text class="menu-value">2.2.0</text>
+    </view>
+    <view class="menu-item">
+      <text class="menu-icon">🔒</text>
+      <text class="menu-text">数据存储</text>
+      <text class="menu-value">微信云托管</text>
+    </view>
+  </view>
+
+  <view class="tip">
+    <text>数据自动云端同步，换手机登录微信即可恢复</text>
+  </view>
+
+  <!-- 编辑资料弹窗 -->
+  <view wx:if="{{showEdit}}" class="modal-mask">
+    <view class="modal">
+      <text class="modal-title">编辑资料</text>
+      <view class="edit-row">
+        <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+          <image wx:if="{{avatarUrl}}" class="edit-avatar" src="{{avatarUrl}}" />
+          <view wx:else class="edit-avatar placeholder">👤</view>
+        </button>
+        <text class="avatar-tip">点击选择头像</text>
+      </view>
+      <view class="form-item">
+        <text class="form-label">昵称</text>
+        <input class="form-input" type="nickname" value="{{nickname}}" placeholder="请输入昵称" bindinput="onNicknameInput" />
+      </view>
+      <view class="modal-btns">
+        <button class="modal-btn cancel" bindtap="closeEdit">取消</button>
+        <button class="modal-btn confirm" bindtap="saveProfile">保存</button>
+      </view>
+    </view>
+  </view>
+</view>

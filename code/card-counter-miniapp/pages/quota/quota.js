@@ -132,17 +132,33 @@ Page({
   async remove() {
     const { id } = this.data;
     if (!id) return;
+    const quotas = storage.getQuotas() || [];
+    const q = quotas.find(x => (x.localId || String(x.id)) === String(id));
+    // 收集该次卡关联的本地签到（按 quotaId 匹配 localId 或 id），用于提示与级联删除
+    const ids = new Set();
+    if (q) {
+      if (q.localId) ids.add(String(q.localId));
+      if (q.id) ids.add(String(q.id));
+    } else {
+      ids.add(String(id));
+    }
+    const checkins = storage.getCheckins() || [];
+    const relatedCount = checkins.filter(c => ids.has(String(c.quotaId || '')) && !c.isRevoked).length;
+    let content = '确定删除这张次卡吗？删除后将从云端移除。';
+    if (relatedCount > 0) {
+      content = `确定删除这张次卡吗？该次卡下还有 ${relatedCount} 条签到记录，将一并删除且不可恢复。`;
+    }
     wx.showModal({
       title: '删除次卡',
-      content: '确定删除这张次卡吗？相关记录将保留。',
+      content,
       confirmColor: '#e74c3c',
       success: async (res) => {
         if (res.confirm) {
           try {
-            const quotas = storage.getQuotas() || [];
-            const q = quotas.find(x => (x.localId || String(x.id)) === String(id));
             const filtered = quotas.filter(x => (x.localId || String(x.id)) !== String(id));
             storage.setQuotas(filtered);
+            // 级联删除本地签到记录，保持与云端一致，避免孤儿签到
+            storage.setCheckins(checkins.filter(c => !ids.has(String(c.quotaId || ''))));
             if (q && q.id) {
               app.callApi('/api/quotas/' + q.id, 'DELETE').catch(() => {});
             }

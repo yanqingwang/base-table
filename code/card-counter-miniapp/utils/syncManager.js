@@ -196,10 +196,12 @@ class SyncManager {
       qMap[key]._cloudKnown = true; // 标记曾出现在云端，用于后续删除同步
     });
     // 本地残留的云端已知记录（网页端已删除）→ 从本地移除；未同步过的本地记录保留待推送
+    const removedQuotaKeys = new Set();
     Object.keys(qMap).forEach(key => {
       const q = qMap[key];
       if ((q._synced === true || q._cloudKnown === true) && !cloudQKeys.has(key)) {
         delete qMap[key];
+        removedQuotaKeys.add(key);
       }
     });
     storage.setQuotas(Object.values(qMap));
@@ -208,6 +210,16 @@ class SyncManager {
     const localCheckins = storage.getCheckins() || [];
     const cMap = {};
     localCheckins.forEach(c => cMap[c.localId || c.local_id || c.id] = c);
+    // 配额已在其他端被删除 → 其本地签到一并清理，避免孤儿签到被再次推送
+    if (removedQuotaKeys.size > 0) {
+      Object.keys(cMap).forEach(key => {
+        const c = cMap[key];
+        const cKey = String(c.quotaId || c.quota_id || '');
+        if (cKey && removedQuotaKeys.has(cKey)) {
+          delete cMap[key];
+        }
+      });
+    }
     const newlyRevoked = []; // { quotaId, deductTimes } 本次新发现的云端撤销
     (cloudCheckins || []).forEach(cc => {
       const key = cc.localId || cc.local_id || cc.id;

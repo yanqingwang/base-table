@@ -228,3 +228,34 @@
   - 网页：嵌套仓库 commit `656e56b`（仅 `templates/index.html`）→ `git push origin main` → 云托管构建；线上验证 200，新控件已生效 ✅
   - 小程序：**v2.4.1 已上传（开发版本）**，**仍待人工提交审核+发布**（wujie 微前端无法脚本化提交审核）
 - **提交（父仓库 base-table python）**：`5e391a3f`（功能）+ `4b386699`（wx:else 修复）
+
+### 2026-08-08 商户签到记录展示 + 最常去商家修正 + 已消费金额统计（v2.4.2）
+- **需求**：① 商户详情页查看签到记录时显示 日期/备注/扣减次数；② 签到页历史展示含 商户/日期/备注/扣减次数；③ 危险操作必须二次确认；④ 小程序「最常去商家」商家名识别错误（应为配额名称）；⑤ 新增「已消费金额」统计，按商户汇总消费金额。网页与小程序都更新；验证→发布→更新日志。
+- **现状核对（核心结论）**：req ①②③ 在 web + mini **已满足**，无需改动：
+  - 网页 `showDetail` 详情底部「签到记录」已含 日期+扣减次数+备注；`renderCheckinTab` 历史含 商户+日期+备注+扣减次数；`resetData`/`forceUpload` 均有 `confirm()` 二次确认
+  - 小程序 `detail.wxml`/`history.wxml` 详情与历史均已含 日期/备注/扣减次数/商户；`profile` 强制上传/重置均 `wx.showModal` 二次确认
+  - 真正待修的是 ④（bug）+ ⑤（新功能）
+- **Bug ④ 修复：最常去商家按配额名称（而非 free-text 商家名）**：
+  - 根因：原逻辑用 `checkin.merchant`（签到时手填的商家文本，可能为空/不一致）分组，导致商家识别错误
+  - 修正：用 `quotaId` 反查配额 `localId` → 取 `quota.merchant`（配额名称，即真正的商家）分组
+  - 网页 `renderStatsTab`：遍历 `localData.checkins`，`if (c.isRevoked) return`，`q = quotas.find(q=>q.localId===c.quotaId)`，`name = (q&&q.merchant)||c.merchant||'手动记录'`，`freq[name]++`；取前 5 渲染
+  - 小程序 `stats.js`：建 `quotaByName[localId]` 索引 + `merchantOf(c)`（回退 `nQuotas.find(q=>String(q.id)===String(c.quotaId))` 再回退 `c.merchant`/`手动记录`）；`merchantCount[name]++`
+  - 小程序 `checkin/history.js`：`merchantText` 统一改为配额名（同 `quotaByName` 查法，回退 `c.merchant`）；商户筛选列表由 `merchantText` 构建，`applyFilter` 按 `merchantText` 过滤（历史页商家维度一致）
+- **功能 ⑤ 新增：已消费金额统计（按商户）**：
+  - 公式：`每配额已消费 = amount × usedTimes / totalTimes`（amount 为配额总额，usedTimes 已用次数，totalTimes 总次数）；按 `quota.merchant`（配额名称）聚合求和
+  - 网页 `renderStatsTab`：`consumed[name] += c`；`amountList = Object.entries(consumed).filter(v>0).sort(desc)`；`totalConsumed = sum.toFixed(2)`
+  - 小程序 `stats.js`：`merchantAmount[name] += consumed`；`amountRank = entries.filter(v>0).sort(desc).map(([name,amount])=>({name,amount:amount.toFixed(2)}))`；`totalConsumed = reduce.toFixed(2)`
+  - 网页新增「💰 已消费金额（按商户）」区块（rank + 合计）；小程序 `stats.wxml` 新增 `.amount-card`（`amount-item`/`amount-name`/`amount-value` 橙色/`amount-total`）
+  - 同时修正网页 `showDetail` 签到记录排序：原仅按 `checkinTime` 排序 → 改为 `checkinDate + ' ' + checkinTime` 降序（避免同日跨日排序错乱）
+- **验证**：
+  - 小程序 18 个 JS `node --check` 全过；Flask `py_compile` 过
+  - 本地起 Flask curl `/` → 200
+  - 推送 120s 后线上探测：HTTP 200，size **71396**（原 69406），含 `最常去商家`(2) / `已消费金额`(2) / `freq[name]` / `consumed[name]` → 新构建已生效 ✅
+  - miniprogram-ci 上传 **v2.4.2 成功** ✅（代理 TLS 抖动重试 3 次后成功，同一版本号重复上传无害）
+- **部署**：
+  - 网页：嵌套仓库 commit `225a867`（"feat(web): 统计页新增最常去商家排行(按配额名称)+已消费金额(按商户)；修复详情签到记录排序"）→ `git push origin main` → 云托管构建（线上已验证 71396）
+  - 小程序：**v2.4.2 已上传（开发版本）**，**仍待人工提交审核+发布**（wujie 微前端无法脚本化提交审核）
+  - 提交（父仓库 base-table python）：`6e607837`（"feat(card-counter): 最常去商家按配额名称修正+已消费金额统计(按商户)；历史/详情商家名统一(v2.4.2)"）
+- **遗留提醒**：
+  - 小程序 `profile.wxml` 版本号仍显示 `2.4.1`（非硬要求未改）；如需精确可改 `2.4.2`
+  - v2.4.2 仍待人工：版本管理→选 2.4.2 开发版本→提交审核→审核通过后发布

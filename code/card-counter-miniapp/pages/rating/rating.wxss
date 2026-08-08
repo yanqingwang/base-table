@@ -1,0 +1,171 @@
+/* pages/rating/rating.wxss */
+.page {
+  min-height: 100vh;
+  background: #f5f5f7;
+  padding: 24rpx 24rpx 160rpx;
+  box-sizing: border-box;
+}
+
+.loading-box {
+  text-align: center;
+  padding: 100rpx 0;
+  color: #999;
+}
+
+.empty-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120rpx 0;
+}
+
+.empty-icon { font-size: 80rpx; }
+.empty-text { color: #999; font-size: 28rpx; margin-top: 20rpx; }
+
+.rating-card {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.rating-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rating-merchant {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.rating-stars {
+  color: #f5a623;
+  font-size: 28rpx;
+}
+
+.rating-comment {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+  margin-top: 12rpx;
+}
+
+/* 新增按钮 */
+.fab {
+  position: fixed;
+  right: 40rpx;
+  bottom: 160rpx;
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  background: #5b5fc7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6rpx 20rpx rgba(91, 95, 199, 0.4);
+  z-index: 100;
+}
+
+.fab-icon {
+  color: #fff;
+  font-size: 56rpx;
+  font-weight: 300;
+  line-height: 1;
+}
+
+/* 弹窗 */
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  width: 600rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 32rpx;
+}
+
+.modal-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 32rpx;
+}
+
+.form-item {
+  margin-bottom: 24rpx;
+}
+
+.form-label {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 12rpx;
+}
+
+.form-input {
+  background: #f8f8fa;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  font-size: 30rpx;
+}
+
+.form-textarea {
+  background: #f8f8fa;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  font-size: 28rpx;
+  width: 100%;
+  box-sizing: border-box;
+  height: 140rpx;
+}
+
+.star-row {
+  display: flex;
+  gap: 16rpx;
+}
+
+.star {
+  font-size: 56rpx;
+  color: #ddd;
+}
+
+.star.active {
+  color: #f5a623;
+}
+
+.modal-btns {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 32rpx;
+}
+
+.modal-btn {
+  flex: 1;
+  height: 80rpx;
+  line-height: 80rpx;
+  font-size: 30rpx;
+  border-radius: 12rpx;
+}
+
+.modal-btn.cancel {
+  background: #f0f0f4;
+  color: #666;
+}
+
+.modal-btn.confirm {
+  background: #5b5fc7;
+  color: #fff;
+}
+
+.modal-btn::after { border: none; }

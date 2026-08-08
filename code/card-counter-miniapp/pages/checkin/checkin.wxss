@@ -1,0 +1,162 @@
+/* pages/checkin/checkin.wxss */
+.page {
+  min-height: 100vh;
+  background: #f5f5f7;
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+
+.checkin-card, .history-card {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.card-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.history-link {
+  font-size: 24rpx;
+  color: #5b5fc7;
+}
+
+/* 次卡选择 */
+.quota-scroll {
+  white-space: nowrap;
+  margin-bottom: 24rpx;
+}
+
+.quota-pill {
+  display: inline-block;
+  background: #f0f0f4;
+  border-radius: 12rpx;
+  padding: 16rpx 24rpx;
+  margin-right: 16rpx;
+  border: 2rpx solid transparent;
+}
+
+.quota-pill.selected {
+  background: #eef0ff;
+  border-color: #5b5fc7;
+}
+
+.quota-pill.add { background: #fdecec; }
+
+.pill-name {
+  display: block;
+  font-size: 28rpx;
+  color: #1d1d1f;
+  font-weight: 500;
+}
+
+.pill-remain {
+  display: block;
+  font-size: 22rpx;
+  color: #999;
+  margin-top: 4rpx;
+}
+
+.no-quota {
+  background: #f8f8fa;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  text-align: center;
+  color: #666;
+  font-size: 26rpx;
+  margin-bottom: 24rpx;
+}
+
+/* 表单 */
+.form-row {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 24rpx;
+}
+
+.form-item.half { flex: 1; }
+.form-item { margin-bottom: 24rpx; }
+
+.form-label {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 12rpx;
+}
+
+.form-input {
+  background: #f8f8fa;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  font-size: 30rpx;
+  color: #1d1d1f;
+}
+
+.form-input.static { color: #5b5fc7; font-weight: 600; }
+
+/* 签到按钮 */
+.checkin-btn {
+  margin-top: 8rpx;
+  background: #27ae60;
+  color: #fff;
+  border-radius: 12rpx;
+  font-size: 32rpx;
+  height: 88rpx;
+  line-height: 88rpx;
+}
+
+.checkin-btn::after { border: none; }
+
+/* 今日记录 */
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.history-item:last-child { border-bottom: none; }
+
+.history-merchant {
+  display: block;
+  font-size: 28rpx;
+  color: #1d1d1f;
+}
+
+.history-time {
+  display: block;
+  font-size: 22rpx;
+  color: #999;
+  margin-top: 4rpx;
+}
+
+.history-right {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.history-deduct {
+  font-size: 28rpx;
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+.revoke-btn {
+  font-size: 24rpx;
+  color: #e74c3c;
+  border: 1rpx solid #e74c3c;
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+}

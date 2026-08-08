@@ -16,14 +16,37 @@ def get_user_by_id(uid):
     return User.query.get(uid)
 
 
-def create_user(openid, nickname='', avatar_url=''):
-    user = User(openid=openid, nickname=nickname, avatar_url=avatar_url)
+def get_user_by_username(username):
+    return User.query.filter(User.username == username).first()
+
+
+def create_user(openid='', nickname='', avatar_url='', username=None, password_hash=None):
+    user = User(
+        openid=openid or None,
+        nickname=nickname,
+        avatar_url=avatar_url,
+        username=username,
+        password_hash=password_hash,
+    )
     db.session.add(user)
     db.session.commit()
     return user
 
 
 def update_user(user):
+    db.session.commit()
+    return user
+
+
+def update_user_profile(user, nickname):
+    if nickname is not None:
+        user.nickname = nickname
+    db.session.commit()
+    return user
+
+
+def change_user_password(user, new_password_hash):
+    user.password_hash = new_password_hash
     db.session.commit()
     return user
 
@@ -38,8 +61,11 @@ def get_quota(qid):
     return Quota.query.get(qid)
 
 
-def get_quota_by_local_id(local_id):
-    return Quota.query.filter(Quota.local_id == local_id).first()
+def get_quota_by_local_id(local_id, user_id=None):
+    q = Quota.query.filter(Quota.local_id == local_id)
+    if user_id is not None:
+        q = q.filter(Quota.user_id == user_id)
+    return q.first()
 
 
 def create_quota(data):
@@ -72,8 +98,11 @@ def get_checkin(cid):
     return Checkin.query.get(cid)
 
 
-def get_checkin_by_local_id(local_id):
-    return Checkin.query.filter(Checkin.local_id == local_id).first()
+def get_checkin_by_local_id(local_id, user_id=None):
+    q = Checkin.query.filter(Checkin.local_id == local_id)
+    if user_id is not None:
+        q = q.filter(Checkin.user_id == user_id)
+    return q.first()
 
 
 def create_checkin(data):
@@ -101,8 +130,11 @@ def get_rating(rid):
     return Rating.query.get(rid)
 
 
-def get_rating_by_local_id(local_id):
-    return Rating.query.filter(Rating.local_id == local_id).first()
+def get_rating_by_local_id(local_id, user_id=None):
+    q = Rating.query.filter(Rating.local_id == local_id)
+    if user_id is not None:
+        q = q.filter(Rating.user_id == user_id)
+    return q.first()
 
 
 def create_rating(data):

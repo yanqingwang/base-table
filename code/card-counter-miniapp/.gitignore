@@ -1,3 +1,5 @@
 node_modules/
 miniprogram_npm/
 *.log
+private.key
+private.key.old-2.2.3

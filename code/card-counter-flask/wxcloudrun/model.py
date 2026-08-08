@@ -7,7 +7,9 @@ class User(db.Model):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
-    openid = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    openid = db.Column(db.String(64), unique=True, nullable=True, index=True)
+    username = db.Column(db.String(64), unique=True, nullable=True, index=True)
+    password_hash = db.Column(db.String(256), nullable=True)
     nickname = db.Column(db.String(128), default='')
     avatar_url = db.Column(db.String(512), default='')
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
@@ -45,6 +47,7 @@ class Checkin(db.Model):
     checkin_date = db.Column(db.Date, nullable=True)
     checkin_time = db.Column(db.String(32), default='')
     is_revoked = db.Column(db.Boolean, default=False)
+    date_edit_logs = db.Column(db.JSON, nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow,
                            onupdate=datetime.utcnow)

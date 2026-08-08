@@ -1,0 +1,46 @@
+<view class="page">
+  <view class="form-card">
+    <view class="form-item">
+      <text class="form-label">商户名称 *</text>
+      <input class="form-input" placeholder="如：XX健身房" value="{{form.merchant}}" data-field="merchant" bindinput="onInput" />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">项目名称</text>
+      <input class="form-input" placeholder="如：游泳月卡 20次" value="{{form.item}}" data-field="item" bindinput="onInput" />
+    </view>
+
+    <view class="form-row">
+      <view class="form-item half">
+        <text class="form-label">总次数 *</text>
+        <input class="form-input" type="number" placeholder="如：20" value="{{form.totalTimes}}" data-field="totalTimes" bindinput="onInput" />
+      </view>
+      <view class="form-item half">
+        <text class="form-label">金额（元）</text>
+        <input class="form-input" type="digit" placeholder="如：300" value="{{form.amount}}" data-field="amount" bindinput="onInput" />
+      </view>
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">到期日期</text>
+      <picker mode="date" value="{{form.expireDate}}" bindchange="onDateChange">
+        <view class="form-input picker-value {{form.expireDate ? '' : 'placeholder'}}">
+          {{expireText}}
+        </view>
+      </picker>
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">备注</text>
+      <input class="form-input" placeholder="补充说明" value="{{form.note}}" data-field="note" bindinput="onInput" />
+    </view>
+  </view>
+
+  <button class="save-btn" bindtap="save" loading="{{saving}}" disabled="{{saving}}">
+    保存
+  </button>
+
+  <button wx:if="{{id}}" class="del-btn" bindtap="remove">
+    删除此卡
+  </button>
+</view>

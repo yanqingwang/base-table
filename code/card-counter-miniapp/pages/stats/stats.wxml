@@ -1,0 +1,63 @@
+<view class="page">
+  <!-- 核心指标 -->
+  <view class="summary-grid" wx:if="{{!loading}}">
+    <view class="summary-card">
+      <text class="summary-num">{{summary.totalCheckins}}</text>
+      <text class="summary-label">总签到</text>
+    </view>
+    <view class="summary-card">
+      <text class="summary-num">{{summary.weekCheckins}}</text>
+      <text class="summary-label">近7天</text>
+    </view>
+    <view class="summary-card">
+      <text class="summary-num">{{summary.avgPerDay}}</text>
+      <text class="summary-label">日均</text>
+    </view>
+    <view class="summary-card">
+      <text class="summary-num">{{summary.usageRate}}%</text>
+      <text class="summary-label">使用率</text>
+    </view>
+  </view>
+
+  <!-- 学习建议 -->
+  <view class="suggest-card" wx:if="{{suggestion && suggestion.message}}">
+    <text class="card-title">📝 学习建议</text>
+    <text class="suggest-msg">{{suggestion.message}}</text>
+  </view>
+
+  <!-- 近7天趋势 -->
+  <view class="chart-card" wx:if="{{weekData.length > 0}}">
+    <text class="card-title">📊 近7天签到趋势</text>
+    <view class="bar-chart">
+      <view wx:for="{{weekData}}" wx:key="date" class="bar-col">
+        <view class="bar-wrap">
+          <view class="bar" style="height: {{item.height}}%"></view>
+        </view>
+        <text class="bar-label">{{item.date}}</text>
+        <text class="bar-value">{{item.count}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 商家排行 -->
+  <view class="rank-card" wx:if="{{merchantRank.length > 0}}">
+    <text class="card-title">🏆 最常去商家</text>
+    <view wx:for="{{merchantRank}}" wx:key="name" class="rank-item">
+      <text class="rank-num">{{item.rank}}</text>
+      <text class="rank-name">{{item.name}}</text>
+      <text class="rank-count">{{item.count}}次</text>
+    </view>
+  </view>
+
+  <!-- 满意度 -->
+  <view class="rating-card" wx:if="{{ratings.length > 0}}">
+    <text class="card-title">⭐ 商家满意度</text>
+    <view wx:for="{{ratings}}" wx:key="localId" class="rating-item">
+      <text class="rating-name">{{item.merchant}}</text>
+      <text class="rating-stars">{{item.stars}}</text>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:if="{{loading}}" class="loading-box">加载中...</view>
+</view>

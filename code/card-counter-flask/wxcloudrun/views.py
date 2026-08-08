@@ -5,11 +5,13 @@ from functools import wraps
 import jwt as pyjwt
 import requests
 from flask import render_template, request, redirect
+from werkzeug.security import generate_password_hash, check_password_hash
 
 import config
 from wxcloudrun import app, db
 from wxcloudrun.dao import (
-    get_user_by_openid, get_user_by_id, create_user, update_user,
+    get_user_by_openid, get_user_by_id, get_user_by_username,
+    create_user, update_user, update_user_profile, change_user_password,
     list_quotas, get_quota, get_quota_by_local_id, create_quota,
     update_quota, delete_quota,
     list_checkins, get_checkin, get_checkin_by_local_id,
@@ -27,7 +29,7 @@ from wxcloudrun.response import make_succ_empty_response, make_succ_response, ma
 def generate_token(user):
     payload = {
         'user_id': user.id,
-        'openid': user.openid,
+        'openid': user.openid or '',
         'exp': datetime.utcnow().timestamp() + config.JWT_EXPIRY_HOURS * 3600,
         'iat': datetime.utcnow().timestamp(),
     }
@@ -87,6 +89,7 @@ def checkin_to_dict(c):
         'checkinDate': c.checkin_date.isoformat() if c.checkin_date else '',
         'checkinTime': c.checkin_time or '',
         'isRevoked': bool(c.is_revoked),
+        'dateEditLogs': c.date_edit_logs or [],
         'createdAt': c.created_at.timestamp() * 1000 if c.created_at else 0,
         'updatedAt': c.updated_at.timestamp() * 1000 if c.updated_at else 0,
     }
@@ -116,64 +119,16 @@ def index():
 # Auth
 # ──────────────────────────────────────────────
 
-@app.route('/api/auth/login-url', methods=['GET'])
-def auth_login_url():
-    """返回微信扫码登录 URL"""
-    state = request.args.get('state', 'card_counter')
-    redirect_uri = config.WECHAT_REDIRECT_URI
-    url = (
-        'https://open.weixin.qq.com/connect/qrconnect'
-        '?appid={}&redirect_uri={}&response_type=code'
-        '&scope=snsapi_login&state={}'
-        '#wechat_redirect'
-    ).format(config.WECHAT_APP_ID, redirect_uri, state)
-    return make_succ_response({'url': url})
+@app.route('/api/auth/wechat-login', methods=['GET'])
+def auth_wechat_login():
+    """小程序 web-view 内自动登录：读取微信云托管传递的用户身份头"""
+    openid = request.headers.get('X-WX-OPENID', '')
+    nickname = request.headers.get('X-WX-NICKNAME', '')
+    avatar_url = request.headers.get('X-WX-AVATAR', '')
 
+    if not openid:
+        return make_err_response('未检测到微信身份，请通过小程序访问', 401)
 
-@app.route('/api/auth/callback', methods=['GET'])
-def auth_callback():
-    """微信回调：用 code 换用户信息，生成 JWT，重定向回首页"""
-    code = request.args.get('code')
-    if not code:
-        return make_err_response('缺少 code 参数')
-
-    # 用 code 换 access_token
-    token_url = (
-        'https://api.weixin.qq.com/sns/oauth2/access_token'
-        '?appid={}&secret={}&code={}&grant_type=authorization_code'
-    ).format(config.WECHAT_APP_ID, config.WECHAT_APP_SECRET, code)
-
-    try:
-        resp = requests.get(token_url, timeout=10)
-        token_data = resp.json()
-    except Exception as e:
-        app.logger.error('wechat token error: %s', e)
-        return make_err_response('获取微信 token 失败')
-
-    if 'errcode' in token_data and token_data['errcode'] != 0:
-        app.logger.error('wechat token err: %s', token_data)
-        return make_err_response('微信登录失败: ' + token_data.get('errmsg', ''))
-
-    access_token = token_data['access_token']
-    openid = token_data['openid']
-
-    # 获取用户信息
-    userinfo_url = (
-        'https://api.weixin.qq.com/sns/userinfo'
-        '?access_token={}&openid={}'
-    ).format(access_token, openid)
-
-    try:
-        resp = requests.get(userinfo_url, timeout=10)
-        user_info = resp.json()
-    except Exception as e:
-        app.logger.error('wechat userinfo error: %s', e)
-        user_info = {}
-
-    nickname = user_info.get('nickname', '')
-    avatar_url = user_info.get('headimgurl', '')
-
-    # 查找或创建用户
     user = get_user_by_openid(openid)
     if user:
         if nickname:
@@ -184,23 +139,258 @@ def auth_callback():
     else:
         user = create_user(openid, nickname, avatar_url)
 
-    # 生成 JWT
     token = generate_token(user)
+    return make_succ_response({
+        'token': token,
+        'user': {'id': user.id, 'nickname': user.nickname, 'avatar_url': user.avatar_url},
+    })
 
-    # 重定向到首页，JWT 放在 hash 中
-    return redirect('/#token=' + token)
+
+@app.route('/api/auth/wx-login', methods=['POST'])
+def auth_wx_login():
+    """小程序 wx.login() 登录：code 换 openid（不依赖云托管环境归属）"""
+    data = request.get_json() or {}
+    code = data.get('code', '')
+    if not code:
+        return make_err_response('缺少登录凭证 code', 400)
+
+    if not config.WECHAT_APP_SECRET:
+        return make_err_response('服务端未配置 WECHAT_APP_SECRET', 500)
+
+    try:
+        resp = requests.get('https://api.weixin.qq.com/sns/jscode2session', params={
+            'appid': config.WECHAT_APP_ID,
+            'secret': config.WECHAT_APP_SECRET,
+            'js_code': code,
+            'grant_type': 'authorization_code',
+        }, timeout=10)
+        result = resp.json()
+    except Exception as e:
+        return make_err_response('微信登录服务异常: ' + str(e), 502)
+
+    if result.get('errcode'):
+        return make_err_response('微信登录失败: ' + result.get('errmsg', ''), 401)
+
+    openid = result.get('openid', '')
+    if not openid:
+        return make_err_response('未获取到用户身份', 401)
+
+    nickname = data.get('nickname', '')
+    avatar_url = data.get('avatarUrl', '')
+
+    user = get_user_by_openid(openid)
+    if user:
+        if nickname:
+            user.nickname = nickname
+        if avatar_url:
+            user.avatar_url = avatar_url
+        update_user(user)
+    else:
+        user = create_user(openid, nickname, avatar_url)
+
+    token = generate_token(user)
+    return make_succ_response({
+        'token': token,
+        'user': {'id': user.id, 'nickname': user.nickname, 'avatar_url': user.avatar_url},
+    })
 
 
 @app.route('/api/auth/me', methods=['GET'])
 @require_auth
 def auth_me():
     user = request.current_user
+    login_methods = []
+    if user.openid:
+        login_methods.append('wechat')
+    if user.username:
+        login_methods.append('password')
     return make_succ_response({
         'id': user.id,
-        'openid': user.openid,
+        'openid': user.openid or '',
+        'username': user.username or '',
         'nickname': user.nickname or '',
         'avatarUrl': user.avatar_url or '',
+        'loginMethods': login_methods,
+        'createdAt': user.created_at.timestamp() * 1000 if user.created_at else 0,
     })
+
+
+# ── Username / Password Registration & Login ──
+
+@app.route('/api/auth/register', methods=['POST'])
+def auth_register():
+    data = request.get_json()
+    if not data:
+        return make_err_response('请求体为空')
+
+    username = (data.get('username') or '').strip()
+    password = data.get('password', '')
+    nickname = (data.get('nickname') or '').strip()
+
+    if len(username) < 3:
+        return make_err_response('用户名至少3个字符')
+    if len(password) < 6:
+        return make_err_response('密码至少6个字符')
+
+    if get_user_by_username(username):
+        return make_err_response('用户名已被注册')
+
+    pw_hash = generate_password_hash(password)
+    user = create_user(username=username, password_hash=pw_hash, nickname=nickname or username)
+    token = generate_token(user)
+    return make_succ_response({
+        'token': token,
+        'user': {'id': user.id, 'username': user.username, 'nickname': user.nickname or ''},
+    })
+
+
+@app.route('/api/auth/login', methods=['POST'])
+def auth_login():
+    data = request.get_json()
+    if not data:
+        return make_err_response('请求体为空')
+
+    username = (data.get('username') or '').strip()
+    password = data.get('password', '')
+
+    if not username or not password:
+        return make_err_response('用户名和密码不能为空')
+
+    user = get_user_by_username(username)
+    if not user or not user.password_hash:
+        return make_err_response('用户名或密码错误', 401)
+
+    if not check_password_hash(user.password_hash, password):
+        return make_err_response('用户名或密码错误', 401)
+
+    token = generate_token(user)
+    return make_succ_response({
+        'token': token,
+        'user': {'id': user.id, 'username': user.username, 'nickname': user.nickname or ''},
+    })
+
+
+# ── WeChat Official Account OAuth ──
+
+@app.route('/api/auth/official-login-url', methods=['GET'])
+def auth_official_login_url():
+    redirect_uri = config.OFFICIAL_REDIRECT_URI
+    appid = config.OFFICIAL_APP_ID
+    state = request.args.get('state', 'card_counter')
+    url = (
+        'https://open.weixin.qq.com/connect/oauth2/authorize'
+        f'?appid={appid}&redirect_uri={redirect_uri}'
+        f'&response_type=code&scope=snsapi_userinfo&state={state}#wechat_redirect'
+    )
+    return make_succ_response({'url': url})
+
+
+@app.route('/api/auth/official-callback', methods=['GET'])
+def auth_official_callback():
+    code = request.args.get('code', '')
+    if not code:
+        return make_err_response('缺少授权码')
+
+    appid = config.OFFICIAL_APP_ID
+    secret = config.OFFICIAL_APP_SECRET
+
+    # Exchange code for access_token
+    token_resp = requests.get(
+        'https://api.weixin.qq.com/sns/oauth2/access_token',
+        params={'appid': appid, 'secret': secret, 'code': code, 'grant_type': 'authorization_code'},
+    )
+    token_data = token_resp.json()
+    if 'errcode' in token_data and token_data['errcode'] != 0:
+        return make_err_response(f"获取access_token失败: {token_data.get('errmsg', 'unknown')}")
+
+    access_token = token_data['access_token']
+    openid = token_data['openid']
+
+    # Get user info
+    user_resp = requests.get(
+        'https://api.weixin.qq.com/sns/userinfo',
+        params={'access_token': access_token, 'openid': openid, 'lang': 'zh_CN'},
+    )
+    user_data = user_resp.json()
+    if 'errcode' in user_data and user_data['errcode'] != 0:
+        return make_err_response(f"获取用户信息失败: {user_data.get('errmsg', 'unknown')}")
+
+    nickname = user_data.get('nickname', '')
+    avatar_url = user_data.get('headimgurl', '')
+
+    user = get_user_by_openid(openid)
+    if user:
+        if nickname:
+            user.nickname = nickname
+        if avatar_url:
+            user.avatar_url = avatar_url
+        update_user(user)
+    else:
+        user = create_user(openid=openid, nickname=nickname, avatar_url=avatar_url)
+
+    token = generate_token(user)
+    return redirect(f'/#token={token}')
+
+
+# ── Profile & Password Management ──
+
+@app.route('/api/auth/profile', methods=['GET', 'PUT'])
+@require_auth
+def auth_profile():
+    user = request.current_user
+
+    if request.method == 'GET':
+        login_methods = []
+        if user.openid:
+            login_methods.append('wechat')
+        if user.username:
+            login_methods.append('password')
+        return make_succ_response({
+            'id': user.id,
+            'username': user.username or '',
+            'nickname': user.nickname or '',
+            'avatarUrl': user.avatar_url or '',
+            'loginMethods': login_methods,
+            'createdAt': user.created_at.timestamp() * 1000 if user.created_at else 0,
+        })
+
+    # PUT
+    data = request.get_json()
+    if not data:
+        return make_err_response('请求体为空')
+    nickname = (data.get('nickname') or '').strip()
+    avatar_url = (data.get('avatarUrl') or data.get('avatar_url') or '').strip()
+    if not nickname:
+        return make_err_response('昵称不能为空')
+    update_user_profile(user, nickname)
+    if avatar_url:
+        user.avatar_url = avatar_url
+        db.session.commit()
+    return make_succ_response({'nickname': user.nickname, 'avatarUrl': user.avatar_url or ''})
+
+
+@app.route('/api/auth/change-password', methods=['POST'])
+@require_auth
+def auth_change_password():
+    user = request.current_user
+    data = request.get_json()
+    if not data:
+        return make_err_response('请求体为空')
+
+    old_password = data.get('old_password', '')
+    new_password = data.get('new_password', '')
+
+    if not user.password_hash:
+        return make_err_response('该账号未设置密码，无法修改')
+
+    if not check_password_hash(user.password_hash, old_password):
+        return make_err_response('原密码错误', 401)
+
+    if len(new_password) < 6:
+        return make_err_response('新密码至少6个字符')
+
+    change_user_password(user, generate_password_hash(new_password))
+    return make_succ_empty_response()
 
 
 # ──────────────────────────────────────────────
@@ -242,10 +432,10 @@ def quotas():
         'preferences': data.get('preferences', {'days': ['weekend']}),
     }
 
-    # check if updating existing by local_id
+    # check if updating existing by local_id (仅当前用户)
     existing = None
     if local_id:
-        existing = get_quota_by_local_id(local_id)
+        existing = get_quota_by_local_id(local_id, user.id)
 
     if existing:
         update_quota(existing, quota_data)
@@ -326,11 +516,28 @@ def checkins():
     # 同时更新对应 quota 的 used_times
     quota_local_id = data.get('quotaId', '')
     deduct = int(data.get('deductTimes', 1))
+
+    # localId 去重：已存在则更新（防重复推送创建重复签到），仅当前用户
+    existing = None
+    if data.get('localId'):
+        existing = get_checkin_by_local_id(data['localId'], user.id)
+
+    quota = None
     if quota_local_id:
-        quota = get_quota_by_local_id(quota_local_id)
-        if quota and quota.user_id == user.id:
+        quota = get_quota_by_local_id(quota_local_id, user.id)
+        if quota and quota.user_id == user.id and not existing:
             quota.used_times = (quota.used_times or 0) + deduct
             db.session.commit()
+
+    if existing:
+        existing.merchant = data.get('merchant', existing.merchant or '')
+        existing.deduct_times = deduct
+        existing.checkin_date = checkin_date
+        existing.checkin_time = data.get('checkinTime', existing.checkin_time or '')
+        existing.quota_local_id = quota_local_id
+        existing.quota_id = quota.id if quota else existing.quota_id
+        db.session.commit()
+        return make_succ_response(checkin_to_dict(existing))
 
     ci_data = {
         'local_id': data.get('localId', ''),
@@ -366,10 +573,51 @@ def revoke_checkin(cid):
 
     # 恢复 quota 次数
     if ci.quota_local_id:
-        quota = get_quota_by_local_id(ci.quota_local_id)
+        quota = get_quota_by_local_id(ci.quota_local_id, user.id)
         if quota and quota.user_id == user.id:
             quota.used_times = max(0, (quota.used_times or 0) - ci.deduct_times)
             db.session.commit()
+
+    return make_succ_response(checkin_to_dict(ci))
+
+
+@app.route('/api/checkins/<int:cid>/date', methods=['PUT'])
+@require_auth
+def update_checkin_date(cid):
+    """修改签到日期，记录更改日志（30天限制为软性提示，不强制）"""
+    user = request.current_user
+    ci = get_checkin(cid)
+    if not ci or ci.user_id != user.id:
+        return make_err_response('签到记录不存在', 404)
+
+    data = request.get_json() or {}
+    new_date_str = (data.get('checkinDate') or '').strip()
+    if not new_date_str:
+        return make_err_response('缺少日期')
+
+    try:
+        new_date = datetime.strptime(new_date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return make_err_response('日期格式错误，应为 YYYY-MM-DD')
+
+    old_date = ci.checkin_date
+    if old_date == new_date:
+        return make_succ_response(checkin_to_dict(ci))
+
+    logs = ci.date_edit_logs or []
+    log_entry = {
+        'from': old_date.isoformat() if old_date else '',
+        'to': new_date_str,
+        'changedAt': datetime.utcnow().isoformat(),
+    }
+    today = date.today()
+    delta = (new_date - today).days
+    if abs(delta) > 30:
+        log_entry['outOfRange'] = True
+    logs.append(log_entry)
+    ci.checkin_date = new_date
+    ci.date_edit_logs = logs
+    db.session.commit()
 
     return make_succ_response(checkin_to_dict(ci))
 
@@ -404,7 +652,7 @@ def ratings():
 
     existing = None
     if local_id:
-        existing = get_rating_by_local_id(local_id)
+        existing = get_rating_by_local_id(local_id, user.id)
 
     if existing:
         existing.score = rating_data['score']
@@ -423,7 +671,7 @@ def ratings():
 @require_auth
 def rating_detail(rid):
     user = request.current_user
-    r = get_rating_by_local_id(str(rid)) or Rating.query.get(rid)
+    r = get_rating_by_local_id(str(rid), user.id) or Rating.query.get(rid)
     if not r or r.user_id != user.id:
         return make_err_response('评价不存在', 404)
 

@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>次卡管家 — Card Counter</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#5b5fc7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="次卡管家">
 <style>
 :root{--bg:#f5f5f7;--surface:#fff;--surface-2:#f8f8fa;--primary:#5b5fc7;--primary-light:#eef0ff;--primary-dark:#4347a0;--red:#e74c3c;--green:#27ae60;--orange:#f39c12;--gray:#999;--text:#1d1d1f;--text-2:#6e6e73;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.08)}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -168,12 +173,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
   </div>
   <div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px">
     <h3 style="font-size:14px;margin-bottom:8px">💾 数据管理</h3>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      <button class="btn btn-primary btn-sm" onclick="manualSync()" id="manualSyncBtn">🔄 手动同步</button>
       <button class="btn btn-outline btn-sm" onclick="exportData()">导出备份</button>
       <button class="btn btn-outline btn-sm" onclick="document.getElementById('importFile').click()">导入恢复</button>
       <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
       <button class="btn btn-danger btn-sm" onclick="resetData()">重置数据</button>
     </div>
+    <div id="syncStatus" style="font-size:12px;color:var(--gray);display:none"></div>
   </div>
 </div>
 
@@ -307,24 +314,44 @@ async function apiFetch(path, opts) {
 // ═══════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════
-function init() {
-  // Check for token in URL hash (WeChat callback)
-  const hash = location.hash;
-  if (hash && hash.includes('token=')) {
-    const t = hash.split('token=')[1].split('&')[0];
-    setToken(t);
-    location.hash = '';
-    history.replaceState(null, '', location.pathname);
-  }
-
+async function init() {
   loadLocal();
   loadPreferences();
+
+  // Check for token from URL hash (Official Account redirect)
+  const hashToken = extractTokenFromHash();
+  if (hashToken) {
+    setToken(hashToken);
+    history.replaceState(null, '', window.location.pathname);
+  }
+
+  // Try WeChat auto-login (Mini Program web-view)
+  await tryWechatAutoLogin();
+
   renderAuthUI();
   renderAll();
 
   if (loggedIn()) {
     fetchUserInfo();
     syncFromServer();
+  }
+}
+
+function extractTokenFromHash() {
+  const hash = window.location.hash;
+  const m = hash.match(/token=([^&]+)/);
+  return m ? m[1] : null;
+}
+
+async function tryWechatAutoLogin() {
+  try {
+    const data = await apiFetch('/api/auth/wechat-login');
+    if (data && data.token) {
+      setToken(data.token);
+      currentUser = data.user;
+    }
+  } catch(e) {
+    // Not in Mini Program web-view — that's OK, use local mode
   }
 }
 
@@ -346,41 +373,215 @@ async function fetchUserInfo() {
 function renderAuthUI() {
   const el = document.getElementById('authSection');
   if (!el) return;
+
   if (loggedIn() && currentUser) {
-    const name = currentUser.nickname || currentUser.openid || '用户';
-    const avatar = currentUser.avatarUrl || '';
-    const avatarHtml = avatar
-      ? '<img src="' + esc(avatar) + '" style="width:40px;height:40px;border-radius:50%;vertical-align:middle;margin-right:8px">'
-      : '<span style="font-size:32px;vertical-align:middle;margin-right:8px">👤</span>';
-    el.innerHTML =
-      '<div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px">' +
-      '<div style="display:flex;align-items:center;margin-bottom:8px">' +
-      avatarHtml +
-      '<div><div style="font-weight:600;font-size:14px">' + esc(name) + '</div>' +
-      '<div style="font-size:11px;color:var(--text-2)">已通过微信登录</div></div></div>' +
-      '<button class="btn btn-outline btn-sm" onclick="handleLogout()">退出登录</button>' +
-      '</div>';
+    el.innerHTML = renderLoggedInUI();
   } else if (loggedIn()) {
-    // Token exists but user info not loaded yet
     el.innerHTML =
       '<div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px;text-align:center">' +
       '<p style="font-size:13px;color:var(--text-2);margin-bottom:8px">正在加载用户信息...</p>' +
       '<button class="btn btn-outline btn-sm" onclick="handleLogout()">退出</button></div>';
   } else {
-    el.innerHTML =
-      '<div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px;text-align:center">' +
-      '<h3 style="font-size:14px;margin-bottom:12px">🔑 微信登录</h3>' +
-      '<p style="font-size:12px;color:var(--text-2);margin-bottom:12px">使用微信扫码登录，云端同步数据</p>' +
-      '<button class="btn btn-primary" onclick="handleWechatLogin()" style="font-size:15px;padding:10px 24px">💬 微信登录</button>' +
-      '<p style="font-size:11px;color:var(--text-2);margin-top:8px">未登录时数据保存在本地浏览器</p>' +
-      '</div>';
+    el.innerHTML = renderLoggedOutUI();
   }
 }
 
-function handleWechatLogin() {
-  apiFetch('/api/auth/login-url').then(data => {
-    if (data && data.url) location.href = data.url;
-  }).catch(e => toast('获取登录链接失败: ' + e.message));
+function renderLoggedInUI() {
+  const u = currentUser;
+  const name = u.nickname || u.username || u.openid || '用户';
+  const avatar = u.avatarUrl || '';
+  const avatarHtml = avatar
+    ? '<img src="' + esc(avatar) + '" style="width:40px;height:40px;border-radius:50%;vertical-align:middle;margin-right:8px">'
+    : '<span style="font-size:32px;vertical-align:middle;margin-right:8px">👤</span>';
+
+  const methods = u.loginMethods || [];
+  const methodLabels = { wechat: '微信', password: '账号密码' };
+  const methodHtml = methods.map(m => methodLabels[m] || m).join('、');
+
+  const hasPassword = u.username && methods.includes('password');
+
+  return '<div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px">' +
+    '<div style="display:flex;align-items:center;margin-bottom:8px">' +
+    avatarHtml +
+    '<div><div style="font-weight:600;font-size:14px">' + esc(name) + '</div>' +
+    '<div style="font-size:11px;color:var(--text-2)">登录方式：' + methodHtml + '</div></div></div>' +
+    '<div style="margin-bottom:8px;font-size:12px;color:var(--text-2)">' +
+    (u.username ? '<div>用户名：' + esc(u.username) + '</div>' : '') +
+    (u.createdAt ? '<div>注册时间：' + new Date(u.createdAt).toLocaleDateString('zh-CN') + '</div>' : '') +
+    '</div>' +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+    '<button class="btn btn-outline btn-sm" onclick="showChangeNickname()">✏️ 修改昵称</button>' +
+    (hasPassword ? '<button class="btn btn-outline btn-sm" onclick="showChangePassword()">🔑 修改密码</button>' : '') +
+    '<button class="btn btn-outline btn-sm" onclick="handleLogout()" style="border-color:var(--red);color:var(--red)">退出登录</button>' +
+    '</div>' +
+    // Change nickname form (hidden)
+    '<div id="changeNicknameForm" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid #eee">' +
+    '<div class="form-group"><label>新昵称</label><input type="text" id="nicknameInput" value="' + esc(u.nickname || '') + '"></div>' +
+    '<div class="form-actions" style="margin-top:8px">' +
+    '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'changeNicknameForm\').style.display=\'none\'">取消</button>' +
+    '<button class="btn btn-primary btn-sm" onclick="saveNickname()">保存</button></div></div>' +
+    // Change password form (hidden)
+    '<div id="changePasswordForm" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid #eee">' +
+    '<div class="form-group"><label>原密码</label><input type="password" id="oldPasswordInput"></div>' +
+    '<div class="form-group"><label>新密码</label><input type="password" id="newPasswordInput" placeholder="至少6个字符"></div>' +
+    '<div class="form-actions" style="margin-top:8px">' +
+    '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'changePasswordForm\').style.display=\'none\'">取消</button>' +
+    '<button class="btn btn-primary btn-sm" onclick="savePassword()">确认修改</button></div></div>' +
+    '</div>';
+}
+
+function renderLoggedOutUI() {
+  return '<div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px">' +
+    '<h3 style="font-size:14px;margin-bottom:12px">🔑 登录 / 注册</h3>' +
+    // Login tab buttons
+    '<div style="display:flex;gap:4px;margin-bottom:12px">' +
+    '<button class="sort-btn active" id="loginTabBtn" onclick="switchAuthTab(\'login\')">登录</button>' +
+    '<button class="sort-btn" id="registerTabBtn" onclick="switchAuthTab(\'register\')">注册</button>' +
+    '</div>' +
+    // Login form
+    '<div id="loginForm">' +
+    '<div class="form-group"><label>用户名</label><input type="text" id="loginUsername" placeholder="输入用户名"></div>' +
+    '<div class="form-group"><label>密码</label><input type="password" id="loginPassword" placeholder="输入密码"></div>' +
+    '<button class="btn btn-primary" onclick="handleLogin()" style="width:100%;margin-top:4px">登录</button>' +
+    '</div>' +
+    // Register form (hidden by default)
+    '<div id="registerForm" style="display:none">' +
+    '<div class="form-group"><label>用户名</label><input type="text" id="regUsername" placeholder="至少3个字符"></div>' +
+    '<div class="form-group"><label>密码</label><input type="password" id="regPassword" placeholder="至少6个字符"></div>' +
+    '<div class="form-group"><label>确认密码</label><input type="password" id="regConfirm" placeholder="再次输入密码"></div>' +
+    '<div class="form-group"><label>昵称（可选）</label><input type="text" id="regNickname" placeholder="如何称呼您"></div>' +
+    '<button class="btn btn-primary" onclick="handleRegister()" style="width:100%;margin-top:4px">注册</button>' +
+    '</div>' +
+    // Divider
+    '<div style="margin:16px 0;text-align:center;color:var(--text-2);font-size:12px">— 或 —</div>' +
+    // WeChat login (公众号网页授权，即微信内网页版微信登录)
+    '<button class="btn btn-outline" onclick="handleWechatLogin()" style="width:100%;font-size:14px;padding:10px">' +
+    '💬 微信登录</button>' +
+    '<p style="font-size:11px;color:var(--text-2);margin-top:8px;text-align:center" id="wechatLoginHint">' +
+    '未登录时数据保存在本地浏览器</p>' +
+    '</div>';
+}
+
+function switchAuthTab(tab) {
+  document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+  document.getElementById('loginTabBtn').classList.toggle('active', tab === 'login');
+  document.getElementById('registerTabBtn').classList.toggle('active', tab === 'register');
+}
+
+async function handleRegister() {
+  const username = document.getElementById('regUsername').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const confirm = document.getElementById('regConfirm').value;
+  const nickname = document.getElementById('regNickname').value.trim();
+
+  if (username.length < 3) { toast('用户名至少3个字符'); return; }
+  if (password.length < 6) { toast('密码至少6个字符'); return; }
+  if (password !== confirm) { toast('两次密码输入不一致'); return; }
+
+  try {
+    const data = await apiFetch('/api/auth/register', {
+      method: 'POST',
+      body: { username, password, nickname: nickname || username },
+    });
+    setToken(data.token);
+    currentUser = data.user;
+    renderAuthUI();
+    fetchUserInfo();
+    syncFromServer();
+    toast('注册成功！');
+  } catch(e) {
+    toast(e.message);
+  }
+}
+
+async function handleLogin() {
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!username || !password) { toast('请输入用户名和密码'); return; }
+
+  try {
+    const data = await apiFetch('/api/auth/login', {
+      method: 'POST',
+      body: { username, password },
+    });
+    setToken(data.token);
+    currentUser = data.user;
+    renderAuthUI();
+    fetchUserInfo();
+    syncFromServer();
+    toast('登录成功！');
+  } catch(e) {
+    toast(e.message);
+  }
+}
+
+function isWechatBrowser() {
+  return /MicroMessenger/i.test(navigator.userAgent || '');
+}
+
+async function handleWechatLogin() {
+  // 在微信内置浏览器中：走公众号网页授权（微信登录）
+  // 在小程序 web-view 中：已在 init() 里通过 X-WX-OPENID 自动登录
+  if (!isWechatBrowser()) {
+    toast('请在微信中打开本页面进行微信登录，或使用下方账号密码登录');
+    return;
+  }
+  try {
+    const data = await apiFetch('/api/auth/official-login-url');
+    if (data && data.url) {
+      window.location.href = data.url;
+    }
+  } catch(e) {
+    toast('获取微信登录链接失败：' + e.message);
+  }
+}
+
+function showChangeNickname() {
+  const f = document.getElementById('changeNicknameForm');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  document.getElementById('changePasswordForm').style.display = 'none';
+}
+
+async function saveNickname() {
+  const nickname = document.getElementById('nicknameInput').value.trim();
+  if (!nickname) { toast('昵称不能为空'); return; }
+  try {
+    await apiFetch('/api/auth/profile', {
+      method: 'PUT',
+      body: { nickname },
+    });
+    currentUser.nickname = nickname;
+    renderAuthUI();
+    toast('昵称已更新');
+  } catch(e) {
+    toast(e.message);
+  }
+}
+
+function showChangePassword() {
+  const f = document.getElementById('changePasswordForm');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  document.getElementById('changeNicknameForm').style.display = 'none';
+}
+
+async function savePassword() {
+  const oldPw = document.getElementById('oldPasswordInput').value;
+  const newPw = document.getElementById('newPasswordInput').value;
+  if (!oldPw || !newPw) { toast('请填写原密码和新密码'); return; }
+  if (newPw.length < 6) { toast('新密码至少6个字符'); return; }
+  try {
+    await apiFetch('/api/auth/change-password', {
+      method: 'POST',
+      body: { old_password: oldPw, new_password: newPw },
+    });
+    document.getElementById('changePasswordForm').style.display = 'none';
+    document.getElementById('oldPasswordInput').value = '';
+    document.getElementById('newPasswordInput').value = '';
+    toast('密码已修改');
+  } catch(e) {
+    toast(e.message);
+  }
 }
 
 function handleLogout() {
@@ -461,6 +662,35 @@ async function syncFromServer() {
     console.warn('sync failed, using local data:', e.message);
   }
   syncInProgress = false;
+}
+
+// 手动同步：拉取云端 + 推送本地，并显示状态
+async function manualSync() {
+  if (!loggedIn()) { alert('请先登录'); return; }
+  if (syncInProgress) return;
+  const btn = document.getElementById('manualSyncBtn');
+  const status = document.getElementById('syncStatus');
+  btn.disabled = true;
+  btn.textContent = '⏳ 同步中...';
+  status.style.display = 'block';
+  status.textContent = '同步中...';
+  try {
+    // 1. 推送本地数据到云端（仅推送云端没有的 localId）
+    let pushed = 0;
+    for (const q of localData.quotas) {
+      const exists = (await apiFetch('/api/quotas')).some(x => x.localId === q.localId);
+      if (!exists) { await pushToServer('quotas', q); pushed++; }
+    }
+    // 2. 拉取云端数据
+    await syncFromServer();
+    status.textContent = '✅ 同步完成，已推送 ' + pushed + ' 条，拉取云端最新数据';
+  } catch(e) {
+    status.textContent = '❌ 同步失败: ' + (e.message || '网络错误');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔄 手动同步';
+    setTimeout(() => { status.style.display = 'none'; }, 4000);
+  }
 }
 
 async function pushToServer(collection, data) {
@@ -943,10 +1173,29 @@ function savePreferences() {
 }
 
 function exportData() {
-  const blob = new Blob([JSON.stringify(localData, null, 2)], { type: 'application/json' });
+  const content = JSON.stringify(localData, null, 2);
+  const filename = 'card-counter-backup-' + todayStr() + '.json';
+  if (window.showSaveFilePicker) {
+    window.showSaveFilePicker({
+      suggestedName: filename,
+      types: [{ description: 'JSON 备份', accept: { 'application/json': ['.json'] } }],
+    })
+      .then(handle => handle.createWritable())
+      .then(writable => writable.write(content).then(() => writable.close()))
+      .then(() => toast('备份已保存'))
+      .catch(err => {
+        if (err.name !== 'AbortError') fallbackExport(filename, content);
+      });
+  } else {
+    fallbackExport(filename, content);
+  }
+}
+
+function fallbackExport(filename, content) {
+  const blob = new Blob([content], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'card-counter-backup-' + todayStr() + '.json';
+  a.download = filename;
   a.click();
   toast('备份已下载');
 }
@@ -984,6 +1233,17 @@ function resetData() {
 // BOOT
 // ═══════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', init);
+
+// ═══════════════════════════════════════════════
+// PWA: register service worker (enables "安装为应用")
+// ═══════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('/sw.js').catch(function (e) {
+      console.warn('Service Worker 注册失败:', e);
+    });
+  });
+}
 </script>
 </body>
 </html>

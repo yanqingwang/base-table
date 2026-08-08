@@ -77,13 +77,12 @@
       <view wx:for="{{filteredCheckins}}" wx:key="localId" class="history-item">
         <view class="history-left">
           <text class="history-merchant">{{item.merchantText}}</text>
-          <text class="history-time">{{item.checkinDate}} {{item.checkinTime}}</text>
+          <text class="history-time {{item.dateModified ? 'date-small' : ''}}">{{item.checkinDate}} {{item.checkinTime}}{{item.dateModified ? '（已改期）' : ''}}</text>
           <text class="history-note" wx:if="{{item.note}}">{{item.note}}</text>
         </view>
         <view class="history-right">
           <text class="history-deduct">-{{item.deductTimes}}次</text>
-          <text class="revoke-btn" data-id="{{item.localId}}" bindtap="changeCheckinDate">改期</text>
-          <text class="revoke-btn" data-id="{{item.localId}}" bindtap="revokeCheckin">撤销</text>
+          <text class="edit-btn" data-id="{{item.localId || item.id}}" bindtap="goEdit">修改</text>
         </view>
       </view>
     </block>

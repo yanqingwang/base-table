@@ -14,18 +14,27 @@ Page({
   },
 
   onLoad(options) {
-    this._id = options.id || '';
+    this._id = (options && options.id) || '';
   },
 
   onShow() {
     this.loadData();
   },
 
+  // 兼容多种 id 键（localId / local_id / id）匹配记录
+  _matchId(x, id) {
+    if (!x || !id) return false;
+    const target = String(id);
+    const lid = x.localId != null ? String(x.localId) : (x.local_id != null ? String(x.local_id) : '');
+    if (lid && lid === target) return true;
+    return x.id != null && String(x.id) === target;
+  },
+
   loadData() {
     this.setData({ loading: true });
     try {
       const checkins = storage.getCheckins() || [];
-      const raw = checkins.find(c => (c.localId || String(c.id)) === this._id);
+      const raw = checkins.find(c => this._matchId(c, this._id));
       if (!raw) {
         wx.showToast({ title: '记录不存在', icon: 'none' });
         this.setData({ loading: false });
@@ -81,7 +90,7 @@ Page({
         }
         try {
           const checkins = storage.getCheckins();
-          const idx = checkins.findIndex(x => (x.localId || String(x.id)) === this._id);
+          const idx = checkins.findIndex(x => this._matchId(x, this._id));
           const oldDate = c.checkinDate;
           if (idx !== -1) {
             const logs = checkins[idx].dateEditLogs || [];
@@ -115,7 +124,7 @@ Page({
         if (!res.confirm) return;
         try {
           const checkins = storage.getCheckins();
-          const idx = checkins.findIndex(x => (x.localId || String(x.id)) === this._id);
+          const idx = checkins.findIndex(x => this._matchId(x, this._id));
           if (idx !== -1) {
             checkins[idx].isRevoked = true;
             checkins[idx].updatedAt = Date.now();

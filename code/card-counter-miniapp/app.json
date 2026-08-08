@@ -5,6 +5,7 @@
     "pages/quota/detail/detail",
     "pages/checkin/checkin",
     "pages/checkin/history/history",
+    "pages/checkin/edit/edit",
     "pages/rating/rating",
     "pages/stats/stats",
     "pages/profile/profile",
@@ -29,6 +30,5 @@
     ]
   },
   "style": "v2",
-  "sitemapLocation": "sitemap.json",
-  "lazyCodeLoading": "requiredComponents"
+  "sitemapLocation": "sitemap.json"
 }

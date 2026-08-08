@@ -166,3 +166,24 @@
 - **小程序 profile 页**：新增「强制上传」按钮（橙色，确认弹窗后全量上传）
 - **测试**：本地 SQLite 迁移验证 ✓；API 测试（note 持久化 / dedup 不重复扣减 / isRevoked 不扣减 / revoke 返还）✓；浏览器 E2E（历史记录 init 自动推送 + 强制上传 + 详情展示备注 + usedTimes 一致）✓；test_diff/test_merge 全过 ✓
 - **部署状态**：小程序 2.3.5 已上传 ✅（含本小节全部改动，待人工提交审核）；后端待 git push 云托管（网页随后端部署自动更新）
+
+### 2026-08-08 修复：小程序无法打开 + 重置数据/删除同步记录（v2.4.0）
+- **根因（小程序打不开）**：
+  1. `app.json` 只注册了 `pages/index/index` 且无 `tabBar`，但 `login.js`/`stats.js`/`detail.js` 都用 `wx.switchTab` 跳 5 个 Tab 页 → switchTab 失败，页面打不开
+  2. `pages/index/index.wxml` 仍是失效的 `<web-view src="https://flask-z9hh-...sh.run.tcloudbase.com/">`（业务域名未备案无法加载）→ 首页空白
+  - 注：`pages/index/index.wxss` 早已写好原生配额列表样式，但 `.js`/`.wxml` 从未补完（停在 web-view 桩）
+- **修复**：
+  - `app.json` 注册全部 9 个页面 + `tabBar`（次卡/签到/统计/评价/我的），FAB bottom 偏移已为 tabBar 预留
+  - 重写 `index.js`/`index.wxml` 为原生配额列表（汇总卡/进度条/即将到期提醒/全局学习建议/快速签到/FAB 新增），复用既有 wxss
+  - `node --check` 全量 JS 通过；`app.json` 等 JSON 校验通过
+- **重置数据 + 删除同步记录**：
+  - 后端新增 `dao.reset_user_data(user_id)` + `POST /api/reset`（require_auth，仅清当前用户 quotas/checkins/ratings，保留账号；其他用户不受影响）
+  - 小程序 profile 新增「重置全部数据（含云端）」：`/api/reset` 清云端 → `storage.clearAll()` 清本地 + `_synced`/`syncStatus` 同步记录 + `pendingCheckinQuota`
+  - 保留原「清除本地数据」（仅本地，云端保留）
+  - 本地 SQLite `db.sqlite3` 已删除（重置开发数据），运行自动 `db.create_all()` 重建
+- **验证**：
+  - 小程序 **已上传 v2.4.0** ✅（开发版本，待人工：版本管理→提交审核→发布）
+  - 后端 `py_compile` 通过；Flask(SQLite) 启动 `/api/reset` 路由注册；功能测试：用户数据 1/1/1 → 0/0/0，其他用户不受影响 ✅
+  - `test_merge.js`/`test_diff.js` 6 场景全过 ✅（数据同步完整性）
+  - 后端改动（含 2.3.x 全量同步修复：checkin.note 列+迁移+处理）已 `git push origin python` 触发云托管构建 ✅
+- **待用户操作**：微信公众平台 → 版本管理 → 选 2.4.0 开发版本 → 提交审核 → 审核通过后发布（wujie 微前端无法脚本化提交审核）

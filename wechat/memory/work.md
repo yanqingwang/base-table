@@ -89,6 +89,7 @@
 3. **miniprogram-ci 上传前置检查**：
    - private.key md5 = `ff454fb9...`（被污染时从 `~/下载/private.wx9c5974ab24d057c3 (1).key` 恢复）
    - 出口 IP 在白名单（代理开启时 IP 会变，需加入）
+- ⚠️ **两仓库陷阱（2026-08-08 实测）**：`code/card-counter-flask/` 是**独立 git 仓库**（`origin = github.com/yanqingwang/card-counter-flask.git`），同时它也被父仓库 `base-table` 作为普通文件跟踪。改完 flask 代码必须 `cd code/card-counter-flask && git add/commit && git push origin main` 才会触发云托管构建；只推父仓库 `base-table` 的 `python` 分支**不会部署**（云托管读的是 card-counter-flask 仓库，不是 base-table）。
 
 ### 2026-08-08 发布状态（当前）
 - **小程序 2.3.2 已上传成功**（开发版本在微信后台），**待人工提交审核 + 发布**
@@ -185,5 +186,23 @@
   - 小程序 **已上传 v2.4.0** ✅（开发版本，待人工：版本管理→提交审核→发布）
   - 后端 `py_compile` 通过；Flask(SQLite) 启动 `/api/reset` 路由注册；功能测试：用户数据 1/1/1 → 0/0/0，其他用户不受影响 ✅
   - `test_merge.js`/`test_diff.js` 6 场景全过 ✅（数据同步完整性）
-  - 后端改动（含 2.3.x 全量同步修复：checkin.note 列+迁移+处理）已 `git push origin python` 触发云托管构建 ✅
+  - 后端改动（含 2.3.x 全量同步修复）最初误推到父仓库 `base-table` 的 `python` 分支，**未触发云托管构建**（详见下方「云托管网页未更新根因与修复」）
 - **待用户操作**：微信公众平台 → 版本管理 → 选 2.4.0 开发版本 → 提交审核 → 审核通过后发布（wujie 微前端无法脚本化提交审核）
+
+### 2026-08-08 云托管网页未更新根因与修复（网页/小程序一致性）
+- **用户反馈**：云托管网页 `https://flask-z9hh-281177-5-1453124923.sh.run.tcloudbase.com/` 未更新；「初始化上传没有做好」（初始化全量同步缺失）；要求云托管页面与小程序内容一致。
+- **诊断**：
+  - 探测线上：`POST /api/reset` → **404**；`index.html`（61843 字节）含 `重置`/`resetData` 但**缺 `强制上传`/`pushLocalPending`** → 线上是旧提交 `8b9183c`
+  - 发现 `code/card-counter-flask/` 是**独立 git 仓库**，`origin = github.com/yanqingwang/card-counter-flask.git`（真正云托管构建源），而父仓库 `base-table` 只是把它当普通文件跟踪
+  - 之前误把改动 commit 到父仓库 `base-table` 的 `python` 分支并 `git push origin python`，该推送**不会触发云托管构建**（云托管读 card-counter-flask 仓库的 main 分支）
+  - 改动实际在嵌套仓库工作区（与父仓库共享物理文件），但从未 commit+push 到嵌套仓库 → 云托管始终构建旧代码
+- **修复**：
+  - `cd code/card-counter-flask` → `git add` 仅源码（wxcloudrun/__init__.py、dao.py、model.py、views.py、templates/index.html），**排除** `card_counter.db` 与 `__pycache__/*`
+  - commit `9ed1d6c` → `git push origin main` → 云托管自动构建
+- **验证（部署后）**：
+  - `POST /api/reset` → **401 未登录**（部署前 404，证明路由已上线且鉴权生效）
+  - 线上 `index.html` 61843 → **65891 字节**，现含 `强制上传`(4) / `pushLocalPending`(5) / `resetData`(2) / `重置`(3) → 全量同步初始化上传 + 重置功能已生效
+  - 云托管网页与小程序 v2.4.0 现共享同一后端能力（强制上传 / 重置数据删除同步记录），内容一致 ✅
+- **遗留提醒**：
+  - 小程序 v2.4.0 已上传但**仍待人工提交审核+发布**（wujie 微前端无法脚本化提交审核）
+  - 嵌套仓库 `card_counter.db`、`__pycache__/*` 被 git 跟踪（无 .gitignore），后续提交须 `git add` 指定文件，勿 `git add -A`

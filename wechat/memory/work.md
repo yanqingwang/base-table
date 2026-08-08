@@ -345,3 +345,34 @@
   - 小程序：**v2.4.5 已上传（开发版本）**，**仍待人工提交审核+发布**（wujie 微前端无法脚本化提交审核）
   - 提交（父仓库 base-table python）：随本次 work.md 提交
 - **遗留提醒**：v2.4.5 仍待人工：版本管理→选 2.4.5 开发版本→提交审核→审核通过后发布；网页构建若迟迟未生效，于云托管控制台确认构建日志。
+
+### 2026-08-08 网页撤销/删除配额同步小程序 + 修改页空白（v2.4.6）
+- **需求**：① 小程序签到管理中，点某次签到「修改」后页面空白（无修改界面、无改期/撤销），请修正；② 网页版本撤销签到后，没有真正同步到小程序页面；并检查网页版本修改后是否同步到小程序端；③ 网页版本删除次卡后，似乎没有成功保存。网页 + 小程序都更新；验证→发布→更新日志。
+- **修复 ① 修改页空白（根因：v2.4.5 修复未发布）**：
+  - 复核：`app.json` 已注册 `pages/checkin/edit/edit`；`goEdit` 传 `item.localId`（`normalizeCheckin` 保证恒有值）；`edit.js` 按 `localId` 查找正确；`edit.wxml` 已为 `wx:if loading / wx:elif checkin / wx:else 未找到` 三段式，任何状态都不会空白。
+  - 结论：代码修复 v2.4.5 已就绪但**只上传了开发版、从未发布**，用户实际仍跑旧构建 → 空白复现。本次随 v2.4.6 一并上传，发布后即生效。
+- **修复 ② 网页撤销/修改未同步小程序（根因：usedTimes 计数器只增不减 + 撤销状态被时间戳 LWW 吞掉）**：
+  - 根因 A：`syncManager.mergeQuota` 的 `usedTimes` 用 `max(local, cloud)` 合并——网页撤销后云端 usedTimes 已扣减，但小程序本地旧的较高值在 max 下恒胜 → 撤销次数永不回落到小程序（配额剩余数不变）。
+  - 根因 B：`QUOTA_FIELDS` 同时含 `usedTimes`（驼峰）与 `used_times`，第 1 步已对计数器做 max 特殊处理，但第 2 步 LWW 循环只跳过 `used_times`、漏跳 `usedTimes` → 云端较低值会在 `cloudTs > localTs` 时被普通 LWW 覆盖（实测 `mergeQuota` 把 10 覆盖成 8），再叠加补偿就出现二次扣减（6）。
+  - 根因 C：签到记录合并是严格 `cloudTs > localTs`，若小程序本地 `updatedAt` 偏大（时钟/并发），云端撤销 `isRevoked=true` 记录不被采用 → 撤销的签到仍显示。
+  - 修复（`utils/syncManager.js`）：
+    1. LWW 循环同时跳过 `used_times`/`usedTimes`，计数器统一走 max 特殊处理（避免被覆盖/二次扣减）。
+    2. 签到合并：**撤销状态以云端为准**——`cc.isRevoked && !existing.isRevoked` 时无论时间戳都采用 `isRevoked=true`，并记录 `newlyRevoked {quotaId, deductTimes}`。
+    3. 撤销补偿：合并后对 `newlyRevoked` 逐条从对应配额 `usedTimes` 扣回（clamp≥0）→ 网页撤销真正同步到小程序（签到消失 + 剩余次数恢复）。
+  - 网页修改（改期）检查：`submitCheckinDate` → `PUT /api/checkins/<id>/date`，服务端写 `checkin_date`+`date_edit_logs`，`updated_at` 因 model `onupdate=utcnow` 自动刷新 → 小程序整记录 LWW 拉取，日期/改期记录正常同步，无需改动。
+  - 验证：临时 node 模拟 5 场景（网页撤销同步 / 网页删配额清除 / 离线本地不丢失 / 未同步本地保留 / 双端均已撤销不二次扣减）全绿 ✅。
+- **修复 ③ 网页删除次卡未保存（根因：deleteQuota 从未调用服务端 DELETE）**：
+  - 根因：`index.html deleteQuota` 只 `localData.quotas.filter(...)` + `saveLocal()`，**未请求服务端**；刷新后 `init()→syncFromServer()` 又从云端拉回 → 删除"没保存"。
+  - 修复（`templates/index.html`）：
+    1. `deleteQuota` 本地先移除，登录态下调用 `DELETE /api/quotas/<qid>`（`q.id` 缺失时按 `localId` 兜底查云端列表匹配 id）；云端失败仅提示、不影响本地。
+    2. `pushToServer` 原先对 `quotas` 不回写 `res.id`（`collection !== 'quotas'` 分支排除），导致网页新建的配额永远没有服务端 id、无法删除——改为三类都回写 `id` 与 `_synced`。
+  - 小程序侧联动：`syncManager.merge` 新增**删除同步**——云端已知（`_synced` 或 `_cloudKnown`）但本次拉取不存在的配额 → 从本地移除；未同步过的本地记录保留待推送。网页删除后小程序下次下拉即清除该配额。
+- **验证**：
+  - 小程序 `syncManager.js` 等 7 个 JS `node --check` 全过；merge 逻辑 node 模拟 5 场景全绿 ✅
+  - Flask `index.html` 内联 JS 语法校验 OK（`node --check` 提取脚本通过）
+  - miniprogram-ci 上传 **v2.4.6 成功** ✅（zip 87421B / 39 文件）
+- **部署**：
+  - 网页：嵌套仓库 commit `05330b2`（deleteQuota+pushToServer）→ `git push origin main` → 追加空提交 `492f66f` 强制触发云托管重建；**线上已生效** ✅（轮询 probe 5：size **68977**，`del_marker=1`、`qpush=1`，含删除确认文案「删除后该次卡将从云端移除」与 pushToServer 配额 id 回写）
+  - 小程序：**v2.4.6 已上传（开发版本）**，**仍待人工提交审核+发布**（wujie 微前端无法脚本化提交审核）
+  - 提交（父仓库 base-table python）：`78893457`（syncManager.js 同步增强）随本次 work.md 提交
+- **遗留提醒**：v2.4.6 仍待人工：版本管理→选 2.4.6 开发版本→提交审核→审核通过后发布（发布后 v2.4.5 的修改页空白修复一并生效）。

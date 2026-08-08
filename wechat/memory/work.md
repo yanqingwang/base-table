@@ -341,7 +341,7 @@
   - Flask `py_compile` 过；嵌套仓库 commit `501759e`（"fix(web): 配额默认扣除次数最小为0（Math.max(0,dd)）"）→ `git push origin main`，线上轮询待生效（验证 `Math.max(0, dd)` 出现）
   - miniprogram-ci 上传 **v2.4.5 成功** ✅（首次即成功，desc 含三项修复）
 - **部署**：
-  - 网页：嵌套仓库 `501759e` → `git push origin main` → 云托管构建（线上待轮询确认 `Math.max(0, dd)` 生效）
+  - 网页：嵌套仓库 `501759e` → `git push origin main` → 云托管构建；**线上已生效** ✅（轮询至 probe 6 生效，size **75232**，含 `fDefaultDeduct min="0"`(1) / `Math.max(0, dd)`(1) / `openCheckinEdit`(2)；注：本次构建曾被云托管延迟，追加空提交 `48f37e9` 重新触发 webhook 后生效）
   - 小程序：**v2.4.5 已上传（开发版本）**，**仍待人工提交审核+发布**（wujie 微前端无法脚本化提交审核）
   - 提交（父仓库 base-table python）：随本次 work.md 提交
 - **遗留提醒**：v2.4.5 仍待人工：版本管理→选 2.4.5 开发版本→提交审核→审核通过后发布；网页构建若迟迟未生效，于云托管控制台确认构建日志。

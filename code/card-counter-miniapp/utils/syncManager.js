@@ -80,7 +80,7 @@ class SyncManager {
     // 2. 其余字段逐字段 LWW（本地为空时采用云端补齐，避免网页编辑的备注/偏好等无法同步到小程序）
     const conflicts = [];
     for (const f of QUOTA_FIELDS) {
-      if (f === 'used_times') continue; // 已特殊处理
+      if (f === 'used_times' || f === 'usedTimes') continue; // 计数器已特殊处理（含驼峰变体）
       const lv = this.getField(local, f);
       const cv = this.getField(cloud, f);
       const lvEmpty = lv === undefined || lv === null || lv === '' || (typeof lv === 'object' && lv !== null && Object.keys(lv).length === 0);
@@ -176,41 +176,76 @@ class SyncManager {
 
   /**
    * 合并云端数据到本地（智能分层）
+   * - 配额：字段级 LWW；云端已知但本次拉取不存在的记录 → 视为在其他端被删除，本地同步移除
+   * - 签到：记录级 LWW；撤销状态以云端为准（不可逆，避免本地时间戳偏大导致撤销不同步）
+   * - 撤销补偿：本次新发现的云端撤销 → 从对应配额 usedTimes 中扣回次数
    */
   merge(cloudQuotas, cloudCheckins, cloudRatings) {
-    // 配额合并：智能分层
+    // ── 配额合并：智能分层 + 删除同步 ──
     const localQuotas = storage.getQuotas() || [];
     const qMap = {};
     localQuotas.forEach(q => qMap[q.localId || q.local_id || q.id] = q);
-    cloudQuotas.forEach(cq => {
+
+    const cloudQKeys = new Set();
+    (cloudQuotas || []).forEach(cq => {
       const key = cq.localId || cq.local_id || cq.id;
       if (!key) return;
+      cloudQKeys.add(key);
       const existing = qMap[key];
       qMap[key] = existing ? this.mergeQuota(existing, cq) : { ...cq };
+      qMap[key]._cloudKnown = true; // 标记曾出现在云端，用于后续删除同步
+    });
+    // 本地残留的云端已知记录（网页端已删除）→ 从本地移除；未同步过的本地记录保留待推送
+    Object.keys(qMap).forEach(key => {
+      const q = qMap[key];
+      if ((q._synced === true || q._cloudKnown === true) && !cloudQKeys.has(key)) {
+        delete qMap[key];
+      }
     });
     storage.setQuotas(Object.values(qMap));
 
-    // 签到合并：localId 去重 + updatedAt 大者胜（记录不可变）
+    // ── 签到合并：localId 去重 + updatedAt 大者胜；撤销状态以云端为准 ──
     const localCheckins = storage.getCheckins() || [];
     const cMap = {};
     localCheckins.forEach(c => cMap[c.localId || c.local_id || c.id] = c);
-    cloudCheckins.forEach(cc => {
+    const newlyRevoked = []; // { quotaId, deductTimes } 本次新发现的云端撤销
+    (cloudCheckins || []).forEach(cc => {
       const key = cc.localId || cc.local_id || cc.id;
       if (!key) return;
       const existing = cMap[key];
       const cloudTs = cc.updatedAt || cc.updated_at || 0;
       const localTs = existing ? (existing.updatedAt || existing.updated_at || 0) : 0;
-      if (!existing || cloudTs > localTs) {
+      if (existing && cc.isRevoked && !existing.isRevoked) {
+        // 云端撤销不可逆：无论时间戳如何都采用撤销状态，并记录待补偿的扣减次数
+        cMap[key] = { ...existing, ...cc, isRevoked: true, updatedAt: Math.max(localTs, cloudTs) || Date.now() };
+        newlyRevoked.push({
+          quotaId: cc.quotaId || cc.quota_local_id || existing.quotaId || existing.quota_local_id || '',
+          deductTimes: cc.deductTimes || existing.deductTimes || 1,
+        });
+      } else if (!existing || cloudTs > localTs) {
         cMap[key] = cc;
       }
     });
     storage.setCheckins(Object.values(cMap));
 
-    // 评价合并：localId 去重 + updatedAt 大者胜（修复"本地优先"导致云端更新永不生效）
+    // ── 撤销补偿：本次拉取新发现的云端撤销 → 从配额已用次数扣回 ──
+    if (newlyRevoked.length) {
+      const quotas = storage.getQuotas();
+      for (const r of newlyRevoked) {
+        if (!r.quotaId) continue;
+        const q = quotas.find(x => String(x.localId || x.local_id || x.id) === String(r.quotaId));
+        if (q) {
+          q.usedTimes = Math.max(0, (q.usedTimes || 0) - r.deductTimes);
+        }
+      }
+      storage.setQuotas(quotas);
+    }
+
+    // ── 评价合并：localId 去重 + updatedAt 大者胜（修复"本地优先"导致云端更新永不生效）──
     const localRatings = storage.getRatings() || [];
     const rMap = {};
     localRatings.forEach(r => rMap[r.localId || r.local_id || r.id] = r);
-    cloudRatings.forEach(cr => {
+    (cloudRatings || []).forEach(cr => {
       const key = cr.localId || cr.local_id || cr.id;
       if (!key) return;
       const existing = rMap[key];

@@ -291,3 +291,31 @@
   - 网页：嵌套仓库 commit `13cd828`（"feat(web): 签到记录改期/撤销移入修改弹窗(管理界面)，保留当日撤销按钮；列表显示备注与已改期标记"）→ `git push origin main` → 云托管构建；线上轮询至 probe 7 生效，size **74619**，含 `openCheckinEdit`(2) ✅
   - 小程序：**v2.4.3 已上传（开发版本）**，**仍待人工提交审核+发布**（wujie 微前端无法脚本化提交审核）
   - 提交（父仓库 base-table python）：待本次 work.md 提交
+
+### 2026-08-08 配额新增「默认扣除次数」（v2.4.4）
+- **需求**：增加次卡配额时，增加「默认扣除次数」字段，默认 1 次；签到时自动填入该默认值。网页 + 小程序都更新；验证→发布→更新日志。
+- **后端（card-counter-flask）**：
+  - `model.py` Quota 新增 `default_deduct`（Integer, default 1）
+  - `quota_to_dict` 输出 `defaultDeduct`（缺省 1）
+  - `quotas()` POST 与 `quota_detail()` PUT 均读取 `defaultDeduct`（缺省 1）写入
+  - `__init__.py` 轻量迁移：为 `quotas` 表补 `default_deduct` 列（MySQL `information_schema` + SQLite `PRAGMA` 双分支，缺省 1）
+- **小程序**：
+  - `util.normalizeQuota` 增加 `defaultDeduct`（后端 `default_deduct` / 本地 `defaultDeduct` 统一，缺省 1）
+  - `pages/quota/quota.js`：`form` 增加 `defaultDeduct`（默认 '1'）；`loadQuota` 回填；`save` 的 payload 与 `POST /api/quotas`、`PUT /api/quotas/<id>` 均带 `defaultDeduct`
+  - `pages/quota/quota.wxml`：总次数行下新增「默认扣除次数」输入（number，placeholder 1）
+  - `pages/checkin/checkin.js`：`onSelectQuota` 与自动选中（`loadData` pendingId）时把 `deductTimes` 预填为 `quota.defaultDeduct || 1`（原固定 1）
+- **网页（index.html）**：
+  - 配额弹窗（`#quotaModal`）新增「默认扣除次数」输入（id `fDefaultDeduct`，默认 1），并提示「每次签到默认扣几次」
+  - `editQuota` 回填 `fDefaultDeduct`；`saveQuota` 读取并写入 `data.defaultDeduct`（随 `pushToServer('quotas', data)` 走 `POST /api/quotas` 落库）
+  - `openCheckin` 打开签到弹窗时，扣减计数默认填 `q.defaultDeduct || 1`（原固定 1）
+- **验证**：
+  - 小程序 `quota.js`/`checkin.js`/`util.js` `node --check` 全过；修复 quota.wxml 多一个 `</view>` 导致的编译失败（第三次上传成功）
+  - Flask `py_compile` 过；本地起 Flask 渲染 75149 字节含 `fDefaultDeduct`(3)；迁移无报错
+  - miniprogram-ci 上传 **v2.4.4 成功** ✅
+- **部署**：
+  - 网页：嵌套仓库 commit `60b7a47`（model/views/__init__ 后端）+ `2556631`（index.html 配额弹窗/签到预填）→ `git push origin main` → 云托管构建；线上轮询至 probe 3 生效，size **75149**，含 `fDefaultDeduct`(3) ✅
+  - 小程序：**v2.4.4 已上传（开发版本）**，**仍待人工提交审核+发布**（wujie 微前端无法脚本化提交审核）
+  - 提交（父仓库 base-table python）：待本次 work.md 提交
+- **遗留提醒**：
+  - 旧配额（未设置过 defaultDeduct）在 `quota_to_dict`/`normalizeQuota` 均回退为 1，向后兼容，无需迁移数据
+  - v2.4.4 仍待人工：版本管理→选 2.4.4 开发版本→提交审核→审核通过后发布

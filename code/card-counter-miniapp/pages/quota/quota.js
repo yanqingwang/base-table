@@ -11,6 +11,7 @@ Page({
       item: '',
       amount: '',
       totalTimes: '',
+      defaultDeduct: '1',
       expireDate: '',
       note: '',
     },
@@ -39,6 +40,7 @@ Page({
           item: nq.item || '',
           amount: nq.amount ? String(nq.amount) : '',
           totalTimes: nq.totalTimes ? String(nq.totalTimes) : '',
+          defaultDeduct: nq.defaultDeduct ? String(nq.defaultDeduct) : '1',
           expireDate: nq.expireDate || '',
           note: nq.note || '',
         },
@@ -69,11 +71,14 @@ Page({
     this.setData({ saving: true });
     try {
       const quotas = storage.getQuotas() || [];
+      const dd = parseInt(form.defaultDeduct, 10);
+      const defaultDeduct = isNaN(dd) ? 1 : Math.max(0, dd); // 最小为 0，空值回退默认 1
       const payload = {
         merchant: form.merchant.trim(),
         item: form.item.trim(),
         amount: form.amount ? parseFloat(form.amount) : 0,
         totalTimes: parseInt(form.totalTimes),
+        defaultDeduct,
         expireDate: form.expireDate || '',
         note: form.note.trim(),
         updatedAt: Date.now(),
@@ -92,6 +97,7 @@ Page({
             item: payload.item,
             amount: payload.amount,
             totalTimes: payload.totalTimes,
+            defaultDeduct: payload.defaultDeduct,
             expireDate: payload.expireDate || undefined,
             note: payload.note,
           }).catch(() => storage.setSyncStatus({ ...storage.getSyncStatus(), hasPendingSync: true }));
@@ -109,6 +115,7 @@ Page({
           item: payload.item,
           amount: payload.amount,
           totalTimes: payload.totalTimes,
+          defaultDeduct: payload.defaultDeduct,
           expireDate: payload.expireDate || undefined,
           note: payload.note,
         }).catch(() => storage.setSyncStatus({ ...storage.getSyncStatus(), hasPendingSync: true }));

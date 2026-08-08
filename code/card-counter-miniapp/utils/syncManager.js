@@ -77,14 +77,18 @@ class SyncManager {
       this.setField(merged, 'used_times', cu);
     }
 
-    // 2. 其余字段逐字段 LWW
+    // 2. 其余字段逐字段 LWW（本地为空时采用云端补齐，避免网页编辑的备注/偏好等无法同步到小程序）
     const conflicts = [];
     for (const f of QUOTA_FIELDS) {
       if (f === 'used_times') continue; // 已特殊处理
       const lv = this.getField(local, f);
       const cv = this.getField(cloud, f);
-      if (lv === undefined || JSON.stringify(lv) === JSON.stringify(cv)) continue;
-      if (cv === undefined) continue;
+      const lvEmpty = lv === undefined || lv === null || lv === '' || (typeof lv === 'object' && lv !== null && Object.keys(lv).length === 0);
+      const cvEmpty = cv === undefined || cv === null || cv === '' || (typeof cv === 'object' && cv !== null && Object.keys(cv).length === 0);
+      if (lvEmpty && cvEmpty) continue;       // 双方都空，无需处理
+      if (cvEmpty) continue;                  // 云端为空，保留本地值
+      if (lvEmpty) { this.setField(merged, f, cv); continue; }  // 本地为空、云端有值 → 采用云端（补齐网页备注等）
+      if (JSON.stringify(lv) === JSON.stringify(cv)) continue;
       if (cloudTs > localTs) {
         this.setField(merged, f, cv);
       } else if (cloudTs === localTs) {

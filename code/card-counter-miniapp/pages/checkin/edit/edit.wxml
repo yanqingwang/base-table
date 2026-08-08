@@ -1,0 +1,35 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="loading-box">加载中...</view>
+
+  <view wx:elif="{{checkin}}" class="edit-wrap">
+    <view class="edit-card">
+      <view class="edit-row">
+        <text class="edit-label">商家</text>
+        <text class="edit-value">{{merchantText}}</text>
+      </view>
+      <view class="edit-row">
+        <text class="edit-label">扣减</text>
+        <text class="edit-value">-{{checkin.deductTimes}} 次</text>
+      </view>
+      <view class="edit-row">
+        <text class="edit-label">日期</text>
+        <text class="edit-value {{dateModified ? 'date-small' : ''}}">{{checkin.checkinDate}} {{checkin.checkinTime}}{{dateModified ? '（已改期）' : ''}}</text>
+      </view>
+      <view class="edit-row">
+        <text class="edit-label">备注</text>
+        <text class="edit-value">{{checkin.note ? checkin.note : '—'}}</text>
+      </view>
+      <view wx:if="{{editLogs.length > 0}}" class="edit-logs">
+        <text class="edit-logs-title">改期记录</text>
+        <text wx:for="{{editLogs}}" wx:key="*this" class="edit-log-item">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="edit-actions">
+      <button class="act-btn date" bindtap="changeDate">📅 修改日期</button>
+      <button class="act-btn revoke" bindtap="revoke">↩️ 撤销签到</button>
+    </view>
+  </view>
+
+  <view wx:else class="empty-box">未找到该签到记录</view>
+</view>

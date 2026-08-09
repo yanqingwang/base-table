@@ -1,0 +1,20 @@
+<!-- pages/qr-login/qr-login.wxml -->
+<view class="container">
+  <view class="card">
+    <view wx:if="{{status === 'loading'}}" class="state">
+      <view class="spinner"></view>
+      <text class="msg">{{message}}</text>
+    </view>
+
+    <view wx:elif="{{status === 'success'}}" class="state">
+      <view class="icon ok">✓</view>
+      <text class="msg">{{message}}</text>
+    </view>
+
+    <view wx:else class="state">
+      <view class="icon err">!</view>
+      <text class="msg">{{message}}</text>
+      <button class="btn" bindtap="goHome">返回首页</button>
+    </view>
+  </view>
+</view>

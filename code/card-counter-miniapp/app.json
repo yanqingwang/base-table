@@ -9,7 +9,8 @@
     "pages/rating/rating",
     "pages/stats/stats",
     "pages/profile/profile",
-    "pages/login/login"
+    "pages/login/login",
+    "pages/qr-login/qr-login"
   ],
   "window": {
     "navigationBarTitleText": "次卡管家",

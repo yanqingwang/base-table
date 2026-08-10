@@ -74,8 +74,8 @@ class SyncManager {
     const cu = this.getField(cloud, 'used_times') || 0;
     this.setField(merged, 'used_times', cu);
 
-    // 2. 其余字段逐字段 LWW（本地为空时采用云端补齐，避免网页编辑的备注/偏好等无法同步到小程序）
-    const conflicts = [];
+    // 2. 其余字段逐字段以云端(网页)为准：云端非空且与本地不同 → 采用云端
+    //    （解决网页/小程序次卡字段不一致；本地为空、云端有值也采用云端补齐）
     for (const f of QUOTA_FIELDS) {
       if (f === 'used_times' || f === 'usedTimes') continue; // 计数器已特殊处理（含驼峰变体）
       const lv = this.getField(local, f);
@@ -83,23 +83,9 @@ class SyncManager {
       const lvEmpty = lv === undefined || lv === null || lv === '' || (typeof lv === 'object' && lv !== null && Object.keys(lv).length === 0);
       const cvEmpty = cv === undefined || cv === null || cv === '' || (typeof cv === 'object' && cv !== null && Object.keys(cv).length === 0);
       if (lvEmpty && cvEmpty) continue;       // 双方都空，无需处理
-      if (cvEmpty) continue;                  // 云端为空，保留本地值
-      if (lvEmpty) { this.setField(merged, f, cv); continue; }  // 本地为空、云端有值 → 采用云端（补齐网页备注等）
-      if (JSON.stringify(lv) === JSON.stringify(cv)) continue;
-      if (cloudTs > localTs) {
-        this.setField(merged, f, cv);
-      } else if (cloudTs === localTs) {
-        // 同时间戳但值不同 → 冲突
-        conflicts.push(f);
-        // 默认取云端（合并结果可编辑），标记待用户确认
-        this.setField(merged, f, cv);
-      }
-      // cloudTs < localTs: 本地较新，保留本地值
-    }
-
-    if (conflicts.length > 0) {
-      merged.conflict = true;
-      merged.conflictFields = (merged.conflictFields || []).concat(conflicts);
+      if (cvEmpty) continue;                  // 云端为空，保留本地值（不反向清空本地）
+      // 本地为空，或值不同 → 采用云端（网页为主，统一收敛）
+      this.setField(merged, f, cv);
     }
 
     // 更新时间戳取最大值
@@ -153,8 +139,8 @@ class SyncManager {
           if (f === 'usedTimes' || f === 'used_times') {
             // 计数器已改为云端派生计算，方向统一为云端覆盖本地
             direction = 'cloud_to_local';
-          } else if (kind === 'checkin') {
-            // 签到字段以网页(云端)为唯一权威源，差异方向统一为云端覆盖本地，
+          } else if (kind === 'checkin' || kind === 'quota' || kind === 'rating') {
+            // 所有业务字段均以网页(云端)为唯一权威源，差异方向统一为云端覆盖本地，
             // 避免错误标记「有未同步数据」（合并时本就采用云端值）
             direction = 'cloud_to_local';
           } else if (lts > cts) {
@@ -278,7 +264,7 @@ class SyncManager {
       storage.setQuotas(quotas);
     }
 
-    // ── 评价合并：localId 去重 + updatedAt 大者胜（修复"本地优先"导致云端更新永不生效）──
+    // ── 评价合并：localId 去重 + 以云端(网页)为准（字段级）──
     const localRatings = storage.getRatings() || [];
     const rMap = {};
     localRatings.forEach(r => rMap[r.localId || r.local_id || r.id] = r);
@@ -286,11 +272,22 @@ class SyncManager {
       const key = cr.localId || cr.local_id || cr.id;
       if (!key) return;
       const existing = rMap[key];
-      const cloudTs = cr.updatedAt || cr.updated_at || cr.createdAt || cr.created_at || 0;
-      const localTs = existing ? (existing.updatedAt || existing.updated_at || existing.createdAt || existing.created_at || 0) : 0;
-      if (!existing || cloudTs > localTs) {
-        rMap[key] = cr;
+      if (!existing) {
+        rMap[key] = cr;            // 云端新增 → 直接采用
+        return;
       }
+      // 字段级以云端(网页)为准：云端非空值覆盖本地
+      const merged = { ...existing };
+      for (const f of ['merchant', 'score', 'comment']) {
+        const cv = cr[f];
+        if (cv === undefined || cv === null || cv === '') continue;
+        merged[f] = cv;
+      }
+      const cloudTs = cr.updatedAt || cr.updated_at || cr.createdAt || cr.created_at || 0;
+      const localTs = existing.updatedAt || existing.updated_at || existing.createdAt || existing.created_at || 0;
+      merged.updatedAt = Math.max(localTs, cloudTs) || Date.now();
+      merged.updated_at = merged.updatedAt;
+      rMap[key] = merged;
     });
     storage.setRatings(Object.values(rMap));
   }

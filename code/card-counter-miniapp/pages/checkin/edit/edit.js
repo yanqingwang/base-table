@@ -14,6 +14,7 @@ Page({
     note: '',
     dateStart: '',
     dateEnd: '',
+    deductTimes: 1,
     canSave: false,
   },
 
@@ -69,6 +70,7 @@ Page({
         note: c.note || '',
         dateStart: d30(-30),
         dateEnd: d30(30),
+        deductTimes: c.deductTimes || 1,
         canSave: false,
       });
     } catch (e) {
@@ -90,12 +92,18 @@ Page({
     this.setData({ note: e.detail.value }, () => this._updateCanSave());
   },
 
+  onDeductInput(e) {
+    const v = parseInt(e.detail.value);
+    this.setData({ deductTimes: (isNaN(v) || v < 0) ? 0 : v }, () => this._updateCanSave());
+  },
+
   _updateCanSave() {
     const c = this.data.checkin;
     if (!c) return;
     const dateChanged = c.checkinDate !== this._originalDate;
     const noteChanged = this.data.note !== this._originalNote;
-    this.setData({ canSave: dateChanged || noteChanged });
+    const deductChanged = (this.data.deductTimes || 0) !== (c.deductTimes || 0);
+    this.setData({ canSave: dateChanged || noteChanged || deductChanged });
   },
 
   // 保存备注 + 日期修改
@@ -138,6 +146,17 @@ Page({
         if (c.id) {
           try {
             await app.callApi('/api/checkins/' + c.id, 'PUT', { note: this.data.note.trim() });
+          } catch (e) { synced = false; }
+        }
+      }
+
+      // 3. 扣减次数修改：推送 /api/checkins/<id>（允许改为 0），服务端据签到重算配额已用次数
+      const deductChanged = (this.data.deductTimes || 0) !== (c.deductTimes || 0);
+      if (deductChanged) {
+        record.deductTimes = this.data.deductTimes || 0;
+        if (c.id) {
+          try {
+            await app.callApi('/api/checkins/' + c.id, 'PUT', { deductTimes: this.data.deductTimes || 0 });
           } catch (e) { synced = false; }
         }
       }

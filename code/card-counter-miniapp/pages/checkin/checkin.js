@@ -48,7 +48,10 @@ Page({
       list.sort((a, b) => merchantOf(a).localeCompare(merchantOf(b)) || (b.checkinDate || '').localeCompare(a.checkinDate || '') || (b.checkinTime || '').localeCompare(a.checkinTime || ''));
     }
     const labels = { today: '今天', month: '最近一月', all: '全部' };
-    list.forEach(c => { c.merchantText = merchantOf(c) || '手动记录'; });
+    list.forEach(c => {
+      c.merchantText = merchantOf(c) || '手动记录';
+      c.dateModified = !!(c.dateEditLogs && c.dateEditLogs.length);
+    });
     this.setData({
       filteredCheckins: list,
       recordTitle: `📋 ${labels[this.data.timeFilter]}签到记录（${list.length}）`,
@@ -121,7 +124,7 @@ Page({
       if (selectedId) {
         const q = activeQuotas.find(x => String(x.localId) === String(selectedId));
         if (q) {
-          this.setData({ selectedQuota: q, merchant: q.merchant || '' });
+          this.setData({ selectedQuota: q, merchant: q.merchant || '', deductTimes: q.defaultDeduct || 1 });
         }
       }
     } catch (e) {
@@ -137,11 +140,12 @@ Page({
   onSelectQuota(e) {
     const id = e.currentTarget.dataset.id;
     const q = this.data.quotas.find(x => String(x.localId) === String(id));
-    this.setData({ selectedId: id, selectedQuota: q, merchant: q ? q.merchant : '' });
+    this.setData({ selectedId: id, selectedQuota: q, merchant: q ? q.merchant : '', deductTimes: q ? (q.defaultDeduct || 1) : 1 });
   },
 
   onDeductChange(e) {
-    this.setData({ deductTimes: parseInt(e.detail.value) || 1 });
+    const v = parseInt(e.detail.value);
+    this.setData({ deductTimes: (isNaN(v) || v < 0) ? 0 : v });
   },
 
   onMerchantInput(e) {
@@ -238,111 +242,18 @@ Page({
     });
   },
 
-  async revokeCheckin(e) {
-    const id = e.currentTarget.dataset.id;
-    const ci = this.data.filteredCheckins.find(c => c.localId === id);
-    if (!ci) return;
-    wx.showModal({
-      title: '撤销签到',
-      content: '确定撤销本次签到？次数将返还。',
-      confirmColor: '#e74c3c',
-      success: async (res) => {
-        if (!res.confirm) return;
-        try {
-          // 1. 本地标记撤销
-          const checkins = storage.getCheckins();
-          const idx = checkins.findIndex(c => (c.localId || String(c.id)) === id);
-          if (idx !== -1) {
-            checkins[idx].isRevoked = true;
-            checkins[idx].updatedAt = Date.now();
-            storage.setCheckins(checkins);
-          }
-          // 2. 返还配额次数
-          if (ci.quotaId) {
-            const quotas = storage.getQuotas();
-            const qIdx = quotas.findIndex(q => (q.localId || String(q.id)) === ci.quotaId);
-            if (qIdx !== -1) {
-              quotas[qIdx].usedTimes = Math.max(0, (quotas[qIdx].usedTimes || 0) - ci.deductTimes);
-              quotas[qIdx].updatedAt = Date.now();
-              storage.setQuotas(quotas);
-            }
-          }
-          // 3. 云端撤销
-          if (ci.id) {
-            app.callApi('/api/checkins/' + ci.id + '/revoke', 'POST').catch(() => {});
-          } else {
-            app.callApi('/api/checkins', 'POST', {
-              ...ci,
-              isRevoked: true,
-            }).catch(() => {});
-          }
-          wx.showToast({ title: '已撤销', icon: 'success' });
-          this.loadData();
-        } catch (err) {
-          wx.showToast({ title: err.message || '撤销失败', icon: 'none' });
-        }
-      },
-    });
-  },
-
-  // 修改签到日期（限定今天前后 30 天，记录更改日志）
-  changeCheckinDate(e) {
-    const id = e.currentTarget.dataset.id;
-    const ci = this.data.filteredCheckins.find(c => c.localId === id);
-    if (!ci) return;
-    const now = new Date();
-    const d30 = (offset) => {
-      const t = new Date(now);
-      t.setDate(t.getDate() + offset);
-      return util.formatDate(t);
-    };
-    wx.showModal({
-      title: '修改签到日期',
-      content: '',
-      editable: true,
-      placeholderText: '输入日期 YYYY-MM-DD（前后30天内）',
-      success: async (res) => {
-        if (!res.confirm || !res.content) return;
-        const newDate = String(res.content).trim();
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate)) {
-          wx.showToast({ title: '日期格式应为 YYYY-MM-DD', icon: 'none' });
-          return;
-        }
-        const diff = Math.round((new Date(newDate) - new Date(util.formatDate(now))) / 86400000);
-        if (Math.abs(diff) > 30) {
-          wx.showToast({ title: '只能在今天前后30天内修改', icon: 'none' });
-          return;
-        }
-        try {
-          const checkins = storage.getCheckins();
-          const idx = checkins.findIndex(c => (c.localId || String(c.id)) === id);
-          const oldDate = ci.checkinDate;
-          if (idx !== -1) {
-            const logs = checkins[idx].dateEditLogs || [];
-            logs.push({ from: oldDate, to: newDate, changedAt: new Date().toISOString() });
-            checkins[idx].checkinDate = newDate;
-            checkins[idx].dateEditLogs = logs;
-            checkins[idx].updatedAt = Date.now();
-            storage.setCheckins(checkins);
-          }
-          if (ci.id) {
-            await app.callApi('/api/checkins/' + ci.id + '/date', 'PUT', { checkinDate: newDate }).catch(() => {});
-          }
-          wx.showToast({ title: '日期已修改', icon: 'success' });
-          this.loadData();
-        } catch (err) {
-          wx.showToast({ title: err.message || '修改失败', icon: 'none' });
-        }
-      },
-    });
-  },
-
   goAddQuota() {
     wx.navigateTo({ url: '/pages/quota/quota' });
   },
 
   goHistory() {
     wx.navigateTo({ url: '/pages/checkin/history/history' });
+  },
+
+  // 进入签到记录修改管理界面（改期/撤销）
+  goEdit(e) {
+    const id = e.currentTarget.dataset.id;
+    wx.navigateTo({ url: '/pages/checkin/edit/edit?id=' + id });
   },
 
   onPullDownRefresh() {

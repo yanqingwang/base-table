@@ -70,12 +70,9 @@ class SyncManager {
     const cloudTs = cloud.updatedAt || cloud.updated_at || 0;
     const merged = { ...local };
 
-    // 1. usedTimes 取最大值（计数不丢失）
-    const lu = this.getField(local, 'used_times') || 0;
+    // 1. usedTimes 以云端为准（云端由签到记录派生计算，权威），不再取最大值避免覆盖
     const cu = this.getField(cloud, 'used_times') || 0;
-    if (cu > lu) {
-      this.setField(merged, 'used_times', cu);
-    }
+    this.setField(merged, 'used_times', cu);
 
     // 2. 其余字段逐字段 LWW（本地为空时采用云端补齐，避免网页编辑的备注/偏好等无法同步到小程序）
     const conflicts = [];
@@ -154,8 +151,8 @@ class SyncManager {
           const cts = c.updatedAt || c.updated_at || 0;
           let direction;
           if (f === 'usedTimes' || f === 'used_times') {
-            // 计数器：取大值，方向为增量合并
-            direction = (lv || 0) >= (cv || 0) ? 'local_to_cloud' : 'cloud_to_local';
+            // 计数器已改为云端派生计算，方向统一为云端覆盖本地
+            direction = 'cloud_to_local';
           } else if (lts > cts) {
             direction = 'local_to_cloud';
           } else if (cts > lts) {

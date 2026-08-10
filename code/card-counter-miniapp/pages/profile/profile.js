@@ -379,4 +379,29 @@ Page({
       wx.showToast({ title: e.message || '设置失败', icon: 'none' });
     }
   },
+
+  // 注销账号：删除全部数据 + 账号本身（用于清理孤儿账号，释放 openid）
+  deleteAccount() {
+    wx.showModal({
+      title: '注销账号',
+      content: '将删除全部次卡/签到数据且不可恢复，确定注销？',
+      confirmColor: '#e74c3c',
+      success: async (res) => {
+        if (!res.confirm) return;
+        wx.showLoading({ title: '注销中...', mask: true });
+        try {
+          await app.callApi('/api/auth/delete-account', 'POST');
+          wx.hideLoading();
+          app.globalData.token = '';
+          app.globalData.userInfo = null;
+          storage.set(storage.keys.TOKEN, '');
+          storage.set(storage.keys.USER_INFO, null);
+          wx.reLaunch({ url: '/pages/login/login' });
+        } catch (e) {
+          wx.hideLoading();
+          wx.showToast({ title: e.message || '注销失败', icon: 'none' });
+        }
+      },
+    });
+  },
 });

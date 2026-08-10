@@ -50,6 +50,12 @@
 | 1.0.3 | 2026-08-08 | README 中英双语 |
 | 1.0.2 | 2026-07-13 | marketplace review errors 修复 |
 
+
+## Joplin Sync Single Vault (joplin-sync-single-vault)
+
+| 版本 | 日期 | 内容 |
+|------|------|------|
+| 0.1.0 | 2026-08-10 | **首个版本**：一个账号 = 一个 vault。本地 vault 下一层平铺同步到服务器根（无 `_vault_<name>` 隔离）；force push 删除服务器全部内容（保留 info.json/master keys）后重传；force pull 拉取服务器全部到当前 vault。同名第二端内容完全一致。release tag 不带 v（市场要求）。 |
 ## 发布方式
 
 - **joplin-server-sync**：GitHub Actions 自动（tag `0.3.x` push 触发 release.yml）

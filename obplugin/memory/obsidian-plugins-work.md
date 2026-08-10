@@ -389,3 +389,11 @@ node cli/sync-cli.cjs sync <vaultPath>   # syncCycle
 - **最终修复**：守卫从"拒绝整批 + 不推 cursor"改为"警告 + 逐个应用"——因为 **applyDelete 本身有服务器 404 验证兜底**（`stillThere !== null` 跳过本地删除），stale replay 不会误删，真实删除（forcePush 重建）正确清理。守卫的价值（避免几百次 GET）应让步于恢复同步。
 - **教训（重要）**：**任何"保护性拒绝"都必须有恢复路径，否则就是永久卡死**。applyDelete 的服务器验证已经是正确的安全网，上层的批量守卫是多余的（且有害）。
 - 部署 md5 轨迹：c43ab8ad → 3512c386（delta 守卫警告版）。commit：6dccbc0。
+
+### 2026-08-10 joplin-sync-single-vault 新插件（一个账号 = 一个 vault）
+
+- **定位**：与 obsidian-joplin-server-sync（多 vault 隔离）互补。单库语义：一个账号只对应一个 vault。
+- **核心差异**：无 `_vault_<name>` 根文件夹、无 belongsToRoot 隔离；force push 删除服务器**全部**内容（仅保留 info.json + master keys）；force pull 拉取服务器全部平铺到当前 vault。
+- **实现**：`ensureRootFolder` 返回空串（内容直接挂服务器根 parent_id=''）；forcePush reset/cleanup 无 foreign 保护；forcePull 无 root 过滤；verifycount 对比服务器全部。
+- **发布**：repo `yanqingwang/obsidian-joplin-sync-single-vault`，tag `0.1.0`（不带 v）。
+- **验证**：CLI forcePush（wiped 1410 保留 1）→ verifycount PASS（1 note + 2 folders + 1 resource 平铺）；forcePull 恢复本地一致。

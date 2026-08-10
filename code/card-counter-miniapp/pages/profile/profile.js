@@ -9,6 +9,12 @@ Page({
     userInfo: null,
     syncStatus: { lastSyncTime: 0, hasPendingSync: false },
     stats: { quotaCount: 0, checkinCount: 0, ratingCount: 0 },
+    loginMethods: [],
+    hasPassword: false,
+    showBind: false,
+    bindUsername: '',
+    bindPassword: '',
+    bindConfirm: '',
     loading: true,
     syncing: false,
     forceSyncing: false,
@@ -31,8 +37,21 @@ Page({
       const checkins = storage.getCheckins() || [];
       const ratings = storage.getRatings() || [];
       const syncStatus = storage.getSyncStatus();
+      // 拉取登录方式（微信 / 账号密码），用于展示「设置登录密码」入口
+      let loginMethods = [];
+      try {
+        const me = await app.callApi('/api/auth/me', 'GET');
+        loginMethods = me.loginMethods || [];
+        if (me.nickname) {
+          app.globalData.userInfo = { ...(app.globalData.userInfo || {}), nickname: me.nickname, avatar_url: me.avatarUrl };
+        }
+      } catch (e) {
+        console.warn('获取登录方式失败:', e);
+      }
       this.setData({
         userInfo: app.globalData.userInfo,
+        loginMethods,
+        hasPassword: loginMethods.includes('password'),
         syncStatus,
         syncText: this.fmtTime(syncStatus.lastSyncTime),
         stats: {
@@ -127,25 +146,31 @@ Page({
     const filePath = `${wx.env.USER_DATA_PATH}/cardcount_backup_${Date.now()}.json`;
     try {
       fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
-      // 优先保存到系统文件（打开系统文件管理器），低版本回退为分享文件
+      // 导出方式：优先保存到系统文件（saveFileToDisk），失败则回退为分享到聊天（shareFileMessage）
+      // 体验版/部分基础库 saveFileToDisk 会失败，需回退到分享，否则导出失败
+      const fallbackShare = () => {
+        if (wx.shareFileMessage) {
+          wx.shareFileMessage({
+            filePath,
+            fileName: '次卡管家备份_' + Date.now() + '.json',
+            success: () => wx.showToast({ title: '已导出到聊天', icon: 'none' }),
+            fail: () => wx.showToast({ title: '导出失败', icon: 'none' }),
+          });
+        } else {
+          wx.showToast({ title: '当前版本不支持导出', icon: 'none' });
+        }
+      };
       if (wx.saveFileToDisk) {
         wx.saveFileToDisk({
           filePath,
           success: () => wx.showToast({ title: '备份已保存', icon: 'success' }),
           fail: (err) => {
             if (err && err.errMsg && err.errMsg.indexOf('cancel') !== -1) return;
-            wx.showToast({ title: '保存失败', icon: 'none' });
+            fallbackShare();
           },
         });
-      } else if (wx.shareFileMessage) {
-        wx.shareFileMessage({
-          filePath,
-          fileName: '次卡管家备份.json',
-          success: () => wx.showToast({ title: '已导出', icon: 'success' }),
-          fail: () => wx.showToast({ title: '导出失败', icon: 'none' }),
-        });
       } else {
-        wx.showToast({ title: '当前版本不支持导出', icon: 'none' });
+        fallbackShare();
       }
     } catch (e) {
       wx.showToast({ title: '导出失败: ' + e.message, icon: 'none' });
@@ -313,5 +338,45 @@ Page({
 
   onPullDownRefresh() {
     this.loadProfile().then(() => wx.stopPullDownRefresh());
+  },
+
+  // 打开「设置登录密码」弹窗（微信用户绑定账号密码，使两种登录归一）
+  openBindAccount() {
+    this.setData({
+      showBind: true,
+      bindUsername: '',
+      bindPassword: '',
+      bindConfirm: '',
+    });
+  },
+
+  closeBind() {
+    this.setData({ showBind: false });
+  },
+
+  onBindUsername(e) { this.setData({ bindUsername: e.detail.value }); },
+  onBindPassword(e) { this.setData({ bindPassword: e.detail.value }); },
+  onBindConfirm(e) { this.setData({ bindConfirm: e.detail.value }); },
+
+  // 设置/绑定账号密码
+  async bindAccount() {
+    const { bindUsername, bindPassword, bindConfirm } = this.data;
+    const username = (bindUsername || '').trim();
+    if (username.length < 3) { wx.showToast({ title: '用户名至少3个字符', icon: 'none' }); return; }
+    if ((bindPassword || '').length < 6) { wx.showToast({ title: '密码至少6个字符', icon: 'none' }); return; }
+    if (bindPassword !== bindConfirm) { wx.showToast({ title: '两次密码不一致', icon: 'none' }); return; }
+    wx.showLoading({ title: '设置中...', mask: true });
+    try {
+      const data = await app.callApi('/api/auth/bind-account', 'POST', {
+        username, password: bindPassword, confirm: bindConfirm,
+      });
+      wx.hideLoading();
+      this.setData({ showBind: false, hasPassword: (data.loginMethods || []).includes('password') });
+      this.loadProfile();
+      wx.showToast({ title: '已设置，现也可用账号登录', icon: 'success' });
+    } catch (e) {
+      wx.hideLoading();
+      wx.showToast({ title: e.message || '设置失败', icon: 'none' });
+    }
   },
 });

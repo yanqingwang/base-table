@@ -61,6 +61,13 @@
       <text class="menu-text">导入恢复</text>
       <text class="menu-arrow">›</text>
     </view>
+    <view wx:if="{{!hasPassword}}" class="menu-item" bindtap="openBindAccount">
+      <text class="menu-icon">🔑</text>
+      <text class="menu-text">设置登录密码</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view wx:if="{{hasPassword}}" class="menu-hint">已支持「微信」与「账号密码」两种登录，数据互通</view>
+    <view class="menu-hint">导入文件来自微信聊天（如「文件传输助手」），先把备份文件发到聊天，再点此处选择</view>
     <view class="menu-item" bindtap="clearAllData">
       <text class="menu-icon">🗑️</text>
       <text class="menu-text danger">清除本地数据</text>
@@ -96,7 +103,7 @@
     <view class="menu-item">
       <text class="menu-icon">ℹ️</text>
       <text class="menu-text">版本</text>
-      <text class="menu-value">2.4.1</text>
+      <text class="menu-value">2.4.5</text>
     </view>
     <view class="menu-item">
       <text class="menu-icon">🔒</text>
@@ -127,6 +134,30 @@
       <view class="modal-btns">
         <button class="modal-btn cancel" bindtap="closeEdit">取消</button>
         <button class="modal-btn confirm" bindtap="saveProfile">保存</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 设置登录密码弹窗（微信用户绑定账号密码） -->
+  <view wx:if="{{showBind}}" class="modal-mask">
+    <view class="modal">
+      <text class="modal-title">设置登录密码</text>
+      <text class="modal-tip">设置后可用「账号密码」登录同一份数据（网页端也可登录）</text>
+      <view class="form-item">
+        <text class="form-label">用户名</text>
+        <input class="form-input" value="{{bindUsername}}" placeholder="至少3个字符" bindinput="onBindUsername" />
+      </view>
+      <view class="form-item">
+        <text class="form-label">密码</text>
+        <input class="form-input" password value="{{bindPassword}}" placeholder="至少6个字符" bindinput="onBindPassword" />
+      </view>
+      <view class="form-item">
+        <text class="form-label">确认密码</text>
+        <input class="form-input" password value="{{bindConfirm}}" placeholder="再次输入密码" bindinput="onBindConfirm" />
+      </view>
+      <view class="modal-btns">
+        <button class="modal-btn cancel" bindtap="closeBind">取消</button>
+        <button class="modal-btn confirm" bindtap="bindAccount">确认设置</button>
       </view>
     </view>
   </view>

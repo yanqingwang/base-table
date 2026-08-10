@@ -257,3 +257,135 @@ Obsidian ↔ Joplin Server 双向同步插件 `obsidian-joplin-server-sync`，�
 - **空目录同步**：walkDirs 要求子树含可同步文件 → 真空目录被过滤 → 改为物化所有空目录，仅排除 home/Library/node_modules 系统目录（v0.3.67）
 - **一致性保障**：打开必拉最新，关闭必推未同步，多设备切换不会丢数据
 - **已上传**：2.3.5 ✅（待人工提交审核）
+
+---
+
+## 2026-08-09 Joplin Server Sync v0.4.0：多库安全 + 可靠性大版本（核心参照）
+
+> 三批外部评审（B 系列 B1-B34 + C 系列 C1-C14）驱动的系统重构。源码：`code/obsidian-joplin-server-sync`，已发布 v0.4.0（GitHub Actions 自动 release，tag `v0.4.0`）。
+
+### 一、核心架构决策（后续改动的第一参照）
+
+1. **共享根镜像模型**：所有 vault 共用服务器上同一个 `_vault_<name>` 根文件夹（第一个 push 的 vault 创建）。镜像端（test1/新库）首 sync 自动"收养"该根 id → 本地无前缀、与 owner 内容一致。**不要**改成评审建议的"每 vault 独立子树 + C 订阅全部"——那与验收（test==test1）冲突。
+2. **body/hash 唯一口径**：服务器 body = 磁盘完整内容（含 `joplin-file-id` frontmatter）。拉取先 stamp 再算 hash，推送对磁盘内容算 hash（`stampFrontmatter` 是 FileIdentity 导出的纯函数，DeltaPuller/SyncEngine 共用）。违反此口径 = 推拉乒乓 + 假冲突。
+3. **id 唯一来源**：`identity.ensureId(file)`（frontmatter），禁止 `createJoplinId()` 直接当文件 id（InitialSync 已统一）。附件 id 永远复用 `existing.joplinId`，force 只影响 hash 跳过。
+4. **统一排除规则**：`SyncEngine.shouldExclude(path)` = excludePatterns + configDir + `_conflicts/` + **任意路径段点开头**（隐藏文件/文件夹）。所有调用点（push/pull/watcher/force/InitialSync）必须走它，禁止内联 isExcluded。
+5. **统一并发锁**：syncCycle/forcePush/forcePull/runFullUpload 共享 `this.running` 标志。**不要**用两套锁（旧代码 syncCycle 用 state、其他用 running → 并发互踩）。
+
+### 二、三批评审的关键缺陷与修复（对照表）
+
+| 编号 | 缺陷 | 修复要点 | 文件 |
+|------|------|---------|------|
+| B1/B2 | belongsToRoot 父链死循环（pid 赋回自身）+ parent_id 空丢弃 | 用本批 parent_id 图 + Resource/MasterKey 豁免 + 回落 mapping | DeltaPuller |
+| B3 | owner 根映射成 `_vault_<name>/` 导致自己文件被搬家 | 根 id 映射本地 `''`（buildForcePullFolderPaths + resolveForcePullFolderPath 特判） | SyncEngine |
+| B4/C2 | 新库首 sync 跳 cursor，永远拉不到已有内容 | InitialSync 调 guard-free `forcePullInner()` + 早退分支也消费 delta 设 cursor | InitialSync |
+| B5 | forcePush reset 删光整台服务器 | reset/cleanup 只删 `ownedIds`（clearAll 前捕获的 mapping id），他库项保留 | SyncEngine |
+| B5.2 | 根文件夹被 cleanup 当孤儿删（clearAll 后 mapping 查不到） | `pushedFolderIds.add(rootFolderId)` | SyncEngine |
+| B6 | 拉取 hash 按未 stamp body 算 → ping-pong | stampFrontmatter 共享函数，hash 统一 stamped 口径 | FileIdentity/DeltaPuller |
+| B7 | `includes('encryption_applied: 1')` 正文误判加密 | unserialize 判字段 | SyncEngine |
+| B9 | safeFileName 不足 + forcePull 同名覆盖 | Windows 非法字符/保留名/尾点/长度 + usedPaths 去重加 id 后缀 | pathUtil/SyncEngine |
+| B13 | forcePull 不清 mapping | 开头 clearAll() | SyncEngine |
+| B18 | 附件冲突只查 mapping 不查磁盘 + 怪路径 | 查磁盘 + basename 后缀 | ResourceManager |
+| B19 | E2EE 附件先跳过判断后解密 → 永远跳过 | 先解密 meta 再判断 | ResourceManager |
+| B20 | force 时附件无条件换 id → 孤儿 blob + 链接悬空 | 复用 existing.joplinId | ResourceManager |
+| B21 | watcher onload 注册 → 启动 create 风暴 | 包进 `onLayoutReady` | main |
+| B22 | 二进制走 ensureId（往 png 插文本，数据损坏） | 按扩展名分流 Note/Resource，二进制用 mapping/path 身份 | VaultWatcher |
+| B24 | E2EE active 但 key 未加载 → 静默明文上传 | fail-hard 抛错 | LocalPusher/ResourceManager |
+| B26 | delta cursor 失效无恢复 | 400/cursor invalid 自动清 cursor 全量对账 | DeltaPuller |
+| B28 | 未知 type_ 无白名单 | 白名单 {Note=1, Folder=2, Resource=4, MasterKey=9} | DeltaPuller/SyncEngine |
+| B30 | suppress 2 秒窗口吞用户编辑（delete 被吞则文件复活） | 一次性 token（首个匹配事件消费）+ 5s 兜底 | VaultWatcher |
+| B32 | trimSlash 反引号笔误 / 每 200 调用重登 / login 无单飞 | `/\/+$/` + 删 REFRESH_INTERVAL + in-flight promise + 429 退避 | JoplinServerApi |
+| B33 | loadSettings 浅拷贝 → syncLog 共享引用污染默认值 | 深拷贝 syncLog | main |
+| C1 | forcePush 清空他库数据（最高优先） | ownedIds 归属判定（见 B5） | SyncEngine |
+| C3 | force 操作制造 delete/create 风暴 → 级联清空 | watcher suspend/resume + changeLog.clear() | VaultWatcher/ChangeLogStore |
+| C4 | 深层 delta 父链不在批内 → 静默丢弃 | 回落 mapping + 回填 rootAncestorCache | DeltaPuller |
+| C5 | >50% 删除守卫无出口 → 永久卡死 | Notice 提示 forcePull/forcePush 出路 | DeltaPuller |
+| C6 | 每周期全库 GET（O(n) 请求） | serverIsEncrypted 会话缓存 + E2EE 关闭短路；force 前失效 | SyncEngine |
+| C7 | push 先于 pull 无条件覆盖 → 并发编辑丢失 | upsertItem 比较 remote.updated_time 冲突交 ConflictResolver | LocalPusher |
+| C8 | forcePull 本地清空无视 excludePatterns | kept 并入 excludePatterns（后统一走 shouldExclude） | SyncEngine |
+| C10 | uniquePath 只防"文件+mapping 都在" | 文件存在且（无 mapping 或 id 不同）即加后缀 | DeltaPuller |
+| C11 | 解密失败 return [] 且 cursor 前进 → 永久丢失 | 抛 tagged 错误，pullAll 捕获后不推 cursor | DeltaPuller |
+| C13 | `.resource/<id>` 斜杠被 encodeURIComponent 成 %2F | 段内编码保留 / | JoplinServerApi |
+| C14 | mapping.json 损坏 → onload 直接炸 | try/catch + 备份 .corrupt + .tmp 恢复 | MappingStore |
+
+### 三、经验教训（踩过的坑）
+
+1. **CLI 测试的 manifest.dir 必须是 vault 相对路径**（`.obsidian/plugins/joplin-server-sync`），不是绝对路径。MappingStore 把它传给 DiskAdapter（root=vaultRoot）做 `path.join` → 绝对路径会拼出 `/vault/vault/...` 错误路径，**CLI 下 mapping 从未真正持久化**（mtime 不更新就是信号）。这是 CLI 环境最隐蔽的坑。
+2. **CLI 环境没有真实 GUI**：Modal 确认会卡死（mock 需补 createDiv）、Notice 不显示。测试加密迁移/删除守卫等 UI 路径时用 CLI 只能验证"卡在确认"而非完整流程。
+3. **Obsidian 未运行≠pgrep 无结果**：`pgrep -f app.asar` 会命中 Joplin Desktop（`/usr/lib/joplin-desktop/app.asar`）。精确判断用 `pgrep -f "obsidian/app.asar"` 或 `ps aux | grep [o]bsidian | grep -v joplin`。
+4. **服务器 info.json 的 e2ee 标记可能是脏的**（历史迁移残留 e2ee:true 但无 master key/加密项）→ 判断服务器加密状态必须看实际数据（master key type_=9 或 encryption_applied=1），不能信 info.json。
+5. **forcePush 的 reset 语义**：共享根模型下"删光重建"= 只删自己 mapping 的项。否则第二个 vault 一 push 就抹掉第一个 vault 的数据（C1 事故场景）。
+6. **force 操作必须挂起 watcher**：否则本地删除/重建的每个文件都进 changelog，下轮 pushAll 按 path 命中新 mapping 反向删服务器（C3 数据丢失链）。
+7. **测试数据会污染**：test vault 是用户活跃工作库（持续写入），对比"服务器==test"要在 forcePush 后立即做；test1 快照会滞后。验证脚本要能剥 `_vault_<name>/` 前缀比镜像端。
+
+### 四、验收基线（0.4.0 全部通过，回归参照）
+
+- **验收1**：test forcePush → 服务器与 test 一致（md + 附件逐文件 sha256，归一化 joplin-file-id）
+- **验收2**：test1 forcePull → test1 == test（240+ 文件内容一致）
+- **验收3**：幂等（连续 syncCycle 无 mtime 变化）+ 加密四场景（未加密↔未加密允许；本地加密+服务器未加密 sync/pull 阻止、forcePush 弹迁移确认；服务器加密+本地未加密三入口全阻止）
+- **隐藏文件**：`.hidden/`、`.drafts/`、`.env`、`.omo/`、`.noteforge/` 全部不上传不拉取；`temp/` excludePatterns 与点开头叠加；force 操作遵守；正常文件（含 .db）不受影响
+
+### 五、测试命令（磁盘级，Obsidian 需关闭）
+
+```bash
+cd /home/wang/wk/code/obsidian-joplin-server-sync
+node cli/build.mjs          # 重建 CLI（含新代码）
+node cli/sync-cli.cjs push <vaultPath>   # forcePush
+node cli/sync-cli.cjs pull <vaultPath>   # forcePull
+node cli/sync-cli.cjs sync <vaultPath>   # syncCycle
+# 服务器一致性验证（临时脚本模式，用完即删）：
+#   枚举服务器 item → 建 parent 链 → resolve 路径 → 归一化 hash 比对本地
+```
+
+### 六、发布记录
+
+- **0.4.2**（2026-08-10）：**市场评审修复 + 稳定性**。⚠️ 关键教训：Obsidian 市场要求 release tag 与 manifest version **完全一致且不带 v 前缀**（`0.4.2` 而非 `v0.4.2`）——此前 v0.4.0/v0.4.1 带 v 被市场拒绝（"No release matches your manifest version"）。本次 tag `0.4.2` 触发 GitHub Actions 自动 release。同时修复 delta 批量删除守卫 wedging、force 后 changelog flush、watcher ENOENT 等；清理评审警告（configDir 原生属性、console.debug、未用代码、类型安全）。已部署 4 个 vault。
+- **v0.4.0**（2026-08-09）：上述全部修复。tag `v0.4.0` push 触发 GitHub Actions 自动 release（assets: main.js/manifest.json/styles.css）。已部署 4 个 vault（/home/wang/wk、test、test1、Obsidian Vault）。
+- **发布方式**：joplin-server-sync 用 GitHub Actions（push tag **不带 v**：`0.3.x`/`0.4.x` 自动），三个 HTML 插件手动 `gh release create`（tag 不带 v）。⚠️ 市场评审要求 release tag = manifest version（无 v 前缀）。
+
+### 2026-08-09 forcePull 不删孤儿文件夹（B15 落地修复）
+
+- **症状**：force pull 时，服务器上不存在但本地存在的文件夹没有删除（空目录、孤儿目录残留）。
+- **根因**：目录删除用 `adapter.list('')` 枚举 + `d.includes('/')` 过滤。CLI 的 DiskAdapter 返回无前缀路径（`orphan-dir`）能删；但 **Obsidian 真实 adapter.list('') 返回带 `./` 前缀的目录名** → `d.includes('/')` 全部过滤 → rootDirs 为空 → 一个目录都不删。这就是评审 B15 预言的"adapter.list('') 不可靠"，当时未修，实测暴露。
+- **修复**：
+  - forcePull 目录枚举改用 **`vault.getAllLoadedFiles()` 过滤 TFolder**（Obsidian 保证 vault 相对路径，跨环境可靠），自底向上 `adapter.rmdir`。
+  - forcePush 的 walkDirs（空目录发现）同样改用 getAllLoadedFiles，统一 B15 语义。
+  - MockVault 补 `getAllLoadedFiles()`（返回 TFile + TFolder，CLI 可测）。
+- **验证**：嵌套孤儿目录、空孤儿目录全部删除；隐藏目录（shouldExclude）保留；正常同步不受影响。
+- **教训**：**adapter.list('') 的返回格式跨环境不可靠（Obsidian 可能带 `./` 前缀），枚举 vault 内路径一律用 `vault.getAllLoadedFiles()`**；`d.includes('/')` 这类前缀过滤是隐患。
+
+### 2026-08-09 forcePull 文件夹删除二次修复（Obsidian 实测暴露）
+
+- **症状**：用户在 Obsidian 里实测 force pull，本地孤儿文件夹（服务器不存在的）未删除。CLI 测试通过但真实环境失败。
+- **第一次修复（B15）用 getAllLoadedFiles 失效**：vault API 返回 Obsidian **内存文件模型**，trashFile 删除数百文件后模型滞后/省略目录 → 枚举不到待删文件夹。CLI 的 MockVault.getAllLoadedFiles 是磁盘扫描，掩盖了差异。
+- **最终修复（磁盘权威）**：目录枚举改回 `adapter.list()` 递归（磁盘为准，不依赖 Obsidian 内存模型），`normDir()` 清洗 `./` 前缀/尾斜杠/`.`/`..`，`adapter.rmdir(d, true)` 递归删除，失败 `console.warn` 暴露（不再 `.catch(() => {})` 静默吞错）。
+- **教训（重要）**：
+  1. **CLI mock 与真实 Obsidian 的 API 行为差异是最大陷阱**——MockVault 的 getAllLoadedFiles 是磁盘扫描、adapter.list 无 `./` 前缀；真实 Obsidian 的 adapter.list('') 返回 `./` 前缀、vault 内存模型滞后。凡是"枚举文件/目录"必须用**磁盘级 adapter**（list/exists/rmdir），不要依赖 Obsidian 内存模型 API。
+  2. 删除/写入类操作失败**绝不能静默吞错**——`console.warn` 至少让用户可诊断。
+- **验证**：CLI 嵌套/空目录删除 + 隐藏保留 + normDir 9 种输入清洗；完整回归（test push→test1 pull→一致性）通过，差异仅为隐藏文件排除 + test 新写入（预期）。
+
+### 2026-08-09 补充：forcePush 空目录发现也统一磁盘 adapter（B15 完整落地）
+
+- forcePush 的 walkDirs（空目录发现）之前也用了 `getAllLoadedFiles()`——与 forcePull 文件夹删除同样的失效模式（真实 Obsidian 内存模型滞后/省略目录）。
+- **修复**：walkDirs 改为 `adapter.list()` 递归 + `normDir()` 清洗（与 forcePull 一致）；`normDir` 提升为模块级函数（forcePush/forcePull 共用）。
+- **教训（强化）**：**所有"枚举 vault 文件/目录"必须走磁盘级 adapter（list/exists），禁止用 getAllLoadedFiles（内存模型）**——CLI mock 是磁盘扫描掩盖了差异，真实 Obsidian 才暴露。删除类操作失败必须 console.warn（已落实）。
+- 部署 md5 变化轨迹：89411788（adapter.list 版）→ 599c5fbc（rmdir(false) 防误删 kept）→ 07c87715（walkDirs 统一）。**用户 Obsidian 进程启动(12:51)早于部署(13:18+) → 必须重载插件加载最终版。**
+
+### 2026-08-09 用户 Obsidian 控制台日志驱动的 3 个修复（0.4.1 后）
+
+用户贴出 Obsidian 控制台完整错误堆栈，暴露 3 个真实 bug（CLI 测试无法覆盖的真实环境问题）：
+
+1. **ENOENT 崩溃刷屏**：`ensureId ← record ← onEvent ← removeFile` —— VaultWatcher.record 对 **delete 事件也调 `ensureId(file)`**（读 frontmatter），但文件已删除 → `ENOENT: no such file` 未捕获异常。修复：delete 事件用 mapping/path 身份，不读文件。**教训：watcher 的 delete 分支绝不能碰文件内容**。
+2. **同步永久卡死**：`refusing 508/1016 delta deletes over 549 mapped items` —— test forcePush 重建服务器（旧 id 全删、新 id 重建），test1 的 delta 流重放**旧 id 的 delete 事件**；守卫看 `deletes.length` 而不是"mapping 里真实存在的 id"→ 整批拒绝 + cursor 不推进 → 每轮卡死。修复：守卫只统计 `mapping.getById(id)` 存在的 delete（applyDelete 对不存在的 id 本就是 no-op）。**教训：删除守卫必须按"相关删除数"而非"原始删除数"判断**。
+3. **changelog 清空不持久化**：`changeLog.clear()` 只置 dirty 标志，forcePush/forcePull 的 finally 没 flush → 502 条 pending 垃圾（旧代码无 watcher 挂起时产生）每次 sync 重放失败。修复：finally 里 `await changeLog.flush()`。
+4. **环境教训**：用户 Obsidian 启动(12:51)早于部署(13:25+) → 跑旧代码 → 之前"文件夹未删"实测是旧代码行为。**发布修复后必须让用户重载插件/重启 Obsidian 才生效**。
+5. **验证方法**：临时 vault 复制 test1 的污染 mapping/changelog → forcePull → 断言 pending=0 + sync 幂等（不 refusing）。
+
+- 部署 md5 轨迹：89411788 → 599c5fbc → 07c87715 → e7b13de → c43ab8ad（最终）。
+
+### 2026-08-10 补充：delta 删除守卫最终修复（用户日志第三次迭代）
+
+- **问题**：守卫改为"只统计 relevantDeletes（mapping 存在）"后仍卡死——test1 的 mapping **确实有**那些旧 id（test1 之前同步过 test 的旧内容），所以过滤后仍 508/1016 个 → 仍拒绝 → 仍卡死。
+- **最终修复**：守卫从"拒绝整批 + 不推 cursor"改为"警告 + 逐个应用"——因为 **applyDelete 本身有服务器 404 验证兜底**（`stillThere !== null` 跳过本地删除），stale replay 不会误删，真实删除（forcePush 重建）正确清理。守卫的价值（避免几百次 GET）应让步于恢复同步。
+- **教训（重要）**：**任何"保护性拒绝"都必须有恢复路径，否则就是永久卡死**。applyDelete 的服务器验证已经是正确的安全网，上层的批量守卫是多余的（且有害）。
+- 部署 md5 轨迹：c43ab8ad → 3512c386（delta 守卫警告版）。commit：6dccbc0。

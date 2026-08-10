@@ -153,6 +153,10 @@ class SyncManager {
           if (f === 'usedTimes' || f === 'used_times') {
             // 计数器已改为云端派生计算，方向统一为云端覆盖本地
             direction = 'cloud_to_local';
+          } else if (kind === 'checkin') {
+            // 签到字段以网页(云端)为唯一权威源，差异方向统一为云端覆盖本地，
+            // 避免错误标记「有未同步数据」（合并时本就采用云端值）
+            direction = 'cloud_to_local';
           } else if (lts > cts) {
             direction = 'local_to_cloud';
           } else if (cts > lts) {
@@ -224,16 +228,40 @@ class SyncManager {
       const existing = cMap[key];
       const cloudTs = cc.updatedAt || cc.updated_at || 0;
       const localTs = existing ? (existing.updatedAt || existing.updated_at || 0) : 0;
-      if (existing && cc.isRevoked && !existing.isRevoked) {
-        // 云端撤销不可逆：无论时间戳如何都采用撤销状态，并记录待补偿的扣减次数
+
+      // 云端撤销不可逆：无论时间戳如何都采用撤销状态（网页为唯一权威源）
+      if (cc.isRevoked) {
         cMap[key] = { ...existing, ...cc, isRevoked: true, updatedAt: Math.max(localTs, cloudTs) || Date.now() };
-        newlyRevoked.push({
-          quotaId: cc.quotaId || cc.quota_local_id || existing.quotaId || existing.quota_local_id || '',
-          deductTimes: cc.deductTimes || existing.deductTimes || 1,
-        });
-      } else if (!existing || cloudTs > localTs) {
-        cMap[key] = cc;
+        if (existing && !existing.isRevoked) {
+          newlyRevoked.push({
+            quotaId: cc.quotaId || cc.quota_local_id || existing.quotaId || existing.quota_local_id || '',
+            deductTimes: cc.deductTimes || existing.deductTimes || 1,
+          });
+        }
+        return;
       }
+
+      if (!existing) {
+        cMap[key] = cc;            // 云端新增 → 直接采用
+        return;
+      }
+
+      // 字段级合并：以云端(网页)为准，冲突字段采用云端值（修复签到备注同步后不一致）
+      // 仅当云端字段非空时才覆盖，避免云端空值清空本地已填备注
+      const merged = { ...existing };
+      const FIELDS = ['merchant', 'deductTimes', 'checkinDate', 'checkinTime', 'note'];
+      for (const f of FIELDS) {
+        const cv = cc[f];
+        if (cv === undefined || cv === null || cv === '') continue;   // 云端为空，保留本地
+        merged[f] = cv;
+        if (f === 'deductTimes') merged.deduct_times = cv;
+        else if (f === 'checkinDate') merged.checkin_date = cv;
+        else if (f === 'checkinTime') merged.checkin_time = cv;
+      }
+      merged.isRevoked = !!cc.isRevoked;   // 以云端撤销状态为准
+      merged.updatedAt = Math.max(localTs, cloudTs) || Date.now();
+      merged.updated_at = merged.updatedAt;
+      cMap[key] = merged;
     });
     storage.setCheckins(Object.values(cMap));
 

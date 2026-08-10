@@ -4,6 +4,9 @@
 
 | 版本 | 日期 | 内容 |
 |------|------|------|
+| 0.4.2 | 2026-08-10 | **市场评审修复 + 稳定性**：release tag 去掉 v 前缀（市场要求 tag=manifest version 不带 v）；delta 批量删除守卫改"验证后逐个应用"（不再 wedging sync）、force 后 changelog flush、watcher ENOENT、forcePush 空目录发现统一磁盘 adapter、forcePull rmdir 递归标志；清理评审警告（configDir 原生属性、console.debug、未用代码、类型安全） |
+| 0.4.1 | 2026-08-09 | **forcePull 孤儿文件夹删除修复（B15）**：adapter.list('') 在 Obsidian 返回 `./` 前缀目录名被旧过滤跳过 → 改用 getAllLoadedFiles() 枚举，forcePush 空目录发现同步修正 |
+| 0.4.0 | 2026-08-09 | **多库安全 + 可靠性大版本**：forcePush/forcePull 只作用于本 vault 项（不误删他库）、首同步全量对账、force 操作挂起 watcher、深层 delta 回落 mapping、删除风暴守卫用户出口、服务器加密状态会话缓存、push 侧冲突检测、隐藏文件（点开头）全局排除、登录单飞、E2EE key 未加载 fail-hard |
 | 0.3.72 | 2026-08-08 | **防误删修复**：applyDelete 404 验证、批量删除风暴保护、vault 根文件夹隔离、belongsToRoot 祖先链、info.json vaultId 警告 |
 | 0.3.71 | 2026-08-08 | README 全英文重写 + 同步通知中文改英文 |
 | 0.3.70 | 2026-08-07 | forcePull fileManager fallback（测试环境兼容） |

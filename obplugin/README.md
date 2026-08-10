@@ -15,7 +15,7 @@ effectiveness refer to skill-html-effectiviness, if update identified, update th
 
 | 插件 | ID | 源码位置 | 最新版本 | 发布仓库 |
 |------|-----|---------|---------|---------|
-| Joplin Server Sync | joplin-server-sync | `code/obsidian-joplin-server-sync` | 0.3.72 | yanqingwang/obsidian-joplin-server-sync |
+| Joplin Server Sync | joplin-server-sync | `code/obsidian-joplin-server-sync` | 0.4.2 | yanqingwang/obsidian-joplin-server-sync |
 | HTML Effectiveness | html-effectiveness | `code/html-effectiveness-plugin` | 1.0.23 | yanqingwang/obsidian-html-effectiveness |
 | MD to HTML Effectiveness | md-to-html-effect | `code/md-to-html-effect-plugin` | 1.0.25 | yanqingwang/obsidian-md-to-html-effect |
 | HTML to MD Effectiveness | html-to-md-effect | `code/html-to-md-effect-plugin` | 1.0.3 | yanqingwang/obsidian-html-to-md-effect |

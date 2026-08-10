@@ -88,18 +88,18 @@
       <text class="menu-text danger">重置全部数据（含云端）</text>
       <text class="menu-arrow">›</text>
     </view>
+    <view class="menu-item" bindtap="deleteAccount">
+      <text class="menu-icon">🗑️</text>
+      <text class="menu-text danger">注销账号（删除全部数据，不可恢复）</text>
+      <text class="menu-arrow">›</text>
+    </view>
   </view>
 
   <!-- 关于 -->
   <view class="menu-card">
     <view class="menu-item" bindtap="logout">
       <text class="menu-icon">🚪</text>
-      <text class="menu-text danger">退出登录</text>
-      <text class="menu-arrow">›</text>
-    </view>
-    <view class="menu-item" bindtap="deleteAccount">
-      <text class="menu-icon">🗑️</text>
-      <text class="menu-text danger">注销账号</text>
+      <text class="menu-text">退出登录</text>
       <text class="menu-arrow">›</text>
     </view>
   </view>

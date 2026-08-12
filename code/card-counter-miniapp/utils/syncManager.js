@@ -221,7 +221,7 @@ class SyncManager {
         if (existing && !existing.isRevoked) {
           newlyRevoked.push({
             quotaId: cc.quotaId || cc.quota_local_id || existing.quotaId || existing.quota_local_id || '',
-            deductTimes: cc.deductTimes || existing.deductTimes || 1,
+            deductTimes: (cc.deductTimes != null ? cc.deductTimes : (existing.deductTimes != null ? existing.deductTimes : 1)),
           });
         }
         return;
@@ -312,7 +312,7 @@ class SyncManager {
           localId: c.localId || c.local_id || c.id,
           quotaId: c.quotaId || c.quota_id || '',
           merchant: c.merchant || '',
-          deductTimes: c.deduct_times || c.deductTimes || 1,
+          deductTimes: (c.deductTimes != null ? c.deductTimes : (c.deduct_times != null ? c.deduct_times : 1)),
           checkinDate: c.checkin_date || c.checkinDate,
           checkinTime: c.checkin_time || c.checkinTime || '',
           note: c.note || '',

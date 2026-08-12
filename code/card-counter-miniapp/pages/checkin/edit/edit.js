@@ -70,7 +70,7 @@ Page({
         note: c.note || '',
         dateStart: d30(-30),
         dateEnd: d30(30),
-        deductTimes: c.deductTimes || 1,
+        deductTimes: (c.deductTimes != null ? c.deductTimes : (c.deduct_times != null ? c.deduct_times : 1)),
         canSave: false,
       });
     } catch (e) {

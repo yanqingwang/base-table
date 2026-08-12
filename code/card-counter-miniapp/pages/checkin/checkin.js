@@ -124,7 +124,7 @@ Page({
       if (selectedId) {
         const q = activeQuotas.find(x => String(x.localId) === String(selectedId));
         if (q) {
-          this.setData({ selectedQuota: q, merchant: q.merchant || '', deductTimes: q.defaultDeduct || 1 });
+          this.setData({ selectedQuota: q, merchant: q.merchant || '', deductTimes: (q.defaultDeduct != null ? q.defaultDeduct : 1) });
         }
       }
     } catch (e) {
@@ -140,7 +140,7 @@ Page({
   onSelectQuota(e) {
     const id = e.currentTarget.dataset.id;
     const q = this.data.quotas.find(x => String(x.localId) === String(id));
-    this.setData({ selectedId: id, selectedQuota: q, merchant: q ? q.merchant : '', deductTimes: q ? (q.defaultDeduct || 1) : 1 });
+    this.setData({ selectedId: id, selectedQuota: q, merchant: q ? q.merchant : '', deductTimes: q ? (q.defaultDeduct != null ? q.defaultDeduct : 1) : 1 });
   },
 
   onDeductChange(e) {

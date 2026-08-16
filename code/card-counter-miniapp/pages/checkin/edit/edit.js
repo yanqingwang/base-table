@@ -185,7 +185,7 @@ Page({
     }
   },
 
-  // 撤销签到（次数返还）
+  // 撤销签到（次数返还；云端失败回滚本地，避免"显示撤销但实际未撤销"）
   revoke() {
     const c = this.data.checkin;
     if (!c) return;
@@ -198,11 +198,42 @@ Page({
         try {
           const checkins = storage.getCheckins();
           const idx = checkins.findIndex(x => this._matchId(x, this._id));
-          if (idx !== -1) {
-            checkins[idx].isRevoked = true;
-            checkins[idx].updatedAt = Date.now();
-            storage.setCheckins(checkins);
+          const record = idx !== -1 ? checkins[idx] : null;
+          if (!record) {
+            wx.showToast({ title: '记录不存在', icon: 'none' });
+            return;
           }
+          let cloudOk = true;
+          if (c.id) {
+            // 云端已存在：走 revoke 接口
+            try {
+              await app.callApi('/api/checkins/' + c.id + '/revoke', 'POST');
+            } catch (e) { cloudOk = false; }
+          } else {
+            // 云端不存在（本地新建未同步）：带 localId + isRevoked 推送，服务端按 localId 幂等
+            try {
+              await app.callApi('/api/checkins', 'POST', {
+                localId: record.localId || record.local_id,
+                quotaId: c.quotaId || '',
+                merchant: c.merchant || '',
+                deductTimes: c.deductTimes || 0,
+                checkinDate: c.checkinDate || '',
+                checkinTime: c.checkinTime || '',
+                note: c.note || '',
+                isRevoked: true,
+              });
+            } catch (e) { cloudOk = false; }
+          }
+          if (!cloudOk) {
+            wx.showToast({ title: '撤销失败，请检查网络', icon: 'none' });
+            return; // 不回滚本地：保留原状态，下次可重试
+          }
+          // 云端成功后才改本地
+          record.isRevoked = true;
+          record.updatedAt = Date.now();
+          record._synced = true;
+          storage.setCheckins(checkins);
+          // 配额次数返还（基于签到记录重算，本地做差值）
           if (c.quotaId) {
             const quotas = storage.getQuotas();
             const qIdx = quotas.findIndex(q => (q.localId || String(q.id)) === c.quotaId);
@@ -211,11 +242,6 @@ Page({
               quotas[qIdx].updatedAt = Date.now();
               storage.setQuotas(quotas);
             }
-          }
-          if (c.id) {
-            app.callApi('/api/checkins/' + c.id + '/revoke', 'POST').catch(() => {});
-          } else {
-            app.callApi('/api/checkins', 'POST', { ...c, isRevoked: true }).catch(() => {});
           }
           wx.showToast({ title: '已撤销', icon: 'success' });
           setTimeout(() => wx.navigateBack(), 600);

@@ -35,6 +35,10 @@
 
 ## 当前记忆
 
+### 2026-08-15
+1. **joplin-server-sync v0.4.4 发布** — 并行 delta-pull + 请求超时重试；tag 0.4.4 触发 GitHub Actions 自动 release，部署 6 vault；磁盘级测试（force push/pull、修改/新建/删除文件夹同步）全部通过
+2. **多 vault 镜像测试教训** — test1 镜像 test 需手动将 mapping rootFolderId 指向 test 根；服务器历史污染按 id 后缀去重
+
 ### 2026-06-01
 1. **Agent Skills 采集** — 搜索下载24个主流agent skills文件到AIReports/agent/，含README索引
 2. **AI Agent Top30报告** — 生成全球（中国+非中国）Top30+主流Agent研究报告

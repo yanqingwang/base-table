@@ -390,6 +390,26 @@ node cli/sync-cli.cjs sync <vaultPath>   # syncCycle
 - **教训（重要）**：**任何"保护性拒绝"都必须有恢复路径，否则就是永久卡死**。applyDelete 的服务器验证已经是正确的安全网，上层的批量守卫是多余的（且有害）。
 - 部署 md5 轨迹：c43ab8ad → 3512c386（delta 守卫警告版）。commit：6dccbc0。
 
+### 2026-08-15 joplin-server-sync v0.4.4：并行 delta-pull + 请求超时重试（已发布）
+
+- **背景**：0.4.3 已发布后，源码仓库有未提交改动（JoplinServerApi + DeltaPuller）。本次先构建部署 → 磁盘级测试（test/test1 两文件夹）→ 提交发布 0.4.4。
+- **磁盘级测试**（Obsidian 已关闭）：
+  - force push (test) → force pull (test1)：272 md 路径+内容逐字节一致、content diff 0、test 无缺失 ✅
+  - 修改文件同步：test 追加内容 → push → pull → hash 一致 ✅
+  - 新建文件夹同步：新建 `goal-test-folder/sub`（2 md）→ 同步到 test1 ✅
+  - 删除文件夹同步：删除 test 中该文件夹 → test1 同步删除 ✅
+- **教训（测试环境）**：
+  - test1 是独立 vault（name=test1），`ensureRootFolder` 会找 `_vault_test1`；要让它镜像 test 的数据，需把 test1 `data/mapping.json` 的 `rootFolderId` 指向 test 的根（`99bc4b41...`）再 pull。这是多 vault 插件的固有行为。
+  - 同一账号服务器有历史污染（重复 title 的遗留 note，如 `psenger-agentic-skeleton-SKILL (1498005)`），pull 会按 id 后缀去重，非新代码 bug。
+  - 磁盘级测试必须关闭 Obsidian（已再次验证）。
+- **发布内容（0.4.4）**：
+  - DeltaPuller 两段式拉取：先读 delta 元数据 → 并行 5 批量下载变更内容（1000+ 项 15+ 分钟 → <30s）；删除 id 并行验证后再本地应用（`applyDelete` → `applyDeleteLocal`）。
+  - JoplinServerApi：每请求 120s 超时（race requestUrl，防连接卡死 wedged sync）、429/5xx/网络错误退避重试、任意 attempt 401 自动重登。
+  - 新增 `test/delta-pull-verify.ts`（mock-server 端到端：initial sync + 增量 delta pull + 删除传播，CONSISTENT ✅）+ `test/mock/obsidian-dp.ts`（补 Modal shim）。
+- **⚠️ 遗留**：`test/delete-guard.test.ts` 调用已重命名的 `applyDelete`（旧 API），未接任何 runner——重命名后过期未更新，删除守卫行为由 delta-pull-verify 覆盖。
+- **发布**：tag `0.4.4`（无 v）push 触发 GitHub Actions 自动 release（assets: main.js/manifest.json/styles.css）。已部署 6 个 vault（下载/test、下载/test1、文档/Obsidian Vault、文档/test、文档/test1、wk）。插件已注册 obsidian-releases，市场机器人自动检测新版本（1-2h 内生效）。
+- commit：`055a822`。
+
 ### 2026-08-10 joplin-sync-single-vault 新插件（一个账号 = 一个 vault）
 
 - **定位**：与 obsidian-joplin-server-sync（多 vault 隔离）互补。单库语义：一个账号只对应一个 vault。

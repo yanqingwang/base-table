@@ -339,6 +339,7 @@ node cli/sync-cli.cjs sync <vaultPath>   # syncCycle
 
 ### 六、发布记录
 
+- **0.4.4**（2026-08-15）：**并行 delta-pull + 请求超时重试**。DeltaPuller 两段式拉取（先读 delta 元数据再并行 5 批量下载变更内容，1000+ 项 15+ 分钟 → <30s）；删除 id 并行验证后再本地应用（applyDelete → applyDeleteLocal）；JoplinServerApi 每请求 120s 超时（防连接卡死 wedged sync）、429/5xx/网络错误退避重试、任意 attempt 401 自动重登。新增 `test/delta-pull-verify.ts` mock-server 端到端测试（CONSISTENT ✅）。tag `0.4.4`（无 v）触发 GitHub Actions 自动 release，已部署 6 个 vault。
 - **0.4.2**（2026-08-10）：**市场评审修复 + 稳定性**。⚠️ 关键教训：Obsidian 市场要求 release tag 与 manifest version **完全一致且不带 v 前缀**（`0.4.2` 而非 `v0.4.2`）——此前 v0.4.0/v0.4.1 带 v 被市场拒绝（"No release matches your manifest version"）。本次 tag `0.4.2` 触发 GitHub Actions 自动 release。同时修复 delta 批量删除守卫 wedging、force 后 changelog flush、watcher ENOENT 等；清理评审警告（configDir 原生属性、console.debug、未用代码、类型安全）。已部署 4 个 vault。
 - **v0.4.0**（2026-08-09）：上述全部修复。tag `v0.4.0` push 触发 GitHub Actions 自动 release（assets: main.js/manifest.json/styles.css）。已部署 4 个 vault（/home/wang/wk、test、test1、Obsidian Vault）。
 - **发布方式**：joplin-server-sync 用 GitHub Actions（push tag **不带 v**：`0.3.x`/`0.4.x` 自动），三个 HTML 插件手动 `gh release create`（tag 不带 v）。⚠️ 市场评审要求 release tag = manifest version（无 v 前缀）。
@@ -389,6 +390,26 @@ node cli/sync-cli.cjs sync <vaultPath>   # syncCycle
 - **最终修复**：守卫从"拒绝整批 + 不推 cursor"改为"警告 + 逐个应用"——因为 **applyDelete 本身有服务器 404 验证兜底**（`stillThere !== null` 跳过本地删除），stale replay 不会误删，真实删除（forcePush 重建）正确清理。守卫的价值（避免几百次 GET）应让步于恢复同步。
 - **教训（重要）**：**任何"保护性拒绝"都必须有恢复路径，否则就是永久卡死**。applyDelete 的服务器验证已经是正确的安全网，上层的批量守卫是多余的（且有害）。
 - 部署 md5 轨迹：c43ab8ad → 3512c386（delta 守卫警告版）。commit：6dccbc0。
+
+### 2026-08-15 joplin-server-sync v0.4.4：并行 delta-pull + 请求超时重试（已发布）
+
+- **背景**：0.4.3 已发布后，源码仓库有未提交改动（JoplinServerApi + DeltaPuller）。本次先构建部署 → 磁盘级测试（test/test1 两文件夹）→ 提交发布 0.4.4。
+- **磁盘级测试**（Obsidian 已关闭）：
+  - force push (test) → force pull (test1)：272 md 路径+内容逐字节一致、content diff 0、test 无缺失 ✅
+  - 修改文件同步：test 追加内容 → push → pull → hash 一致 ✅
+  - 新建文件夹同步：新建 `goal-test-folder/sub`（2 md）→ 同步到 test1 ✅
+  - 删除文件夹同步：删除 test 中该文件夹 → test1 同步删除 ✅
+- **教训（测试环境）**：
+  - test1 是独立 vault（name=test1），`ensureRootFolder` 会找 `_vault_test1`；要让它镜像 test 的数据，需把 test1 `data/mapping.json` 的 `rootFolderId` 指向 test 的根（`99bc4b41...`）再 pull。这是多 vault 插件的固有行为。
+  - 同一账号服务器有历史污染（重复 title 的遗留 note，如 `psenger-agentic-skeleton-SKILL (1498005)`），pull 会按 id 后缀去重，非新代码 bug。
+  - 磁盘级测试必须关闭 Obsidian（已再次验证）。
+- **发布内容（0.4.4）**：
+  - DeltaPuller 两段式拉取：先读 delta 元数据 → 并行 5 批量下载变更内容（1000+ 项 15+ 分钟 → <30s）；删除 id 并行验证后再本地应用（`applyDelete` → `applyDeleteLocal`）。
+  - JoplinServerApi：每请求 120s 超时（race requestUrl，防连接卡死 wedged sync）、429/5xx/网络错误退避重试、任意 attempt 401 自动重登。
+  - 新增 `test/delta-pull-verify.ts`（mock-server 端到端：initial sync + 增量 delta pull + 删除传播，CONSISTENT ✅）+ `test/mock/obsidian-dp.ts`（补 Modal shim）。
+- **⚠️ 遗留**：`test/delete-guard.test.ts` 调用已重命名的 `applyDelete`（旧 API），未接任何 runner——重命名后过期未更新，删除守卫行为由 delta-pull-verify 覆盖。
+- **发布**：tag `0.4.4`（无 v）push 触发 GitHub Actions 自动 release（assets: main.js/manifest.json/styles.css）。已部署 6 个 vault（下载/test、下载/test1、文档/Obsidian Vault、文档/test、文档/test1、wk）。插件已注册 obsidian-releases，市场机器人自动检测新版本（1-2h 内生效）。
+- commit：`055a822`。
 
 ### 2026-08-10 joplin-sync-single-vault 新插件（一个账号 = 一个 vault）
 

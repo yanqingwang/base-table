@@ -4,6 +4,7 @@
 
 | 版本 | 日期 | 内容 |
 |------|------|------|
+| 0.4.4 | 2026-08-15 | **并行 delta-pull + 请求超时重试**：DeltaPuller 两段式拉取（先读 delta 元数据，再并行 5 批量下载变更内容，1000+ 项从 15+ 分钟降到 <30s）；删除 id 并行验证后再本地应用（applyDelete→applyDeleteLocal）；JoplinServerApi 每请求 120s 超时（防止连接卡死 wedged sync）、429/5xx/网络错误退避重试、任意 attempt 401 自动重登；新增 delta-pull-verify.ts 端到端 mock 测试 |
 | 0.4.2 | 2026-08-10 | **市场评审修复 + 稳定性**：release tag 去掉 v 前缀（市场要求 tag=manifest version 不带 v）；delta 批量删除守卫改"验证后逐个应用"（不再 wedging sync）、force 后 changelog flush、watcher ENOENT、forcePush 空目录发现统一磁盘 adapter、forcePull rmdir 递归标志；清理评审警告（configDir 原生属性、console.debug、未用代码、类型安全） |
 | 0.4.1 | 2026-08-09 | **forcePull 孤儿文件夹删除修复（B15）**：adapter.list('') 在 Obsidian 返回 `./` 前缀目录名被旧过滤跳过 → 改用 getAllLoadedFiles() 枚举，forcePush 空目录发现同步修正 |
 | 0.4.0 | 2026-08-09 | **多库安全 + 可靠性大版本**：forcePush/forcePull 只作用于本 vault 项（不误删他库）、首同步全量对账、force 操作挂起 watcher、深层 delta 回落 mapping、删除风暴守卫用户出口、服务器加密状态会话缓存、push 侧冲突检测、隐藏文件（点开头）全局排除、登录单飞、E2EE key 未加载 fail-hard |

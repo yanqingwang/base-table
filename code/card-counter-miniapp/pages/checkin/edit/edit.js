@@ -106,13 +106,14 @@ Page({
     this.setData({ canSave: dateChanged || noteChanged || deductChanged });
   },
 
-  // 保存备注 + 日期修改
+  // 保存备注 + 日期 + 扣减次数修改
   async saveChanges() {
     const c = this.data.checkin;
     if (!c) return;
     const dateChanged = c.checkinDate !== this._originalDate;
     const noteChanged = this.data.note !== this._originalNote;
-    if (!dateChanged && !noteChanged) {
+    const deductChanged = (this.data.deductTimes || 0) !== (c.deductTimes || 0);
+    if (!dateChanged && !noteChanged && !deductChanged) {
       wx.showToast({ title: '没有修改', icon: 'none' });
       return;
     }
@@ -151,13 +152,25 @@ Page({
       }
 
       // 3. 扣减次数修改：推送 /api/checkins/<id>（允许改为 0），服务端据签到重算配额已用次数
-      const deductChanged = (this.data.deductTimes || 0) !== (c.deductTimes || 0);
       if (deductChanged) {
-        record.deductTimes = this.data.deductTimes || 0;
+        const newDeduct = this.data.deductTimes || 0;
+        record.deductTimes = newDeduct;
+        record._deductOriginal = c.deductTimes; // 供本地配额差值调整
         if (c.id) {
           try {
-            await app.callApi('/api/checkins/' + c.id, 'PUT', { deductTimes: this.data.deductTimes || 0 });
+            await app.callApi('/api/checkins/' + c.id, 'PUT', { deductTimes: newDeduct });
           } catch (e) { synced = false; }
+        }
+        // 本地配额 usedTimes 同步调整差值
+        if (c.quotaId) {
+          const quotas = storage.getQuotas();
+          const qIdx = quotas.findIndex(q => (q.localId || String(q.id)) === c.quotaId);
+          if (qIdx !== -1) {
+            const diff = newDeduct - (c.deductTimes || 0);
+            quotas[qIdx].usedTimes = Math.max(0, (quotas[qIdx].usedTimes || 0) + diff);
+            quotas[qIdx].updatedAt = Date.now();
+            storage.setQuotas(quotas);
+          }
         }
       }
 

@@ -9,7 +9,7 @@
       </view>
       <view class="edit-row">
         <text class="edit-label">扣减次数</text>
-        <input class="edit-input" type="number" value="{{checkin.deductTimes}}" bindinput="onDeductInput" />
+        <input class="edit-input" type="number" value="{{deductTimes}}" bindinput="onDeductInput" />
       </view>
 
       <!-- 日期：可修改（今天前后 30 天） -->

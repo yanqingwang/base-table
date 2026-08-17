@@ -64,7 +64,7 @@ NODE_PATH=$(npm root -g) node scripts/upload_ci.js <version> <desc>
 | 2.5.0 | **网页版微信扫码登录（小程序码）**：新增 `qr-login/start|confirm|status` 三接口 + `LoginSession` 模型 + 前端二维码弹窗与轮询；不再依赖公众号网页授权（免认证服务号） | **已上线** | **已上传，待发布（需发布后扫码登录才生效）** |
 | 2.5.1 | **修复撤销不回退**：`used_times` 改由签到记录 `SUM` 派生（撤销/签到/改扣减次数均重算），客户端传入值被忽略；新增 `/api/quotas/recompute`；签到/修改支持扣减次数设为 0 | **已上线** | 已上传（白名单拦，待重传） |
 | 2.5.2 | **账号绑定 双向打通**：`LoginSession` 加 `mode`；新增 `qr-login/bind/start` + confirm/status bind 模式（扫码回写 openid）、`bind-account`（微信设密码）；冲突拒绝不合并；网页「绑定微信/设置账号密码」+ 小程序「设置登录密码」 | **已上线** | 已提交 `python` 分支，待上传/发布 |
-| 2.6.0 | **B 端商业化闭环 + Bug 修复**：P0/P1 修复（usedTimes 权威源/静默登录去 getUserProfile/写入即同步/401 上限/删除墓碑/双finish/多环境/容量兜底）；发卡→领卡→动态签名码核销（防重放/幂等/跨商户隔离）；Phase 4 云事件+订阅消息可配置接线；Phase 5 网页实时看板+微信支付准备；小程序 B 端页面（领卡/卡包/商户控制台/核销/电脑看板） | **已上线(后端)** | **v2.6.0 开发版已上传**，待人工提交审核/发布 |
+| 2.6.0 | **B 端商业化闭环 + Bug 修复**：P0/P1 修复（usedTimes 权威源/静默登录去 getUserProfile/写入即同步/401 上限/删除墓碑/双finish/多环境/容量兜底）；发卡→领卡→动态签名码核销（防重放/幂等/跨商户隔离）；Phase 4 云事件+订阅消息可配置接线；Phase 5 网页实时看板+微信支付准备；UGC 内容安全(msgSecCheck v2)；小程序 B 端页面（领卡/卡包/商户控制台/核销/电脑看板） | **已上线(后端)** | **v2.6.0 开发版已上传**，待人工提交审核/发布 |
 
 ---
 
@@ -112,6 +112,7 @@ NODE_PATH=$(npm root -g) node scripts/upload_ci.js <version> <desc>
   - 小程序商户控制台新增「电脑看板」按钮（`pages/merchant/index`）：拼接 `webBase/merchant/<id>?token=` 复制到剪贴板，商户在电脑浏览器打开实时看板；`utils/config.js` 新增各环境 `webBase`。
 - **测试**：`test_b_end.py` 已落地为真实文件（原手册仅嵌代码），覆盖 Phase 1-5：商户/越权/发卡/领卡/动态码核销（幂等/过期/篡改/跨商户/用满）/列表/内部接口/核销feed/微信支付守卫，全部 `ALL B-END TESTS PASSED`。修正了手册中原样例的三处缺陷（越权用例用非员工、令牌秒级碰撞需 sleep、建商户需带 body）。Quota 原有流程回归通过（usedTimes 派生不变）。小程序 `node --check` 全绿。
 - **发布**：后端 `card-counter-flask` 已 `git push main` 并云托管自动构建上线（验证 `/merchant/<id>` 302）；父仓库 `python` 分支已 `git push`（版本记录）。小程序 **v2.6.0 开发版已上传**（`scripts/upload_ci.js`，经 IPv4 代理 `127.0.0.1:20171` 绕过 IPv6 白名单拦截；上传前已把代理 egress `141.11.22.41` 加入微信上传 IP 白名单）。**待人工**：微信公众平台「提交审核 / 发布」(开发版→体验版→正式版)。B 端功能（发卡/领卡/核销/看板）需发布后对线上用户生效。
+- **内容安全（msgSecCheck）补充**：新增 `check_text_security` / `reject_unsafe_text`（复用 `get_miniapp_access_token`/`wx_api_request`），在 UGC 写入边界（评价 comment、签到备注 note、配额 商家/事项/备注 的 POST/PUT）调用微信 `msgSecCheck v2`。策略与云事件一致：未配 `WECHAT_APP_SECRET` 或接口异常 → 失败开放（放行+告警，不锁死写入）；命中 risky/review → 400 拦截。已用 mock 验证放行/拦截两条路径；正式环境需配置 `WECHAT_APP_SECRET` 才真正生效。更新 `docs/测试手册-次卡管家-B端.md` 回归清单。
 
 ## 2026-08-09 网页版微信登录问题排查 + 改小程序码扫码登录（v2.5.0）
 

@@ -217,6 +217,7 @@ print('ALL B-END TESTS PASSED')
 ## 四、回归清单（每次发布前）
 - [ ] 后端：`test_b_end.py` 全绿（Phase 1-5：商户/权限/发卡/领卡/动态码核销/内部接口/核销feed/微信支付守卫）
 - [ ] 后端：原 quota/checkin 流程回归（`used_times` 由签到派生不变）
+- [ ] 后端：**内容安全**：`WECHAT_APP_SECRET` 缺失时 UGC 写入放行（no-op）；配置后对评价/签到备注/配额商家·事项·备注调用 `msgSecCheck v2`，命中 risky/review 返回 400 拦截（已用 mock 验证放行/拦截两条路径）
 - [ ] 小程序：`node --check` 全绿；P0#1~#4 手动用例通过
 - [ ] 小程序：B 端「建商户→发卡→领卡→核销」走通；「电脑看板」链接可复制
 - [ ] 网页：看板 `/merchant/<id>?token=` 正常渲染、5s 轮询刷新

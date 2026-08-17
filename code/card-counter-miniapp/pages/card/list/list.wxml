@@ -1,0 +1,20 @@
+<view class="container">
+  <view class="header">
+    <text class="title">我的卡包</text>
+    <button class="btn small" bindtap="goClaim">+ 领卡</button>
+  </view>
+
+  <view wx:if="{{loading}}" class="empty">加载中…</view>
+  <view wx:elif="{{cards.length === 0}}" class="empty">还没有次卡，点右上角「领卡」</view>
+
+  <view wx:for="{{cards}}" wx:key="id" class="card" data-id="{{item.id}}" bindtap="openDetail">
+    <view class="card-top">
+      <text class="merchant">次卡 #{{item.id}}</text>
+      <text class="badge {{item.status}}">{{item.statusText}}</text>
+    </view>
+    <view class="card-bottom">
+      <text class="remain">剩余 {{item.remaining}} / {{item.totalTimes}} 次</text>
+      <text class="arrow">›</text>
+    </view>
+  </view>
+</view>

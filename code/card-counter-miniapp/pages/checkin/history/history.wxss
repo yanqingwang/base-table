@@ -64,6 +64,11 @@
   margin-top: 4rpx;
 }
 
+.item-date.date-small {
+  font-size: 22rpx;
+  color: #e67e22;
+}
+
 .item-edit-log {
   display: block;
   font-size: 22rpx;
@@ -71,8 +76,23 @@
   margin-top: 4rpx;
 }
 
+.item-right {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  flex-shrink: 0;
+}
+
 .item-deduct {
   font-size: 30rpx;
   color: #e74c3c;
   font-weight: 600;
+}
+
+.edit-btn {
+  font-size: 24rpx;
+  color: #5b5fc7;
+  border: 1rpx solid #5b5fc7;
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
 }

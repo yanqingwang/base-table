@@ -1,4 +1,6 @@
-// utils/syncManager.js - 数据同步（智能分层合并：计数器取大值 + 字段级取最新 + 冲突标记）
+// utils/syncManager.js - 数据同步（云端优先合并 + 删除墓碑）
+// 重要：usedTimes(已用次数) 是服务端纯派生字段，由 checkins 聚合计算。
+// 客户端永不上传、永不作为写入依据，避免多端 push 把旧值覆盖回服务端造成"冲正薅次数"。
 const storage = require('./storage');
 
 // 配额的可编辑字段（用于字段级 LWW 比较）
@@ -60,19 +62,18 @@ class SyncManager {
   }
 
   /**
-   * 智能合并配额：
-   * - usedTimes 取最大值（防止离线扣减丢失）
-   * - 其余字段逐字段比较 updatedAt，取各自最新
-   * - 同字段双改（时间戳相同且值不同）→ 标记 conflict
+   * 合并配额：
+   * - usedTimes 直接采用云端值（服务端由签到记录派生，唯一权威来源）
+   * - 其余字段以云端(网页)为准，做字段级收敛
    */
   mergeQuota(local, cloud) {
     const localTs = local.updatedAt || local.updated_at || 0;
     const cloudTs = cloud.updatedAt || cloud.updated_at || 0;
     const merged = { ...local };
 
-    // 1. usedTimes 以云端为准（云端由签到记录派生计算，权威），不再取最大值避免覆盖
-    const cu = this.getField(cloud, 'used_times') || 0;
-    this.setField(merged, 'used_times', cu);
+  // 1. usedTimes 以云端为准（云端由签到记录派生计算，权威）；客户端不上传该字段，此处直接采用云端值
+  const cu = this.getField(cloud, 'used_times') || 0;
+  this.setField(merged, 'used_times', cu);
 
     // 2. 其余字段逐字段以云端(网页)为准：云端非空且与本地不同 → 采用云端
     //    （解决网页/小程序次卡字段不一致；本地为空、云端有值也采用云端补齐）
@@ -191,7 +192,7 @@ class SyncManager {
         removedQuotaKeys.add(key);
       }
     });
-    storage.setQuotas(Object.values(qMap));
+    storage.setQuotasSilent(Object.values(qMap));
 
     // ── 签到合并：localId 去重 + updatedAt 大者胜；撤销状态以云端为准 ──
     const localCheckins = storage.getCheckins() || [];
@@ -207,7 +208,6 @@ class SyncManager {
         }
       });
     }
-    const newlyRevoked = []; // { quotaId, deductTimes } 本次新发现的云端撤销
     (cloudCheckins || []).forEach(cc => {
       const key = cc.localId || cc.local_id || cc.id;
       if (!key) return;
@@ -217,18 +217,12 @@ class SyncManager {
 
       // 云端撤销不可逆：无论时间戳如何都采用撤销状态（网页为唯一权威源）
       if (cc.isRevoked) {
-        cMap[key] = { ...existing, ...cc, isRevoked: true, updatedAt: Math.max(localTs, cloudTs) || Date.now() };
-        if (existing && !existing.isRevoked) {
-          newlyRevoked.push({
-            quotaId: cc.quotaId || cc.quota_local_id || existing.quotaId || existing.quota_local_id || '',
-            deductTimes: (cc.deductTimes != null ? cc.deductTimes : (existing.deductTimes != null ? existing.deductTimes : 1)),
-          });
-        }
+        cMap[key] = { ...existing, ...cc, isRevoked: true, _cloudKnown: true, updatedAt: Math.max(localTs, cloudTs) || Date.now() };
         return;
       }
 
       if (!existing) {
-        cMap[key] = cc;            // 云端新增 → 直接采用
+        cMap[key] = { ...cc, _cloudKnown: true };  // 云端新增 → 直接采用，并标记云端已知
         return;
       }
 
@@ -245,24 +239,23 @@ class SyncManager {
         else if (f === 'checkinTime') merged.checkin_time = cv;
       }
       merged.isRevoked = !!cc.isRevoked;   // 以云端撤销状态为准
+      merged._cloudKnown = true;           // 标记云端已知，供删除墓碑使用
       merged.updatedAt = Math.max(localTs, cloudTs) || Date.now();
       merged.updated_at = merged.updatedAt;
       cMap[key] = merged;
     });
-    storage.setCheckins(Object.values(cMap));
+    storage.setCheckinsSilent(Object.values(cMap));
 
-    // ── 撤销补偿：本次拉取新发现的云端撤销 → 从配额已用次数扣回 ──
-    if (newlyRevoked.length) {
-      const quotas = storage.getQuotas();
-      for (const r of newlyRevoked) {
-        if (!r.quotaId) continue;
-        const q = quotas.find(x => String(x.localId || x.local_id || x.id) === String(r.quotaId));
-        if (q) {
-          q.usedTimes = Math.max(0, (q.usedTimes || 0) - r.deductTimes);
-        }
+    // ── 签到删除墓碑：云端已知但本次拉取已不存在的记录 → 视为在其他端被删除，本地同步移除 ──
+    // （仅移除已同步过 / 曾出现在云端的记录；纯本地未推送记录保留，避免误删离线新建数据）
+    const cloudCKeys = new Set((cloudCheckins || []).map(cc => cc.localId || cc.local_id || cc.id).filter(Boolean));
+    Object.keys(cMap).forEach(key => {
+      const c = cMap[key];
+      if ((c._synced === true || c._cloudKnown === true) && !cloudCKeys.has(key)) {
+        delete cMap[key];
       }
-      storage.setQuotas(quotas);
-    }
+    });
+    storage.setCheckinsSilent(Object.values(cMap));
 
     // ── 评价合并：localId 去重 + 以云端(网页)为准（字段级）──
     const localRatings = storage.getRatings() || [];
@@ -273,7 +266,7 @@ class SyncManager {
       if (!key) return;
       const existing = rMap[key];
       if (!existing) {
-        rMap[key] = cr;            // 云端新增 → 直接采用
+        rMap[key] = { ...cr, _cloudKnown: true };   // 云端新增 → 直接采用，标记云端已知
         return;
       }
       // 字段级以云端(网页)为准：云端非空值覆盖本地
@@ -287,9 +280,21 @@ class SyncManager {
       const localTs = existing.updatedAt || existing.updated_at || existing.createdAt || existing.created_at || 0;
       merged.updatedAt = Math.max(localTs, cloudTs) || Date.now();
       merged.updated_at = merged.updatedAt;
+      merged._cloudKnown = true;   // 标记云端已知，供删除墓碑使用
       rMap[key] = merged;
     });
-    storage.setRatings(Object.values(rMap));
+    storage.setRatingsSilent(Object.values(rMap));
+
+    // ── 评价删除墓碑：云端已知但本次拉取已不存在的记录 → 本地同步移除 ──
+    // （仅移除已同步过 / 曾出现在云端的记录；纯本地未推送记录保留）
+    const cloudRKeys = new Set((cloudRatings || []).map(cr => cr.localId || cr.local_id || cr.id).filter(Boolean));
+    Object.keys(rMap).forEach(key => {
+      const r = rMap[key];
+      if ((r._synced === true || r._cloudKnown === true) && !cloudRKeys.has(key)) {
+        delete rMap[key];
+      }
+    });
+    storage.setRatingsSilent(Object.values(rMap));
   }
 
   /**
@@ -301,8 +306,9 @@ class SyncManager {
     const localCheckins = storage.getCheckins();
     const localRatings = storage.getRatings();
 
-    // 先推签到/评价（服务端会累加 quota usedTimes），最后推配额（本地 usedTimes 权威覆盖）
-    // 顺序关键：配额最后推，避免全量上传时 usedTimes 被签到累加二次计数
+    // 先推签到/评价（服务端据此聚合 quota.usedTimes），最后推配额。
+    // 注意：配额 payload 不再携带 usedTimes —— 该字段由服务端派生，客户端上传会被忽略，
+    // 若误传旧值还可能被"覆盖回服务端"造成核销效果被冲正，故必须剔除。
     // 签到推送
     let pushedCheckin = 0;
     for (const c of localCheckins) {
@@ -337,7 +343,7 @@ class SyncManager {
         pushedRating++;
       } catch (e) {}
     }
-    // 配额推送（最后推：usedTimes 以本地为准，覆盖签到累加结果）
+    // 配额推送（不含 usedTimes，服务端按 checkins 聚合派生）
     let pushedQuota = 0;
     for (const q of localQuotas) {
       if (!force && q._synced) continue;
@@ -348,7 +354,6 @@ class SyncManager {
           item: q.item || '',
           amount: q.amount || 0,
           totalTimes: q.total_times || q.totalTimes || 0,
-          usedTimes: q.used_times || q.usedTimes || 0,
           expireDate: q.expire_date || q.expireDate || '',
           note: q.note || '',
         };
@@ -359,9 +364,9 @@ class SyncManager {
     }
 
     // 持久化 _synced 标记
-    storage.setQuotas(localQuotas);
-    storage.setCheckins(localCheckins);
-    storage.setRatings(localRatings);
+    storage.setQuotasSilent(localQuotas);
+    storage.setCheckinsSilent(localCheckins);
+    storage.setRatingsSilent(localRatings);
 
     storage.setSyncStatus({ lastSyncTime: Date.now(), hasPendingSync: pushedQuota + pushedCheckin + pushedRating > 0 });
     return pushedQuota + pushedCheckin + pushedRating;

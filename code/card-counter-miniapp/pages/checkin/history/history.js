@@ -39,6 +39,7 @@ Page({
       normalized.forEach(c => {
         c.merchantText = merchantOf(c);
         c.dateEditText = (c.dateEditLogs || []).map(l => l.from + ' → ' + l.to).join('；');
+        c.dateModified = !!(c.dateEditLogs && c.dateEditLogs.length);
       });
 
       // 商家列表（按配额名称）
@@ -65,5 +66,11 @@ Page({
 
   onPullDownRefresh() {
     this.loadData().then(() => wx.stopPullDownRefresh());
+  },
+
+  // 进入签到记录修改管理界面（改期/撤销）
+  goEdit(e) {
+    const id = e.currentTarget.dataset.id;
+    wx.navigateTo({ url: '/pages/checkin/edit/edit?id=' + id });
   },
 });

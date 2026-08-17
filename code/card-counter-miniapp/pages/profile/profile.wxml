@@ -49,6 +49,20 @@
     </view>
   </view>
 
+  <!-- 卡包 / 商户（B 端） -->
+  <view class="menu-card">
+    <view class="menu-item" bindtap="goCardList">
+      <text class="menu-icon">🎫</text>
+      <text class="menu-text">我的卡包</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goMerchant">
+      <text class="menu-icon">🏪</text>
+      <text class="menu-text">我是商户</text>
+      <text class="menu-arrow">›</text>
+    </view>
+  </view>
+
   <!-- 数据管理 -->
   <view class="menu-card">
     <view class="menu-item" bindtap="exportData">

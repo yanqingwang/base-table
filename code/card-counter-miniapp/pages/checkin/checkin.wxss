@@ -204,6 +204,11 @@
   margin-top: 4rpx;
 }
 
+.history-time.date-small {
+  font-size: 20rpx;
+  color: #e67e22;
+}
+
 .history-right {
   display: flex;
   align-items: center;
@@ -216,10 +221,10 @@
   font-weight: 600;
 }
 
-.revoke-btn {
+.edit-btn {
   font-size: 24rpx;
-  color: #e74c3c;
-  border: 1rpx solid #e74c3c;
+  color: #5b5fc7;
+  border: 1rpx solid #5b5fc7;
   padding: 4rpx 16rpx;
   border-radius: 8rpx;
 }

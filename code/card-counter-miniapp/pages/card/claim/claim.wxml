@@ -1,0 +1,9 @@
+<view class="container">
+  <view class="tip">向商户出示或输入领取码，次卡将绑定到你的账号</view>
+  <view class="field">
+    <text class="label">领取码</text>
+    <input class="input" placeholder="如 A1B2C3D4" value="{{code}}" bindinput="onInput" maxlength="12" />
+  </view>
+  <button class="btn primary" loading="{{loading}}" bindtap="submit">领取次卡</button>
+  <view class="hint">领取码由商户发卡后提供，区分大小写（已自动转大写）。</view>
+</view>

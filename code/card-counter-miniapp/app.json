@@ -10,7 +10,12 @@
     "pages/stats/stats",
     "pages/profile/profile",
     "pages/login/login",
-    "pages/qr-login/qr-login"
+    "pages/qr-login/qr-login",
+    "pages/card/claim/claim",
+    "pages/card/list/list",
+    "pages/card/detail/detail",
+    "pages/merchant/index/index",
+    "pages/merchant/redeem/redeem"
   ],
   "window": {
     "navigationBarTitleText": "次卡管家",

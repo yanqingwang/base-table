@@ -1,0 +1,22 @@
+<view class="container" wx:if="{{card}}">
+  <view class="card">
+    <view class="card-top">
+      <text class="title">次卡 #{{card.id}}</text>
+      <text class="badge {{card.status}}">{{card.statusText}}</text>
+    </view>
+    <view class="remain-big">剩余 <text class="num">{{card.remaining}}</text> / {{card.totalTimes}} 次</view>
+    <view class="expire" wx:if="{{card.expireDate}}">有效期至 {{card.expireDate}}</view>
+  </view>
+
+  <view class="qr-box">
+    <view class="qr-title">出示给商户核销</view>
+    <view class="qr-token">{{token}}</view>
+    <view class="qr-count">核销码 {{remainSec}}s 后自动刷新（防截图盗用）</view>
+    <button class="btn line" bindtap="copyToken">复制核销码</button>
+    <button class="btn line" bindtap="refreshToken">立即刷新</button>
+  </view>
+
+  <view class="note">每次核销码仅 90 秒内有效，且一次性使用（同码重复核销不会重复扣次）。</view>
+</view>
+
+<view wx:else class="container"><view class="empty">加载中…</view></view>

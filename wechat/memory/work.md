@@ -69,6 +69,48 @@ NODE_PATH=$(npm root -g) node scripts/upload_ci.js <version> <desc>
 
 ## 历史详情（按日期/版本，供回溯）
 
+## 2026-08-17 Bug 修复（P0/P1）+ B 端最小闭环（Phase 1-3）
+
+### 小程序端 Bug 修复（card-counter-miniapp）
+- **P0#1 usedTimes 权威源**：`syncManager.push()` 配额 payload 不再上传 `usedTimes`（后端本就按 checkins 派生，客户端上传旧值会冲正核销效果）；移除 merge 中与服务端派生矛盾的本地「撤销补偿」逻辑（会造成双重扣减）。`mergeQuota` 统一采用云端值。
+- **P0#2 静默登录 getUserProfile**：`loginByCode()` 不再调用 `wx.getUserProfile`（无手势必挂、新注册小程序不可用），静默登录直接用空昵称建号；资料完善保留在「我的」页官方 `chooseAvatar`/`nickname` 流程。已用 Node 测试验证。
+- **P0#3 写入即同步**：`storage.js` 列表类 key 写入后 debounce 触发 `autoSync('push')`，`onHide` 仅作兜底；同步管理器内部持久化改用 `setXxxSilent` 避免自触发循环。
+- **P0#4 callApi 401 死循环**：新增 `retry` 参数，401 重登录最多 1 次。
+- **P1**：`merge()` 为 checkins/ratings 补 `_cloudKnown` 删除墓碑（网页删了小程序同步移除）；`autoSync` 用 `finished`/`started` 标志修复 `finish` 双调用造成的并发重入；新增 `utils/config.js` 按 `envVersion` 自动选环境（env/service/resourceAppid 不再硬编码）；`storage.set` 捕获写入异常并标记 `storageError`。
+
+### 后端 B 端最小闭环（card-counter-flask，与 quota 共存不替换）
+- 新增模型：`Merchant / Staff / CardTemplate / Card / RedemptionRecord / NotificationLog`（保留现有 quota/checkin，零破坏性）。
+- 商户鉴权：`@require_staff_auth(role)` 装饰器，强制带 `merchantId` 并校验员工归属实现多商户隔离。
+- Phase 1：建商户（创建人=owner）、商户列表、邀请员工、卡种增删查。
+- Phase 2/3：发卡（一次性领取码 + 行锁防并发抢领）、领卡、动态 HMAC 签名核销令牌（90s 时效防截图重放）、核销（行锁 + `verify_token` 幂等 + 余额/过期校验 + 乐观锁 version）。`emit_cloud_event`/`send_subscribe_message` 留占位（Phase 4 接入云开发）。
+- 测试：Flask test_client 覆盖发卡→领卡→核销→幂等→过期/篡改/跨商户拒绝→用满拒绝，全部通过。
+
+### 待办（人工 / 下阶段）
+- 小程序端需增加商户/核销相关页面（当前仅后端 API 就绪，客户小程序未接 B 端 UI）。
+- Phase 4 订阅消息 + 云开发定时触发器、Phase 5 实时看板 + 微信支付，依赖 CloudBase 环境（当前仓库外）。
+- 小程序/网页部署同现有流程（work.md 快速开始），B 端改动需上传开发版 + 发布后生效。
+
+#### 续：小程序 B 端页面（同日下午）
+- 新增 `pages/card/{claim,list,detail}`（领卡 / 我的卡包 / 动态核销码）与 `pages/merchant/{index,redeem}`（商户控制台 / 核销），注册到 app.json；profile 增加「我的卡包 / 我是商户」入口。
+- 后端补 `GET /api/cards`（我的卡包）、`GET /api/merchant/cards`（商户卡列表），Flask test_client 验证发卡→领卡→卡包→核销闭环通过。
+- **动态核销码当前以文本展示**（仓库无 QR 库），`wx.scanCode` 核销入口已就绪；真实部署建议接入 QR 库或后端出图。
+- 已写 `wechat/docs/测试手册-次卡管家-B端.md`（后端自动化用例 + 小程序手动验证 + 回归清单）。
+- Phase 4/5（订阅消息、云开发看板、微信支付）仍依赖 CloudBase 环境，当前为占位函数。
+
+#### 续2：Phase 4/5 完成（2026-08-17 晚）
+- **Phase 4 接入云开发（可配置、安全 no-op）**：
+  - `emit_cloud_event()` / `send_subscribe_message()` 从占位改为**可配置 HTTP 接线**：配置 `CLOUDBASE_EVENT_URL` / `CLOUDBASE_SUBSCRIBE_URL` 时 POST 到对应云函数，未配置则安全 no-op（不抛异常、不阻断核销主流程）。`send_subscribe_message` 始终先落库 `NotificationLog`（pending），便于对账。
+  - 新增内部事件接口（@require_internal 保护，共享密钥 `INTERNAL_API_TOKEN`，未配置时仅本进程可调用）：
+    - `GET /api/internal/expiring-cards?merchantId&days`：即将到期在售卡（订阅消息定时器用）。
+    - `GET /api/internal/redemption-feed?merchantId&limit`：核销事件流（看板备用事件源）。
+  - 云函数 deliverable：`cloudfunctions/checkExpiringCards/index.js`（定时触发 → 拉取到期卡 → 调 notifySubscribe 发订阅消息）、`cloudfunctions/notifySubscribe/index.js`（云侧 `cloud.openapi.subscribeMessage.send`）。均通过 `node --check`。
+- **Phase 5 实时看板（网页版）+ 微信支付准备**：
+  - 新增 `GET /api/merchant/redemptions?merchantId`（员工鉴权）返回最近核销 feed（看板前端轮询）。
+  - 新增网页看板 `GET /merchant/<id>?token=` + 模板 `templates/merchant_dashboard.html`：概览（发卡总数/在售/已用满/今日核销）+ 5s 轮询的实时核销记录 + 全部卡表；无 token/非本商户员工 → 302 跳首页。
+  - 微信支付准备 `POST /api/merchant/pay/prepare`（owner，受 env 守卫）：未配置 `WECHAT_PAY_MCH_ID/API_KEY` 返回 503 明确错误；`WECHAT_PAY_MOCK=1` 返回占位 prepay 便于联调；真实下单留 v3 TODO（需证书）。新增 `config.WECHAT_PAY_*`。
+  - 小程序商户控制台新增「电脑看板」按钮（`pages/merchant/index`）：拼接 `webBase/merchant/<id>?token=` 复制到剪贴板，商户在电脑浏览器打开实时看板；`utils/config.js` 新增各环境 `webBase`。
+- **测试**：`test_b_end.py` 已落地为真实文件（原手册仅嵌代码），覆盖 Phase 1-5：商户/越权/发卡/领卡/动态码核销（幂等/过期/篡改/跨商户/用满）/列表/内部接口/核销feed/微信支付守卫，全部 `ALL B-END TESTS PASSED`。修正了手册中原样例的三处缺陷（越权用例用非员工、令牌秒级碰撞需 sleep、建商户需带 body）。Quota 原有流程回归通过（usedTimes 派生不变）。小程序 `node --check` 全绿。
+
 ## 2026-08-09 网页版微信登录问题排查 + 改小程序码扫码登录（v2.5.0）
 
 ### 问题
@@ -567,3 +609,62 @@ NODE_PATH=$(npm root -g) node scripts/upload_ci.js <version> <desc>
   - 网页/后端：`a811774`（修复）+`6a97487`（空提交触发重建）；线上验证页面含「将一并删除且不可恢复」✅。
   - 小程序：`78f020a1`（父仓库）→ 上传开发版 **v2.4.10** 成功（`upload_ci.js 2.4.10`）；**待人工发布**（wujie 微前端无法脚本化）。
 - **验证**：`node --check` 小程序两文件 ✅、`py_compile dao.py` ✅、网页 curl 特征串 ✅。后端级联效果建议删除一条有签到的次卡后复查孤儿数。
+
+### 2026-08-08 鸿蒙版（Cloud 静态托管）扣减次数/备注保存修复
+- **问题**（用户报告）：鸿蒙 WebView 版更改扣减次数（已用次数/总次数）不识别修改、不能自动保存，修改备注也有问题
+- **根因**：`code/card-counter-cloud/index.html`（鸿蒙 WebView 加载的静态托管版）配额表单用 `<form onsubmit>` + `type="submit"` — 鸿蒙 WebView (ArkWeb) 对 form submit 事件支持不完整，点击保存触发默认表单提交/不触发 onsubmit → saveQuota 不执行 → 次数/备注修改丢失
+- **修复**（card-counter-cloud/index.html）：
+  1. 配额表单 `<form onsubmit>` → `<div>`，保存按钮 `type="submit"` → `type="button" onclick="saveQuota()"`（不再依赖表单提交事件）
+  2. `saveQuota()` 去除 `e.preventDefault()` 依赖 + 补必填校验（商家/事项为空时 toast 提示）
+  3. 签到弹窗新增「备注（可选）」输入框 `checkinNote`（与 Flask 版对齐），`confirmCheckin` 保存 note 字段
+  4. 今日签到记录/详情页签到记录展示备注（`c.note`）
+  5. 签到弹窗 +/− 按钮补 `type="button"`（防 ArkWeb 表单语义干扰）
+- **同步**：`pushToCloud` 用 `{...data, userId}` 全字段展开，note 随记录自动同步（CloudBase NoSQL 无需 schema）
+- **测试**：本地静态服务 + 浏览器实测 — 新增配额（次数/备注）✓ 编辑配额真实点击保存按钮（usedTimes/note 保存、弹窗关闭）✓ 签到填备注 ✓ 详情页展示备注 ✓ JS 语法检查 ✓
+- **部署状态**：待部署静态托管（需 CloudBase 授权）
+
+### 2026-08-08 签到修改页扣减次数/备注保存修复（小程序 v2.5.3）
+- **问题**（用户报告）：签到修改页改扣减次数不识别修改、不能保存；改备注也有问题
+- **根因**（pages/checkin/edit/edit.js + edit.wxml）：
+  1. `saveChanges()` 早退条件 `if (!dateChanged && !noteChanged) return` **漏掉 deductChanged** → 只改扣减次数提示「没有修改」直接返回，永不保存
+  2. edit.wxml 扣减次数 input `value="{{checkin.deductTimes}}"` 绑定错误——onDeductInput 更新的是顶层 `deductTimes`，input 显示 checkin 对象原始值，用户输入后显示不回显/保存取错值
+  3. 扣减次数修改未同步本地配额 usedTimes 差值（服务端会重算，本地会不一致）
+- **修复**：
+  1. saveChanges 早退条件加 `deductChanged`（日期/备注/次数任一修改均可保存）
+  2. wxml input 改绑 `{{deductTimes}}`
+  3. 扣减次数变化时本地配额 usedTimes 按差值同步调整（`newDeduct - oldDeduct`）
+- **测试**：
+  - 新增 `scripts/test_edit.js` 7 场景（只改次数/只改备注/只改日期/无修改/改为0/配额差值双向）全部通过
+  - 后端 PUT `/api/checkins/<id>` 实测：deduct 2→5→1，quota usedTimes 同步重算 2→5→1，note 更新 ✓
+- **上传**：`NODE_PATH=$(npm root -g) node --dns-result-order=ipv4first scripts/upload_ci.js 2.5.3 "..."` — **关键：加 `--dns-result-order=ipv4first` 强制 IPv4 出口，绕开本机 IPv6 不在上传 IP 白名单的拦截**（v2.5.2 因此一直传不上，本次成功）
+- **已提交**：`ded939dc`（python 分支），v2.5.3 开发版已上传 ✅（待人工提交审核发布）
+
+### 2026-08-08 撤销签到云端优先修复（小程序 v2.5.4 + 网页）
+- **问题**（用户报告）：部分签到显示「撤销成功」但实际未撤销（如涂来涂去改期记录）；改期后需显示新时间
+- **根因**：
+  1. 小程序 edit.js revoke()：`app.callApi(.../revoke).catch(() => {})` 吞掉云端失败 + **无条件 toast「已撤销」+ 本地先标记 isRevoked=true** → 云端失败时本地显示已撤销，实际云端未撤销（数据不一致）
+  2. 网页 revokeCheckin 同样：`.catch(() => { ci._synced = false })` 但 toast 已无条件显示成功，本地已标记撤销
+  3. 无 id 记录（本地新建未同步）：`POST {...c, isRevoked:true}` 未显式带 localId 幂等
+- **修复**：
+  1. 小程序 revoke()：**await 云端结果**——云端成功才改本地 isRevoked + 返还配额；云端失败提示「撤销失败，请检查网络」，本地保持原状态可重试
+  2. 无 id 时显式 POST `{localId, quotaId, merchant, deductTimes, checkinDate, checkinTime, note, isRevoked:true}`（服务端按 localId 幂等）
+  3. 网页 revokeCheckin 同步修复：await revoke API，成功才改本地；失败 toast 提示不误报
+  4. 改期显示：小程序 edit 保存后 loadData 刷新（wxml 绑 checkin.checkinDate）；网页 saveCheckinEdit 后 renderAll 刷新 + 「已改期」标记 —— 均验证显示新时间 ✓
+- **测试**：
+  - 新增 `scripts/test_revoke.js` 4 场景（云端成功改本地/云端失败不改本地/无id幂等/失败回滚）✓
+  - 后端 API 实测：创建→改期 8-01→8-05→撤销→quota 返还 0→重复撤销幂等返回「该签到已撤销」✓
+  - 网页 E2E（浏览器）：改期 08-05 后列表显示新时间+已改期标记 ✓；撤销后 server isRevoked=true + quota=0 + 本地同步 ✓
+- **上传**：`HTTPS_PROXY=http://127.0.0.1:20171 node --dns-result-order=ipv4first scripts/upload_ci.js 2.5.4 "..."` — **关键：走本地代理 20171 强制 IPv4 出口**（v2.5.3 时 `--dns-result-order` 单独有效，v2.5.4 需叠加代理；本机 IPv6 路由正常时会走 IPv6 被微信 IP 白名单拦截）
+- **发布**：小程序 v2.5.4 开发版已上传 ✅（待人工提交审核发布）；后端 commit `d8e228e` 已 git push 云托管自动构建 ✅
+
+### 2026-08-08 网页版同步补齐修复（后端 fc5f0d7）
+- **检测发现**（用户要求同步检测网页版）：
+  1. `pushLocalPending` 只推送「云端没有的 localId」——改期/备注/扣减次数修改 PUT 云端失败后 `_synced=false`，但手动同步**永不补推**（原逻辑按云端存在性判断，本地失败修改丢失）
+  2. `saveCheckinEdit` 改扣减次数**未同步本地配额 usedTimes 差值**（小程序 v2.5.4 已修，网页版漏了）→ 本地 quota 与签到记录不一致
+- **修复**（wxcloudrun/templates/index.html）：
+  1. `pushLocalPending` 改为：云端没有的 localId 全推；云端已有但 `_synced===false` 的记录补推（POST 按 localId 幂等更新）
+  2. `saveCheckinEdit` 改扣减次数时本地配额 usedTimes 按差值调整（`Math.max(0, used + (newDeduct - oldDeduct))`）
+- **验证**（浏览器 E2E，本地 5098）：
+  - 修改备注 → mock 云端 PUT 失败 → `_synced=false` → 手动同步 → **云端 note 已补推更新** ✓
+  - 扣减次数 2→5 → 本地 quota usedTimes 5 = 服务端 5 ✓
+- **发布**：commit `fc5f0d7` 已 git push → 云托管自动构建 ✅（网页随构建自动上线）

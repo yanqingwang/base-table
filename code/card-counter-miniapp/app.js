@@ -1,11 +1,12 @@
 // app.js - 次卡管家 云开发版（5 Tab 完整版）
 const storage = require('./utils/storage');
 const syncManager = require('./utils/syncManager');
+const config = require('./utils/config');
 
 App({
   globalData: {
-    env: 'prod-d5gm4a2q00a7f9209', // 微信云托管环境 ID
-    service: 'flask-z9hh',          // 云托管服务名
+    env: config.env,                // 微信云托管环境 ID（按运行环境自动选择）
+    service: config.service,        // 云托管服务名
     token: '',
     userInfo: null,
     cloud: null,                    // wx.cloud.Cloud 实例
@@ -18,8 +19,8 @@ App({
     } else {
       // 用 Cloud 实例 + resourceAppid/resourceEnv，await init 完成后才能 callContainer
       const cloud = new wx.cloud.Cloud({
-        resourceAppid: 'wx9c5974ab24d057c3', // 小程序 AppID
-        resourceEnv: 'prod-d5gm4a2q00a7f9209', // 云托管环境 ID
+        resourceAppid: config.resourceAppid, // 小程序 AppID
+        resourceEnv: config.env,             // 云托管环境 ID
       });
       this.globalData.cloud = cloud;
       this.initCloud(cloud);
@@ -90,7 +91,16 @@ App({
   autoSync(mode) {
     if (this.globalData.syncing) return;
     this.globalData.syncing = true;
-    const finish = () => { this.globalData.syncing = false; };
+    // 用「是否已完成」标志确保 finish 只生效一次：
+    // 一旦 doSync 开始执行，syncing 锁的释放只由 doSync 的 finally 负责，
+    // 8s 超时只在云一直未就绪（doSync 从未启动）时才兜底释放，避免提前释放造成并发重入。
+    let finished = false;
+    let started = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      this.globalData.syncing = false;
+    };
     const doSync = async () => {
       try {
         if (!this.globalData.token) {
@@ -107,11 +117,13 @@ App({
         finish();
       }
     };
-    // 等待云就绪后执行，超时 8s 放弃
+    // 等待云就绪后执行
     this.waitCloudReady().then(ready => {
-      if (ready) doSync(); else finish();
+      if (ready) { started = true; doSync(); }
+      else finish();
     });
-    setTimeout(finish, 8000);
+    // 8s 超时：仅当 doSync 始终未启动（云未就绪）时兜底释放锁；已启动则由 finally 释放
+    setTimeout(() => { if (!started) finish(); }, 8000);
   },
 
   cleanupExampleData() {
@@ -150,14 +162,15 @@ App({
 
   /**
    * 调用云托管 Flask 后端
+   * @param {number} retry 401 重登录已尝试次数（上限 1，避免 token 签发即失效导致无限重登录）
    */
-  callApi(path, method = 'GET', data = {}, auth = true) {
+  callApi(path, method = 'GET', data = {}, auth = true, retry = 0) {
     const header = { 'X-WX-SERVICE': this.globalData.service };
     if (auth && this.globalData.token) {
       header['Authorization'] = 'Bearer ' + this.globalData.token;
     }
     return new Promise((resolve, reject) => {
-      const doCall = (retry) => {
+      const doCall = (cloudRetry) => {
         this.globalData.cloud.callContainer({
           config: { env: this.globalData.env },
           path,
@@ -171,8 +184,12 @@ App({
               resolve(body.data);
             } else if (body && body.code === -1) {
               if ((body.errorMsg === '未登录或登录已过期' || res.statusCode === 401) && auth) {
+                if (retry >= 1) {
+                  reject(new Error('登录状态异常，请重新进入小程序'));
+                  return;
+                }
                 this.wechatLogin().then(() => {
-                  this.callApi(path, method, data, auth).then(resolve).catch(reject);
+                  this.callApi(path, method, data, auth, retry + 1).then(resolve).catch(reject);
                 }).catch(reject);
               } else {
                 reject(new Error(body.errorMsg || '请求失败'));
@@ -183,8 +200,8 @@ App({
           },
           fail: (err) => {
             // Cloud API isn't enabled → init 未完成，重试
-            if (retry < 3 && err.errMsg && err.errMsg.indexOf('Cloud API') !== -1) {
-              setTimeout(() => doCall(retry + 1), 500);
+            if (cloudRetry < 3 && err.errMsg && err.errMsg.indexOf('Cloud API') !== -1) {
+              setTimeout(() => doCall(cloudRetry + 1), 500);
             } else {
               reject(new Error(err.errMsg || '网络错误'));
             }
@@ -233,6 +250,9 @@ App({
 
   /**
    * wx.login + code2Session 登录（不依赖云托管环境归属）
+   * 静默登录：无用户手势，不得调用 wx.getUserProfile（该接口必须由用户点击触发，
+   * 且 2022-02 后新注册小程序已无法调用）。此处不强求头像昵称，先用默认值建号，
+   * 资料完善交由「我的」页的官方按钮流程（open-type=chooseAvatar / nickname 输入框）处理。
    */
   loginByCode() {
     return new Promise((resolve, reject) => {
@@ -242,7 +262,8 @@ App({
             reject(new Error('wx.login 未返回 code'));
             return;
           }
-          this.fetchUserProfile(loginRes.code).then(resolve).catch(reject);
+          // 静默登录不强求头像昵称，先用默认值建号
+          this.callWxLogin(loginRes.code, '', '').then(resolve).catch(reject);
         },
         fail: (err) => reject(new Error(err.errMsg || 'wx.login 失败')),
       });
@@ -250,30 +271,8 @@ App({
   },
 
   /**
-   * 获取用户资料（昵称头像）后调用后端登录
-   * 新版微信 getUserProfile 返回匿名信息，能获取到就用，否则用默认值
+   * 调用后端 wx-login 接口完成登录
    */
-  fetchUserProfile(code) {
-    return new Promise((resolve, reject) => {
-      let nickname = '';
-      let avatarUrl = '';
-      wx.getUserProfile({
-        desc: '用于展示用户信息',
-        success: (profileRes) => {
-          const ui = profileRes.userInfo || {};
-          nickname = ui.nickName || '';
-          avatarUrl = ui.avatarUrl || '';
-          // 过滤匿名值（新版微信返回"微信用户"+灰头像）
-          if (nickname === '微信用户') nickname = '';
-          this.callWxLogin(code, nickname, avatarUrl).then(resolve).catch(reject);
-        },
-        fail: () => {
-          this.callWxLogin(code, nickname, avatarUrl).then(resolve).catch(reject);
-        },
-      });
-    });
-  },
-
   callWxLogin(code, nickname, avatarUrl) {
     return new Promise((resolve, reject) => {
       const doCall = (retry) => {

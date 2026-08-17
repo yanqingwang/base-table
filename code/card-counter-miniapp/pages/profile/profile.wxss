@@ -176,6 +176,13 @@
   color: #ccc;
 }
 
+.menu-hint {
+  font-size: 22rpx;
+  color: #999;
+  padding: 16rpx 0 20rpx;
+  line-height: 1.6;
+}
+
 /* ⚠️ 谨慎操作区块 */
 .danger-zone {
   border: 2rpx solid #e74c3c;

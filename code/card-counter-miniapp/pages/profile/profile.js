@@ -261,6 +261,16 @@ Page({
     });
   },
 
+  // 我的卡包
+  goCardList() {
+    wx.navigateTo({ url: '/pages/card/list/list' });
+  },
+
+  // 我是商户
+  goMerchant() {
+    wx.navigateTo({ url: '/pages/merchant/index/index' });
+  },
+
   // 退出登录
   logout() {
     wx.showModal({

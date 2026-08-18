@@ -114,6 +114,12 @@ NODE_PATH=$(npm root -g) node scripts/upload_ci.js <version> <desc>
 - **发布**：后端 `card-counter-flask` 已 `git push main` 并云托管自动构建上线（验证 `/merchant/<id>` 302）；父仓库 `python` 分支已 `git push`（版本记录）。小程序 **v2.6.0 开发版已上传**（`scripts/upload_ci.js`，经 IPv4 代理 `127.0.0.1:20171` 绕过 IPv6 白名单拦截；上传前已把代理 egress `141.11.22.41` 加入微信上传 IP 白名单）。**待人工**：微信公众平台「提交审核 / 发布」(开发版→体验版→正式版)。B 端功能（发卡/领卡/核销/看板）需发布后对线上用户生效。
 - **内容安全（msgSecCheck）补充**：新增 `check_text_security` / `reject_unsafe_text`（复用 `get_miniapp_access_token`/`wx_api_request`），在 UGC 写入边界（评价 comment、签到备注 note、配额 商家/事项/备注 的 POST/PUT）调用微信 `msgSecCheck v2`。策略与云事件一致：未配 `WECHAT_APP_SECRET` 或接口异常 → 失败开放（放行+告警，不锁死写入）；命中 risky/review → 400 拦截。已用 mock 验证放行/拦截两条路径；正式环境需配置 `WECHAT_APP_SECRET` 才真正生效。更新 `docs/测试手册-次卡管家-B端.md` 回归清单。
 
+#### 续3：范围收敛（暂不做商业，仅功能端）
+- 用户决策：**暂时不考虑商业（卖卡变现/微信支付）**，仅聚焦**功能端（商户侧 B 端）功能开发与验证**，完成后停手。
+- 因此 WeChat Pay（`/api/merchant/pay/prepare`）维持「env 守卫 + mock」占位，**不推进真实下单/证书/回调**；商户端也无「卖卡」UI。
+- 功能端范围（已完成并验证）：商户建店/发卡/领卡/动态码核销（防重放/幂等/跨商户隔离/用满拒绝）、商户核销页、顾客卡包/卡详情动态核销码、网页实时看板、订阅消息/云事件可配置接线（Phase 4）、UGC 内容安全（Phase 4 安全补充）。
+- 验证结论：后端 `test_b_end.py` 全绿（Phase 1-3 闭环 + 内部接口 + 核销feed + 内容安全 mock 两条路径）；小程序 5 个 B 端页面 `node --check` 全绿、与后端 API 字段对齐（领取码大写字母表一致、redeem-token 返回 `token/expiresIn`、核销返回 `remaining/recordId`）；`app.json` 已注册 5 个 B 端页面。功能端开发 + 验证完成，停止（不再主动发布/review，除非另行要求）。
+
 ## 2026-08-09 网页版微信登录问题排查 + 改小程序码扫码登录（v2.5.0）
 
 ### 问题

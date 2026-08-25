@@ -16,6 +16,7 @@ Page({
     token: '',
     remainSec: 0,
     loading: true,
+    refund: null,    // {refundCents, refundable, rule, maxRefundCents}
   },
 
   onLoad(query) {
@@ -26,6 +27,17 @@ Page({
     if (!app.ensureLogin()) return;
     this.loadCard();
     this.refreshToken();
+    this.loadRefund();
+  },
+
+  async loadRefund() {
+    if (!this.data.id) return;
+    try {
+      const refund = await app.callApi('/api/cards/' + this.data.id + '/refund-estimate', 'GET');
+      this.setData({ refund });
+    } catch (e) {
+      // 非关键信息，失败不阻塞详情页
+    }
   },
 
   onHide() { this.stopTimer(); },

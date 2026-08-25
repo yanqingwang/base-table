@@ -271,6 +271,24 @@ Page({
     wx.navigateTo({ url: '/pages/merchant/index/index' });
   },
 
+  // 购买次卡（商家分享的购卡链接 / 卡种 ID）
+  goBuy() {
+    wx.showModal({
+      title: '购买次卡',
+      editable: true,
+      placeholderText: '请输入商家分享的卡种 ID',
+      success: (res) => {
+        if (!res.confirm) return;
+        const id = parseInt((res.content || '').trim(), 10);
+        if (!id) {
+          wx.showToast({ title: '卡种 ID 无效', icon: 'none' });
+          return;
+        }
+        wx.navigateTo({ url: '/pages/order/buy/buy?templateId=' + id });
+      },
+    });
+  },
+
   // 退出登录
   logout() {
     wx.showModal({

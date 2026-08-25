@@ -1,0 +1,29 @@
+<view class="container" wx:if="{{tpl}}">
+  <view class="card">
+    <view class="title">{{tpl.name}}</view>
+    <view class="price">¥{{priceText}}<text class="unit">元</text></view>
+    <view class="meta">共 {{tpl.totalTimes}} 次 · 有效期 {{tpl.validDays}} 天</view>
+    <view class="refund" wx:if="{{tpl.refundRule}}">退费规则：{{tpl.refundRule}}</view>
+  </view>
+
+  <button class="btn primary" loading="{{buying}}" bindtap="onBuy">
+    {{buying ? '支付中…' : '立即购买 ¥' + priceText}}
+  </button>
+  <view class="note">支付成功后将自动发放次卡至「我的卡包」。</view>
+</view>
+
+<view class="container" wx:elif="{{!loading}}">
+  <view class="empty">未获取到卡种信息，请通过商家分享的购卡链接打开。</view>
+</view>
+
+<view class="container" wx:else><view class="empty">加载中…</view></view>
+
+<!-- 购买成功 -->
+<view class="mask" wx:if="{{result}}">
+  <view class="dialog">
+    <view class="ok">✓ 购卡成功</view>
+    <view class="line">次卡已发放至卡包</view>
+    <view class="line">订单号 #{{result.orderId}}</view>
+    <button class="btn primary" bindtap="goMyCards">查看我的卡包</button>
+  </view>
+</view>

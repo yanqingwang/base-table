@@ -4,6 +4,10 @@
     <button class="btn small" bindtap="goClaim">+ 领卡</button>
   </view>
 
+  <view class="quick">
+    <button class="btn small ghost" bindtap="goGroupBuy">团购券核销</button>
+  </view>
+
   <view wx:if="{{loading}}" class="empty">加载中…</view>
   <view wx:elif="{{cards.length === 0}}" class="empty">还没有次卡，点右上角「领卡」</view>
 

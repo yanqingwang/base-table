@@ -16,6 +16,15 @@
     <button class="btn line" bindtap="refreshToken">立即刷新</button>
   </view>
 
+  <view class="refund" wx:if="{{refund}}">
+    <view class="refund-title">应退金额估算</view>
+    <block wx:if="{{refund.refundable}}">
+      <view class="refund-amt">¥{{refund.refundCents / 100}}.00</view>
+      <view class="refund-rule">规则：{{refund.rule}}</view>
+    </block>
+    <view class="refund-no" wx:else>当前不符合退费条件（{{refund.reason || '按规则不予退款'}}）</view>
+  </view>
+
   <view class="note">每次核销码仅 90 秒内有效，且一次性使用（同码重复核销不会重复扣次）。</view>
 </view>
 

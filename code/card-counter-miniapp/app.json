@@ -14,6 +14,8 @@
     "pages/card/claim/claim",
     "pages/card/list/list",
     "pages/card/detail/detail",
+    "pages/order/buy/buy",
+    "pages/groupbuy/redeem/redeem",
     "pages/merchant/index/index",
     "pages/merchant/redeem/redeem"
   ],

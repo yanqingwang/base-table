@@ -45,6 +45,10 @@ Page({
     wx.navigateTo({ url: '/pages/card/claim/claim' });
   },
 
+  goGroupBuy() {
+    wx.navigateTo({ url: '/pages/groupbuy/redeem/redeem' });
+  },
+
   onPullDownRefresh() {
     this.load().then(() => wx.stopPullDownRefresh());
   },

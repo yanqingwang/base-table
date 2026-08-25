@@ -65,6 +65,58 @@ try:
                 if 'note' not in _cols:
                     _conn.execute(_text("ALTER TABLE checkins ADD COLUMN note TEXT NULL"))
                     _conn.commit()
+                # quotas 表补列：default_deduct
+                _qcols = {r[0] for r in _conn.execute(_text(
+                    "SELECT COLUMN_NAME FROM information_schema.COLUMNS "
+                    "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'quotas'"))}
+                if 'default_deduct' not in _qcols:
+                    _conn.execute(_text("ALTER TABLE quotas ADD COLUMN default_deduct INT NULL DEFAULT 1"))
+                    _conn.commit()
+                # login_sessions 表补列：mode（账号绑定扫码会话）
+                _scols = {r[0] for r in _conn.execute(_text(
+                    "SELECT COLUMN_NAME FROM information_schema.COLUMNS "
+                    "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'login_sessions'"))}
+                if 'mode' not in _scols:
+                    _conn.execute(_text(
+                        "ALTER TABLE login_sessions ADD COLUMN mode VARCHAR(16) NOT NULL DEFAULT 'login'"))
+                    _conn.commit()
+                # cards 表补列：商业化扩展（预约冻结/生效模式/备注/归属用户）
+                _ccols = {r[0] for r in _conn.execute(_text(
+                    "SELECT COLUMN_NAME FROM information_schema.COLUMNS "
+                    "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cards'"))}
+                if 'held_times' not in _ccols:
+                    _conn.execute(_text("ALTER TABLE cards ADD COLUMN held_times INT NULL DEFAULT 0"))
+                    _conn.commit()
+                if 'effective_mode' not in _ccols:
+                    _conn.execute(_text(
+                        "ALTER TABLE cards ADD COLUMN effective_mode VARCHAR(16) NULL DEFAULT 'claim'"))
+                    _conn.commit()
+                if 'issue_note' not in _ccols:
+                    _conn.execute(_text("ALTER TABLE cards ADD COLUMN issue_note TEXT NULL"))
+                    _conn.commit()
+                if 'owner_user_id' not in _ccols:
+                    _conn.execute(_text("ALTER TABLE cards ADD COLUMN owner_user_id INT NULL"))
+                    _conn.commit()
+                # card_templates 表补列：退费规则结构化（D 任务）
+                _tcols = {r[0] for r in _conn.execute(_text(
+                    "SELECT COLUMN_NAME FROM information_schema.COLUMNS "
+                    "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'card_templates'"))}
+                for _col, _ddl in (
+                    ('refund_rule', "ALTER TABLE card_templates ADD COLUMN refund_rule TEXT NULL"),
+                    ('refund_rule_type', "ALTER TABLE card_templates ADD COLUMN refund_rule_type VARCHAR(16) NULL DEFAULT 'prorata_by_used'"),
+                    ('deduct_per_use_cents', "ALTER TABLE card_templates ADD COLUMN deduct_per_use_cents INT NULL"),
+                    ('max_refund_cents', "ALTER TABLE card_templates ADD COLUMN max_refund_cents INT NULL"),
+                ):
+                    if _col not in _tcols:
+                        _conn.execute(_text(_ddl))
+                        _conn.commit()
+                # orders 表补列：ref_template_id（C 任务 订单/支付闭环）
+                _ocols = {r[0] for r in _conn.execute(_text(
+                    "SELECT COLUMN_NAME FROM information_schema.COLUMNS "
+                    "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders'"))}
+                if 'ref_template_id' not in _ocols:
+                    _conn.execute(_text("ALTER TABLE orders ADD COLUMN ref_template_id INT NULL"))
+                    _conn.commit()
             else:
                 # SQLite：PRAGMA 检查列，缺失则 ALTER TABLE 补列
                 _cols = {r[1] for r in _conn.execute(_text("PRAGMA table_info(checkins)"))}
@@ -74,12 +126,61 @@ try:
                 if 'note' not in _cols:
                     _conn.execute(_text("ALTER TABLE checkins ADD COLUMN note TEXT NULL"))
                     _conn.commit()
+                # quotas 表补列：default_deduct
+                _qcols = {r[1] for r in _conn.execute(_text("PRAGMA table_info(quotas)"))}
+                if 'default_deduct' not in _qcols:
+                    _conn.execute(_text("ALTER TABLE quotas ADD COLUMN default_deduct INTEGER DEFAULT 1"))
+                    _conn.commit()
+                # login_sessions 表补列：mode
+                _scols = {r[1] for r in _conn.execute(_text("PRAGMA table_info(login_sessions)"))}
+                if 'mode' not in _scols:
+                    _conn.execute(_text(
+                        "ALTER TABLE login_sessions ADD COLUMN mode VARCHAR(16) NOT NULL DEFAULT 'login'"))
+                    _conn.commit()
+                # cards 表补列：商业化扩展
+                _ccols = {r[1] for r in _conn.execute(_text("PRAGMA table_info(cards)"))}
+                if 'held_times' not in _ccols:
+                    _conn.execute(_text("ALTER TABLE cards ADD COLUMN held_times INTEGER DEFAULT 0"))
+                    _conn.commit()
+                if 'effective_mode' not in _ccols:
+                    _conn.execute(_text(
+                        "ALTER TABLE cards ADD COLUMN effective_mode VARCHAR(16) DEFAULT 'claim'"))
+                    _conn.commit()
+                if 'issue_note' not in _ccols:
+                    _conn.execute(_text("ALTER TABLE cards ADD COLUMN issue_note TEXT"))
+                    _conn.commit()
+                if 'owner_user_id' not in _ccols:
+                    _conn.execute(_text("ALTER TABLE cards ADD COLUMN owner_user_id INTEGER"))
+                    _conn.commit()
+                # card_templates 表补列：退费规则结构化（D 任务）
+                _tcols = {r[1] for r in _conn.execute(_text("PRAGMA table_info(card_templates)"))}
+                for _col, _ddl in (
+                    ('refund_rule', "ALTER TABLE card_templates ADD COLUMN refund_rule TEXT"),
+                    ('refund_rule_type', "ALTER TABLE card_templates ADD COLUMN refund_rule_type VARCHAR(16)"),
+                    ('deduct_per_use_cents', "ALTER TABLE card_templates ADD COLUMN deduct_per_use_cents INTEGER"),
+                    ('max_refund_cents', "ALTER TABLE card_templates ADD COLUMN max_refund_cents INTEGER"),
+                ):
+                    if _col not in _tcols:
+                        _conn.execute(_text(_ddl))
+                        _conn.commit()
+                # orders 表补列：ref_template_id（C 任务 订单/支付闭环）
+                _ocols = {r[1] for r in _conn.execute(_text("PRAGMA table_info(orders)"))}
+                if 'ref_template_id' not in _ocols:
+                    _conn.execute(_text("ALTER TABLE orders ADD COLUMN ref_template_id INTEGER"))
+                    _conn.commit()
 except Exception as _e:  # noqa: BLE001 - 迁移失败不阻塞启动
     import logging
-    logging.getLogger(__name__).warning('checkins 表迁移失败: %s', _e)
+    logging.getLogger(__name__).warning('checkins/quotas/login_sessions/cards 表迁移失败: %s', _e)
 
 # 加载控制器
 from wxcloudrun import views
+
+# 商业化扩展路由（排课/预约/销卡/退款/时间窗格/学员档案）
+try:
+    from wxcloudrun import commercial_views  # noqa: E402,F401
+except Exception as _e:  # noqa: BLE001 - 商业化扩展加载失败不阻塞主服务
+    import logging
+    logging.getLogger(__name__).warning('commercial_views 加载失败: %s', _e)
 
 # 加载配置
 app.config.from_object('config')

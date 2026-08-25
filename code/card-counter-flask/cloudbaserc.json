@@ -1,0 +1,21 @@
+{
+  "envId": "cardcount-d4gjfjexz3097d803",
+  "run": {
+    "services": [
+      {
+        "name": "flask-z9hh",
+        "path": ".",
+        "dockerfile": "Dockerfile",
+        "containerPort": 80,
+        "cpu": 0.5,
+        "mem": 1,
+        "minNum": 0,
+        "maxNum": 50,
+        "policyDetails": "cpu=60&mem=60",
+        "customLogs": "stdout",
+        "envParams": "",
+        "remark": "v2.7.0 A/C/D/B 特性接入"
+      }
+    ]
+  }
+}

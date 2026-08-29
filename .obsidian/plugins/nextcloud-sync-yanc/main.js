@@ -720,6 +720,327 @@ var init_SettingTab = __esm({
         this.render();
       }
       /**
+       * Patch a `Setting`'s `setTooltip` so the tooltip lands on the whole row (same behaviour as
+       * `makeSetting`). Used for the Settings rendered declaratively by `getSettingDefinitions()`.
+       */
+      patchTooltip(st) {
+        st.setTooltip = (tooltip) => {
+          (0, import_obsidian4.setTooltip)(st.settingEl, tooltip);
+          return st;
+        };
+        return st;
+      }
+      /**
+       * Declarative settings definitions (Obsidian 1.13.0+).
+       *
+       * Implementing this makes every control discoverable in the new settings search and, on
+       * Obsidian >= 1.13.0, drives the tab rendering (Obsidian then skips `display()`). The render
+       * callbacks below reproduce exactly the same controls as `render()`, which remains the
+       * pre-1.13.0 fallback — so behaviour is identical across versions.
+       */
+      getSettingDefinitions() {
+        var _a;
+        const s = this.plugin.settings;
+        const patch = (st) => this.patchTooltip(st);
+        const ready = () => {
+          const pw = loadAppPassword(this.app, s.passwordSecretId);
+          return s.serverUrl.trim().length > 0 && s.username.trim().length > 0 && typeof pw === "string" && pw.length > 0;
+        };
+        const def = (name, desc, render) => ({ name, desc, render });
+        const grp = (heading, items) => ({ type: "group", heading, items });
+        const excludedItems = ((_a = s.excludedFolders) != null ? _a : []).map(
+          (folder) => def(folder, "", (st) => {
+            patch(st);
+            st.setName(folder).addExtraButton((btn) => btn.setIcon("trash").setTooltip("Remove").onClick(async () => {
+              var _a2;
+              this.plugin.settings.excludedFolders = ((_a2 = this.plugin.settings.excludedFolders) != null ? _a2 : []).filter((f) => f !== folder);
+              await this.plugin.saveSettings();
+              if ((0, import_obsidian4.requireApiVersion)("1.13.0")) this.update();
+            }));
+          })
+        );
+        const configItems = s.syncConfigFolder ? CONFIG_SYNC_CATEGORIES.map((category) => def(category.label, category.description, (st) => {
+          patch(st);
+          st.setName(category.label).setDesc(category.description).setTooltip(TOOLTIPS[CONFIG_CATEGORY_TOOLTIP[category.key]]).addToggle((toggle) => toggle.setValue(this.plugin.settings.configSync[category.key]).onChange(async (value) => {
+            this.plugin.settings.configSync[category.key] = value;
+            await this.plugin.saveSettings();
+          }));
+        })) : [];
+        const top = [];
+        if (s.lastKnownServerVersion && !isSupportedNextcloudVersion(s.lastKnownServerVersion)) {
+          top.push(def("Server recommendation", "", (st) => {
+            patch(st);
+            st.settingEl.addClass("ncs-setting-warning");
+            st.settingEl.createDiv({ text: `\u26A0\uFE0F Connected Nextcloud server is ${s.lastKnownServerVersion}. Nextcloud ${MIN_NEXTCLOUD_VERSION} (Hub 26 "Winter") or later is recommended; some features may be unavailable or degrade on older servers.` });
+          }));
+        }
+        top.push({ name: "Per-vault settings", desc: "Settings are stored per-vault. Each vault can have a different Nextcloud server and user." });
+        top.push(def("Sign-in status", "", (st) => {
+          patch(st);
+          st.settingEl.empty();
+          if (ready()) {
+            st.settingEl.removeClass("ncs-auth-warning");
+            return;
+          }
+          st.settingEl.addClass("ncs-auth-warning");
+          st.settingEl.createSpan({ text: "\u26A0\uFE0F " });
+          st.settingEl.createEl("strong", { text: "Not signed in yet" });
+          st.settingEl.createDiv({ text: "Enter the server URL below, then log in (or fill in a username and app password). Syncing stays disabled until you do." });
+        }));
+        top.push({
+          name: "Sync now",
+          desc: "Sync this vault with Nextcloud. Available once the server URL, username and app password are set.",
+          disabled: () => !ready(),
+          action: () => {
+            void this.plugin.runSyncNow();
+          }
+        });
+        const nextcloudGroup = grp("Nextcloud", [
+          def("Server URL", SERVER_URL_DESC, (st) => {
+            patch(st);
+            st.setName("Server URL").setDesc(SERVER_URL_DESC).setTooltip(TOOLTIPS.serverUrl).addText((text) => text.setPlaceholder("https://cloud.example.com/remote.php/dav/files/alice/").setValue(s.serverUrl).onChange(async (value) => {
+              s.serverUrl = value.trim();
+              await this.plugin.saveSettings();
+              if ((0, import_obsidian4.requireApiVersion)("1.13.0")) this.refreshDomState();
+            }));
+          }),
+          { name: "Sign-in", desc: SIGN_IN_HELP },
+          {
+            name: "Log in via browser (Nextcloud) \u2014 recommended",
+            desc: "Use Nextcloud login flow v2 to obtain an app password automatically. Requires the server URL above. Falls back to manual entry on non-nextcloud servers.",
+            disabled: () => s.serverUrl.trim().length === 0,
+            action: () => {
+              void this.runLoginFlow();
+            }
+          },
+          { name: "", desc: SIGN_IN_MANUAL_DIVIDER },
+          def("Username", "Nextcloud username (vault-specific). Only needed for manual sign-in.", (st) => {
+            patch(st);
+            st.setName("Username").setDesc("Nextcloud username (vault-specific). Only needed for manual sign-in.").setTooltip(TOOLTIPS.username).addText((text) => text.setValue(s.username).onChange(async (value) => {
+              s.username = value.trim();
+              await this.plugin.saveSettings();
+              if ((0, import_obsidian4.requireApiVersion)("1.13.0")) this.refreshDomState();
+            }));
+          }),
+          def("App password", `Nextcloud app password (only for manual sign-in). Click "Link\u2026" to store it in Obsidian's encrypted Secret Storage (never saved in data.json). Generate at Settings \u2192 Security \u2192 Devices & Sessions.`, (st) => {
+            patch(st);
+            st.setName("App password").setDesc(`Nextcloud app password (only for manual sign-in). Click "Link\u2026" to store it in Obsidian's encrypted Secret Storage (never saved in data.json). Generate at Settings \u2192 Security \u2192 Devices & Sessions.`).setTooltip(TOOLTIPS.appPassword).addComponent((el) => new import_obsidian4.SecretComponent(this.app, el).setValue(s.passwordSecretId || DEFAULT_PASSWORD_SECRET_ID).onChange(async (secretId) => {
+              s.passwordSecretId = secretId;
+              await this.plugin.saveSettings();
+              if ((0, import_obsidian4.requireApiVersion)("1.13.0")) this.refreshDomState();
+            }));
+          }),
+          def("Sync folder", "Fixed to this vault's name. The entire vault is synced under a remote folder named after the vault.", (st) => {
+            patch(st);
+            st.setName("Sync folder").setDesc("Fixed to this vault's name. The entire vault is synced under a remote folder named after the vault.").setTooltip(TOOLTIPS.syncFolder).addText((text) => text.setValue(this.app.vault.getName()).setDisabled(true));
+          }),
+          def("Sync target (WebDAV)", this.syncTargetUrl(), (st) => {
+            patch(st);
+            st.setName("Sync target (WebDAV)").setDesc(this.syncTargetUrl()).setTooltip(TOOLTIPS.syncTarget);
+            st.descEl.addClass("ncs-break-all");
+          })
+        ]);
+        const syncGroup = grp("Sync", [
+          def("Startup sync delay (seconds)", "Wait this many seconds after startup before the startup sync. 0 = no startup sync.", (st) => {
+            patch(st);
+            this.addNumberSlider(st, { name: "Startup sync delay (seconds)", desc: "Wait this many seconds after startup before the startup sync. 0 = no startup sync.", tooltip: TOOLTIPS.startupSyncDelay, ...SLIDER_LIMITS.startupSyncDelay, get: () => s.startupSyncDelaySeconds, set: (v) => {
+              s.startupSyncDelaySeconds = v;
+            } });
+          }),
+          def("Sync interval (minutes)", import_obsidian4.Platform.isMobile ? 'Disabled on mobile (the OS suspends background timers). Use "Sync on startup" or "Sync now".' : "0 = manual sync only", (st) => {
+            patch(st);
+            this.addNumberSlider(st, { name: "Sync interval (minutes)", desc: import_obsidian4.Platform.isMobile ? 'Disabled on mobile (the OS suspends background timers). Use "Sync on startup" or "Sync now".' : "0 = manual sync only", tooltip: TOOLTIPS.syncInterval, ...SLIDER_LIMITS.syncInterval, disabled: import_obsidian4.Platform.isMobile, get: () => s.syncIntervalMinutes, set: (v) => {
+              s.syncIntervalMinutes = v;
+            }, apply: () => this.plugin.applyAutoSyncInterval() });
+          }),
+          def("Network timeout (seconds)", "", (st) => {
+            patch(st);
+            this.addNumberSlider(st, { name: "Network timeout (seconds)", tooltip: TOOLTIPS.networkTimeout, ...SLIDER_LIMITS.networkTimeout, get: () => s.networkTimeoutSeconds, set: (v) => {
+              s.networkTimeoutSeconds = v;
+            } });
+          }),
+          def("Network concurrency", "Number of simultaneous WebDAV requests. Higher is faster but uses more memory/connections. Mobile defaults to a lower value.", (st) => {
+            patch(st);
+            this.addNumberSlider(st, { name: "Network concurrency", desc: "Number of simultaneous WebDAV requests. Higher is faster but uses more memory/connections. Mobile defaults to a lower value.", tooltip: TOOLTIPS.networkConcurrency, ...SLIDER_LIMITS.networkConcurrency, get: () => s.networkConcurrency, set: (v) => {
+              s.networkConcurrency = v;
+            } });
+          }),
+          def("Sync on Wi-Fi only", import_obsidian4.Platform.isIosApp ? "Not available on iOS (no network-type API). The app cannot tell Wi-Fi from cellular here." : "Skip syncing while on a cellular connection (Wi-Fi and wired are allowed).", (st) => {
+            patch(st);
+            st.setName("Sync on Wi-Fi only").setDesc(import_obsidian4.Platform.isIosApp ? "Not available on iOS (no network-type API). The app cannot tell Wi-Fi from cellular here." : "Skip syncing while on a cellular connection (Wi-Fi and wired are allowed).").setTooltip(TOOLTIPS.syncOnWifiOnly).addToggle((toggle) => toggle.setValue(s.syncOnWifiOnly && !import_obsidian4.Platform.isIosApp).setDisabled(import_obsidian4.Platform.isIosApp).onChange(async (value) => {
+              s.syncOnWifiOnly = value;
+              await this.plugin.saveSettings();
+            }));
+          }),
+          def("Sync on file change", import_obsidian4.Platform.isMobile ? 'Disabled on mobile (the OS suspends background work). Use "Sync on startup" or "Sync now".' : "Immediately sync a file or folder right after you create, edit, delete, or rename it (a short delay after you stop editing a file). Deletions and renames propagate too. Works alongside the periodic sync interval. Desktop only.", (st) => {
+            patch(st);
+            st.setName("Sync on file change").setDesc(import_obsidian4.Platform.isMobile ? 'Disabled on mobile (the OS suspends background work). Use "Sync on startup" or "Sync now".' : "Immediately sync a file or folder right after you create, edit, delete, or rename it (a short delay after you stop editing a file). Deletions and renames propagate too. Works alongside the periodic sync interval. Desktop only.").setTooltip(TOOLTIPS.syncOnFileChange).addToggle((toggle) => toggle.setValue(s.watchOnChangeEnabled && !import_obsidian4.Platform.isMobile).setDisabled(import_obsidian4.Platform.isMobile).onChange(async (value) => {
+              s.watchOnChangeEnabled = value;
+              await this.plugin.saveSettings();
+            }));
+          }),
+          def("Maximum file size (MB)", "Files larger than this are skipped with a warning, in both directions (upload and download). 0 = unlimited. On mobile a low limit avoids out-of-memory crashes.", (st) => {
+            patch(st);
+            this.addNumberSlider(st, { name: "Maximum file size (MB)", desc: "Files larger than this are skipped with a warning, in both directions (upload and download). 0 = unlimited. On mobile a low limit avoids out-of-memory crashes.", tooltip: TOOLTIPS.maxFileSize, ...SLIDER_LIMITS.maxFileSize, get: () => s.maxFileSizeMB, set: (v) => {
+              s.maxFileSizeMB = v;
+            } });
+          })
+        ]);
+        const conflictGroup = grp("Conflict resolution", [
+          def("Auto merge file types", 'Comma-separated file extensions treated as "auto merge files", such as md, txt or py. These use the auto merge file strategy below; every other file uses the other file strategy. Clear the field to route every file through the other file strategy.', (st) => {
+            patch(st);
+            st.setName("Auto merge file types").setDesc('Comma-separated file extensions treated as "auto merge files", such as md, txt or py. These use the auto merge file strategy below; every other file uses the other file strategy. Clear the field to route every file through the other file strategy.').setTooltip(TOOLTIPS.autoMergeFileTypes).addText((text) => text.setPlaceholder("Comma-separated extensions").setValue(formatMergeableExtensions(s.autoMergeFileTypes)).onChange(async (value) => {
+              s.autoMergeFileTypes = parseMergeableExtensions(value);
+              await this.plugin.saveSettings();
+            }));
+          }),
+          def("Auto merge file strategy", "How to resolve a conflict on an auto merge file. Merge attempts a 3-way merge (clean \u2192 merged, text conflict \u2192 markers, non-text \u2192 held untouched); the others pick one side deterministically.", (st) => {
+            patch(st);
+            st.setName("Auto merge file strategy").setDesc("How to resolve a conflict on an auto merge file. Merge attempts a 3-way merge (clean \u2192 merged, text conflict \u2192 markers, non-text \u2192 held untouched); the others pick one side deterministically.").setTooltip(TOOLTIPS.autoMergeFileStrategy).addDropdown((dd) => dd.addOption("merge", "Merge").addOption("biggest-size", "Biggest size").addOption("latest-mtime", "Latest modified").addOption("local-win", "Local wins").addOption("remote-win", "Remote wins").setValue(s.autoMergeFileStrategy).onChange(async (value) => {
+              s.autoMergeFileStrategy = value;
+              await this.plugin.saveSettings();
+            }));
+          }),
+          def("Other file strategy", "How to resolve a conflict on every other file (images, PDFs, config JSON, \u2026). Latest modified keeps the newer side; Biggest size keeps the larger; Local/remote wins always keep that side.", (st) => {
+            patch(st);
+            st.setName("Other file strategy").setDesc("How to resolve a conflict on every other file (images, PDFs, config JSON, \u2026). Latest modified keeps the newer side; Biggest size keeps the larger; Local/remote wins always keep that side.").setTooltip(TOOLTIPS.otherFileStrategy).addDropdown((dd) => dd.addOption("biggest-size", "Biggest size").addOption("latest-mtime", "Latest modified").addOption("local-win", "Local wins").addOption("remote-win", "Remote wins").setValue(s.otherFileStrategy).onChange(async (value) => {
+              s.otherFileStrategy = value;
+              await this.plugin.saveSettings();
+            }));
+          }),
+          def("Frontmatter strategy", "How to resolve a conflict on a Markdown note\u2019s frontmatter, independently of the body. Merge does a semantic merge (array fields such as tags/aliases union-merge; a scalar clash is decided by the conflict strategy below); the other four adopt one whole side\u2019s frontmatter block. Applies to every Markdown note regardless of the body strategy.", (st) => {
+            patch(st);
+            st.setName("Frontmatter strategy").setDesc("How to resolve a conflict on a Markdown note\u2019s frontmatter, independently of the body. Merge does a semantic merge (array fields such as tags/aliases union-merge; a scalar clash is decided by the conflict strategy below); the other four adopt one whole side\u2019s frontmatter block. Applies to every Markdown note regardless of the body strategy.").setTooltip(TOOLTIPS.frontmatterStrategy).addDropdown((dd) => dd.addOption("merge", "Merge").addOption("biggest-size", "Biggest size").addOption("latest-mtime", "Latest modified").addOption("local-win", "Local wins").addOption("remote-win", "Remote wins").setValue(s.frontmatterStrategy).onChange(async (value) => {
+              s.frontmatterStrategy = value;
+              await this.plugin.saveSettings();
+            }));
+          }),
+          def("Conflict strategy", "When merge cannot auto-resolve a part (a body line both sides changed, or a clashing frontmatter field), this decides the outcome. Conflict markers keeps both sides (frontmatter falls back to latest modified \u2014 markers can\u2019t live in the --- block); the others pick one side per conflicting part. Only fires for the merge strategy.", (st) => {
+            patch(st);
+            st.setName("Conflict strategy").setDesc("When merge cannot auto-resolve a part (a body line both sides changed, or a clashing frontmatter field), this decides the outcome. Conflict markers keeps both sides (frontmatter falls back to latest modified \u2014 markers can\u2019t live in the --- block); the others pick one side per conflicting part. Only fires for the merge strategy.").setTooltip(TOOLTIPS.conflictStrategy).addDropdown((dd) => dd.addOption("conflict-markers", "Conflict markers").addOption("biggest-size", "Biggest size").addOption("latest-mtime", "Latest modified").addOption("local-win", "Local wins").addOption("remote-win", "Remote wins").setValue(s.conflictStrategy).onChange(async (value) => {
+              s.conflictStrategy = value;
+              await this.plugin.saveSettings();
+            }));
+          })
+        ]);
+        const excludedGroup = grp("Excluded folders", [
+          { name: "Excluded folders", desc: "Folders that are never synced \u2014 neither uploaded nor downloaded. Matched by folder prefix at a folder boundary, additive on top of .git, .trash, the config plugins folder, and plugin state that are already excluded automatically." },
+          ...excludedItems,
+          def("Add excluded folder", "Choose a vault folder to stop syncing. Start typing to pick from matching folders, or open the full folder picker.", (st) => {
+            patch(st);
+            const addExcluded = async (raw) => {
+              var _a2;
+              const norm = normalizeExcludedFolder(raw);
+              if (!norm) {
+                new import_obsidian4.Notice("Enter a folder path inside the vault.");
+                return;
+              }
+              const list = (_a2 = this.plugin.settings.excludedFolders) != null ? _a2 : [];
+              if (list.includes(norm)) {
+                new import_obsidian4.Notice(`"${norm}" is already excluded.`);
+                return;
+              }
+              this.plugin.settings.excludedFolders = [...list, norm];
+              await this.plugin.saveSettings();
+              if ((0, import_obsidian4.requireApiVersion)("1.13.0")) this.update();
+            };
+            let excludeInput = null;
+            st.setName("Add excluded folder").setDesc("Choose a vault folder to stop syncing. Start typing to pick from matching folders, or open the full folder picker.").setTooltip(TOOLTIPS.addExcludedFolder).addText((text) => {
+              excludeInput = text;
+              text.setPlaceholder("Example: attachments/large media");
+              new FolderInputSuggest(this.app, text.inputEl, () => this.plugin.settings.excludedFolders, (path) => {
+                void addExcluded(path);
+              });
+            }).addButton((btn) => btn.setButtonText("Add").setCta().onClick(() => {
+              var _a2;
+              void addExcluded((_a2 = excludeInput == null ? void 0 : excludeInput.getValue()) != null ? _a2 : "");
+            }));
+          }),
+          // YANC fork toggles
+          def("Exclude hidden files", 'Never sync files whose name starts with "." (for example .env and .gitignore). Hidden files inside ordinary folders are still excluded. On by default.', (st) => {
+            patch(st);
+            st.setName("Exclude hidden files").setDesc('Never sync files whose name starts with "." (for example .env and .gitignore). Hidden files inside ordinary folders are still excluded. On by default.').setTooltip(TOOLTIPS.excludeHiddenFiles).addToggle((toggle) => toggle.setValue(s.excludeHiddenFiles).onChange(async (value) => {
+              s.excludeHiddenFiles = value;
+              await this.plugin.saveSettings();
+            }));
+          }),
+          def("Exclude dotfolders", 'Never sync folders whose name starts with "." (for example .git and .hidden) and everything inside them. This is a generalization of the always-on .git/.trash exclusion to all dotfolders. On by default.', (st) => {
+            patch(st);
+            st.setName("Exclude dotfolders").setDesc('Never sync folders whose name starts with "." (for example .git and .hidden) and everything inside them. This is a generalization of the always-on .git/.trash exclusion to all dotfolders. On by default.').setTooltip(TOOLTIPS.excludeDotFolders).addToggle((toggle) => toggle.setValue(s.excludeDotFolders).onChange(async (value) => {
+              s.excludeDotFolders = value;
+              await this.plugin.saveSettings();
+            }));
+          })
+        ]);
+        const configGroup = grp(`Config folder (${this.app.vault.configDir})`, [
+          def("Sync config folder", `Opt in to syncing parts of the ${this.app.vault.configDir} config folder across devices. Off by default \u2014 only notes and other vault files sync. Community plugins are never synced (their files stay device-local). A synced change to core-plugin settings may need an Obsidian restart to take effect on the other device.`, (st) => {
+            patch(st);
+            st.setName("Sync config folder").setDesc(`Opt in to syncing parts of the ${this.app.vault.configDir} config folder across devices. Off by default \u2014 only notes and other vault files sync. Community plugins are never synced (their files stay device-local). A synced change to core-plugin settings may need an Obsidian restart to take effect on the other device.`).setTooltip(TOOLTIPS.syncConfigFolder).addToggle((toggle) => toggle.setValue(s.syncConfigFolder).onChange(async (value) => {
+              s.syncConfigFolder = value;
+              await this.plugin.saveSettings();
+              if ((0, import_obsidian4.requireApiVersion)("1.13.0")) this.update();
+            }));
+          }),
+          ...configItems
+        ]);
+        const debugGroup = grp("Debug", [
+          def("Enable logging (troubleshooting)", 'Write a single per-device log file (nextcloud-debug_<device>.txt) to the vault root while troubleshooting. The device name is derived automatically and the location is fixed to the vault root. To see the file inside Obsidian, turn on Settings \u2192 Files & Links \u2192 "Detect all file extensions" (otherwise open it via your OS or Nextcloud). Turn this off and delete the file when finished.', (st) => {
+            patch(st);
+            st.setName("Enable logging (troubleshooting)").setDesc('Write a single per-device log file (nextcloud-debug_<device>.txt) to the vault root while troubleshooting. The device name is derived automatically and the location is fixed to the vault root. To see the file inside Obsidian, turn on Settings \u2192 Files & Links \u2192 "Detect all file extensions" (otherwise open it via your OS or Nextcloud). Turn this off and delete the file when finished.').setTooltip(TOOLTIPS.loggingEnabled).addToggle((toggle) => toggle.setValue(s.loggingEnabled).onChange(async (value) => {
+              s.loggingEnabled = value;
+              await this.plugin.saveSettings();
+              if (value) {
+                void this.plugin.logSettingsSnapshot();
+                new import_obsidian4.Notice(`Nextcloud Sync: logging to "${this.plugin.logFilePath()}" (vault root). Enable "Detect all file extensions" to see it in Obsidian.`, 1e4);
+              }
+            }));
+          })
+        ]);
+        const advancedGroup = grp("Advanced (use with caution)", [
+          def("Mass-delete safety limit", "Most files/folders one sync may delete locally when they vanish from the server \u2014 the guard that stops a partial or failed remote listing from wiping your vault. -1 = automatic (recommended): the built-in limit of max(20, 20% of tracked files). 0 = no limit (risky \u2014 a broken listing could delete everything locally). A positive number sets a fixed limit. Raise this only if a legitimate large deletion was blocked.", (st) => {
+            patch(st);
+            st.setName("Mass-delete safety limit").setDesc("Most files/folders one sync may delete locally when they vanish from the server \u2014 the guard that stops a partial or failed remote listing from wiping your vault. -1 = automatic (recommended): the built-in limit of max(20, 20% of tracked files). 0 = no limit (risky \u2014 a broken listing could delete everything locally). A positive number sets a fixed limit. Raise this only if a legitimate large deletion was blocked.").setTooltip(TOOLTIPS.massDeleteLimit).addText((text) => text.setPlaceholder("-1").setValue(String(s.massDeleteLimit)).onChange(async (value) => {
+              s.massDeleteLimit = normalizeNumericInput(value, -1, 1e6, s.massDeleteLimit);
+              await this.plugin.saveSettings();
+            }));
+          })
+        ]);
+        const maintenanceGroup = grp("Maintenance", [
+          {
+            name: "Reset vault index",
+            desc: "Clear this device's sync tracking index so the plugin returns to its first-install state. No vault or remote files are deleted; the next sync performs a full re-scan. Use this if the sync state looks inconsistent.",
+            action: () => {
+              void this.plugin.resetVaultIndex();
+            }
+          },
+          {
+            name: "Mirror from remote",
+            desc: 'Force this device\u2019s vault to exactly match the remote: download everything the remote has, and delete local files and folders that are not on the remote (honoring your Obsidian "deleted files" setting, so removals are recoverable). Unsynced local changes are discarded. A confirmation shows how many files will be downloaded and deleted before anything happens. Use this to make a device follow the remote after migrating from another sync tool.',
+            action: () => {
+              void this.plugin.runRemoteMirror();
+            }
+          },
+          {
+            name: "Last session summary",
+            desc: "Open the sync status dialog: recent activity grouped by sync run, conflicts, retries, and errors.",
+            action: () => {
+              this.plugin.openSyncStatus();
+            }
+          }
+        ]);
+        return [
+          ...top,
+          nextcloudGroup,
+          syncGroup,
+          conflictGroup,
+          excludedGroup,
+          configGroup,
+          debugGroup,
+          advancedGroup,
+          maintenanceGroup
+        ];
+      }
+      /**
        * Build the settings UI. Kept separate from display() so the panel can be re-rendered
        * (e.g. after Login Flow) without calling the deprecated PluginSettingTab.display().
        */
@@ -804,7 +1125,7 @@ var init_SettingTab = __esm({
         targetSetting = makeSetting(containerEl).setName("Sync target (WebDAV)").setDesc(this.syncTargetUrl()).setTooltip(TOOLTIPS.syncTarget);
         targetSetting.descEl.addClass("ncs-break-all");
         new import_obsidian4.Setting(containerEl).setName("Sync").setHeading();
-        this.addNumberSlider(containerEl, {
+        this.addNumberSlider(makeSetting(containerEl), {
           name: "Startup sync delay (seconds)",
           desc: "Wait this many seconds after startup before the startup sync. 0 = no startup sync.",
           tooltip: TOOLTIPS.startupSyncDelay,
@@ -814,7 +1135,7 @@ var init_SettingTab = __esm({
             this.plugin.settings.startupSyncDelaySeconds = v;
           }
         });
-        this.addNumberSlider(containerEl, {
+        this.addNumberSlider(makeSetting(containerEl), {
           name: "Sync interval (minutes)",
           desc: import_obsidian4.Platform.isMobile ? 'Disabled on mobile (the OS suspends background timers). Use "Sync on startup" or "Sync now".' : "0 = manual sync only",
           tooltip: TOOLTIPS.syncInterval,
@@ -828,7 +1149,7 @@ var init_SettingTab = __esm({
           // a plugin reload — previously the timer kept the value from load time.
           apply: () => this.plugin.applyAutoSyncInterval()
         });
-        this.addNumberSlider(containerEl, {
+        this.addNumberSlider(makeSetting(containerEl), {
           name: "Network timeout (seconds)",
           tooltip: TOOLTIPS.networkTimeout,
           ...SLIDER_LIMITS.networkTimeout,
@@ -837,7 +1158,7 @@ var init_SettingTab = __esm({
             this.plugin.settings.networkTimeoutSeconds = v;
           }
         });
-        this.addNumberSlider(containerEl, {
+        this.addNumberSlider(makeSetting(containerEl), {
           name: "Network concurrency",
           desc: "Number of simultaneous WebDAV requests. Higher is faster but uses more memory/connections. Mobile defaults to a lower value.",
           tooltip: TOOLTIPS.networkConcurrency,
@@ -857,7 +1178,7 @@ var init_SettingTab = __esm({
           this.plugin.settings.watchOnChangeEnabled = value;
           await this.plugin.saveSettings();
         }));
-        this.addNumberSlider(containerEl, {
+        this.addNumberSlider(makeSetting(containerEl), {
           name: "Maximum file size (MB)",
           desc: "Files larger than this are skipped with a warning, in both directions (upload and download). 0 = unlimited. On mobile a low limit avoids out-of-memory crashes.",
           tooltip: TOOLTIPS.maxFileSize,
@@ -998,9 +1319,9 @@ var init_SettingTab = __esm({
        * Add a numeric slider setting. It includes a numeric popup while dragging (dynamic tooltip)
        * and a label that always shows the current value.
        */
-      addNumberSlider(containerEl, opts) {
+      addNumberSlider(setting, opts) {
         var _a;
-        const setting = makeSetting(containerEl).setName(opts.name);
+        setting.setName(opts.name);
         if (opts.desc) setting.setDesc(opts.desc);
         if (opts.tooltip) setting.setTooltip(opts.tooltip);
         const numInput = setting.controlEl.createEl("input", {

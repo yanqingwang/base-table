@@ -1,0 +1,441 @@
+/* Nextcloud Sync — plugin styles.
+   Classes are prefixed `ncs-` to avoid collisions. Dynamic state is expressed
+   through `.is-*` modifier classes rather than inline styles. */
+
+/* ── Settings tab ───────────────────────────────────────────────────────── */
+.ncs-auth-warning {
+  border: 1px solid var(--text-error, #e93147);
+  border-left: 4px solid var(--text-error, #e93147);
+  background: var(--background-modifier-error);
+  color: var(--text-error, #e93147);
+  padding: 10px 12px;
+  margin: 4px 0 16px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.ncs-auth-warning div {
+  margin-top: 4px;
+  font-weight: 400;
+  color: var(--text-normal);
+}
+
+.ncs-setting-warning {
+  border-left: 3px solid var(--text-warning, #d08770);
+  background: var(--background-secondary);
+  padding: 8px 12px;
+  margin: 8px 0 16px;
+  border-radius: 4px;
+}
+
+.ncs-break-all {
+  word-break: break-all;
+}
+
+.ncs-slider-value {
+  margin-right: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Editable numeric input paired with each settings slider (spec 036): keyboard entry of exact
+   values the coarse slider step cannot reach. Fixed, non-shrinking width so the slider beside it
+   keeps the remaining width.
+   IMPORTANT (mobile fix): Obsidian phone CSS forces bare inputs to full width via
+   `.is-phone .setting-item-control input { width: 100%; margin: 0 }` (specificity 0,2,1). Without a
+   stronger selector the numeric box expands to the whole row and pushes the slider off-screen. These
+   selectors (0,2,1 desktop / 0,3,1 phone) outrank it and pin the box to a compact width. */
+.setting-item-control input.ncs-slider-num,
+.is-phone .setting-item-control input.ncs-slider-num {
+  flex: 0 0 4.5em;
+  width: 4.5em;
+  min-width: 4.5em;
+  margin: 0 10px 0 0;
+  text-align: right;
+}
+
+/* Let the paired slider take the remaining width and shrink instead of overflowing. */
+.setting-item-control .slider {
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .setting-item-control input.ncs-slider-num,
+  .is-phone .setting-item-control input.ncs-slider-num {
+    flex-basis: 4em;
+    width: 4em;
+    min-width: 4em;
+    margin-right: 8px;
+  }
+}
+
+/* ── Debug preview modal ─────────────────────────────────────────────────── */
+.ncs-debug-modal {
+  width: min(900px, 95vw);
+}
+
+.ncs-debug-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 8px;
+}
+
+.ncs-debug-list {
+  max-height: 50vh;
+  overflow: auto;
+  font-family: var(--font-monospace);
+  font-size: 12px;
+}
+
+.ncs-debug-row {
+  padding: 3px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: pre;
+}
+
+.ncs-debug-row:hover {
+  background: var(--background-modifier-hover);
+}
+
+/* ── Dry-run preview modal (initial sync approval) ───────────────────────── */
+.ncs-dryrun-note {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin: 2px 0 6px;
+}
+
+.ncs-dryrun-conflict {
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+
+.ncs-dryrun-conflict:hover {
+  background: var(--background-modifier-hover);
+  text-decoration: underline;
+}
+
+/* ── Sync status dialog (status-bar click) ───────────────────────────────── */
+.ncs-status-list {
+  max-height: 50vh;
+  overflow: auto;
+  font-family: var(--font-monospace);
+  font-size: 12px;
+  margin: 4px 0 8px;
+}
+
+.ncs-status-row {
+  padding: 3px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.ncs-status-row:hover {
+  background: var(--background-modifier-hover);
+}
+
+/* Deleted entries are not clickable (clicking would recreate the note), so they keep the
+   default cursor instead of the pointer applied to interactive rows above. */
+.ncs-status-row-static {
+  cursor: default;
+}
+
+/* Feature 041: a conflict row carries the (clickable) path plus a force-resolution dropdown + Apply.
+   Flex with wrap so the controls sit beside the path on desktop and drop below it on narrow (mobile)
+   widths — no fixed 4-button strip that would overflow. The row itself is not clickable (only the
+   path span is), so reset the pointer cursor inherited from .ncs-status-row. */
+.ncs-conflict-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  cursor: default;
+}
+
+.ncs-conflict-path {
+  flex: 1 1 auto;
+  min-width: 0;
+  cursor: pointer;
+  word-break: break-all;
+}
+
+.ncs-conflict-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.ncs-conflict-select {
+  max-width: 160px;
+}
+
+/* Feature 042: bulk-resolve row above the per-file conflict list. Styled as a Setting so it reads
+   as a deliberate, higher-level action distinct from the compact per-file rows below it. */
+.ncs-bulk-conflict-row {
+  background: var(--background-secondary);
+  border-radius: var(--radius-s, 4px);
+  padding: 4px 12px;
+  margin-bottom: 8px;
+}
+
+.ncs-bulk-conflict-row .setting-item-name {
+  font-size: var(--font-ui-small);
+}
+
+.ncs-bulk-conflict-row .setting-item-description {
+  font-size: var(--font-ui-smaller);
+}
+
+/* Recent-activity (24h) history: bounded height with an always-visible vertical scrollbar
+   so a long list stays compact and its scroll position is obvious. */
+.ncs-history-list {
+  max-height: 240px;
+  overflow-y: scroll;
+  overflow-x: auto;
+}
+
+/* One compact line per entry: leading status icon + path (grows) + muted time (right). The
+   icon alone encodes the outcome, so the status word no longer takes a separate line. */
+.ncs-history-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.ncs-history-icon {
+  flex: 0 0 auto;
+}
+
+.ncs-history-path {
+  flex: 1 1 auto;
+  word-break: break-all;
+}
+
+.ncs-history-time {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.ncs-history-errmsg {
+  margin-left: 22px; /* align under the path, past the icon */
+}
+
+/* Separator heading introducing one sync run's group of recent-activity entries. */
+.ncs-history-run-sep {
+  margin: 8px 0 2px;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  text-align: center;
+}
+.ncs-history-run-sep:first-child {
+  margin-top: 0;
+}
+
+/* ── Diff / merge preview modal ──────────────────────────────────────────── */
+.ncs-diff-modal {
+  width: min(1100px, 95vw);
+}
+
+.ncs-diff-controls {
+  margin: 4px 0 8px;
+}
+
+.ncs-diff-btn {
+  margin-right: 6px;
+}
+
+.ncs-diff-headers {
+  display: flex;
+  font-weight: bold;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.ncs-diff-header-cell {
+  flex: 1;
+  padding: 4px 8px;
+}
+
+.ncs-diff-scroll {
+  max-height: 60vh;
+  overflow-y: scroll; /* always show vertical scrollbar so position is visible */
+  overflow-x: auto;
+  font-family: var(--font-monospace);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ncs-diff-section-header {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 2px 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-muted);
+}
+
+.ncs-diff-section-header.is-changed {
+  background: color-mix(in srgb, var(--color-yellow) 18%, transparent);
+  color: var(--text-warning);
+}
+
+.ncs-diff-row {
+  display: flex;
+  align-items: baseline;
+}
+
+/* Each row holds two sides (local | remote): side by side on wide screens, stacked on narrow. */
+.ncs-diff-side {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: baseline;
+}
+
+.ncs-diff-side-left {
+  border-right: 1px solid var(--background-modifier-border);
+}
+
+.ncs-diff-gutter {
+  width: 32px;
+  min-width: 32px;
+  text-align: right;
+  padding: 0 4px;
+  color: var(--text-faint);
+  user-select: none;
+  font-size: 10px;
+}
+
+.ncs-diff-marker {
+  width: 14px;
+  min-width: 14px;
+  text-align: center;
+  user-select: none;
+  font-weight: bold;
+  color: transparent;
+}
+
+.ncs-diff-marker.is-del {
+  color: var(--color-red);
+}
+
+.ncs-diff-marker.is-add {
+  color: var(--color-green);
+}
+
+.ncs-diff-cell {
+  flex: 1;
+  padding: 0 4px;
+  background: transparent;
+}
+
+.ncs-diff-cell.is-del {
+  background: color-mix(in srgb, var(--color-red) 20%, transparent);
+}
+
+.ncs-diff-cell.is-add {
+  background: color-mix(in srgb, var(--color-green) 20%, transparent);
+}
+
+/* Narrow screens (mobile): stack the two diff sides vertically instead of side by side. */
+@media (max-width: 600px) {
+  .ncs-diff-row {
+    flex-direction: column;
+  }
+
+  .ncs-diff-side-left {
+    border-right: none;
+    border-bottom: 1px solid var(--background-modifier-border);
+  }
+
+  .ncs-diff-headers {
+    flex-direction: column;
+  }
+}
+
+/* Status-filter chips in the Sync Status dialog (full-width, wraps; readable on mobile) */
+.ncs-status-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  margin: 8px 0 4px;
+}
+
+.ncs-status-filter-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-ui-small);
+  white-space: nowrap;
+  cursor: pointer;
+  /* Chip: clear bounds + comfortable tap target so the checkbox never overlaps the label. */
+  padding: 4px 10px;
+  min-height: 28px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 14px;
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.ncs-status-filter-item input[type='checkbox'] {
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.ncs-status-filter-item .ncs-status-filter-text {
+  line-height: 1.2;
+}
+
+/* Selected chip: accent border + text so on/off is obvious at a glance. */
+.ncs-status-filter-item.is-checked {
+  border-color: var(--interactive-accent);
+  background: color-mix(in srgb, var(--interactive-accent) 16%, var(--background-secondary));
+  color: var(--text-normal);
+}
+
+/* Compare-with-remote popup: local vs remote metadata table */
+.ncs-compare-meta {
+  margin: 8px 0;
+}
+
+.ncs-compare-row {
+  display: flex;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.ncs-compare-label {
+  flex: 0 0 80px;
+  color: var(--text-muted);
+}
+
+.ncs-compare-local,
+.ncs-compare-remote {
+  flex: 1;
+  font-family: var(--font-monospace);
+  word-break: break-all;
+}
+
+.ncs-compare-match {
+  color: var(--color-green);
+}
+
+.ncs-compare-mismatch {
+  color: var(--color-red);
+}

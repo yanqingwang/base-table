@@ -14,3 +14,4 @@
 .card-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 16rpx; }
 .remain { font-size: 26rpx; color: #555; }
 .arrow { color: #bbb; font-size: 36rpx; }
+.section-title { font-size: 30rpx; font-weight: 600; margin: 8rpx 0 20rpx; color: #333; }

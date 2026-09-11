@@ -18,3 +18,27 @@
 .refund-amt { font-size: 48rpx; font-weight: 700; color: #e4393c; }
 .refund-rule { font-size: 22rpx; color: #999; margin-top: 8rpx; }
 .refund-no { font-size: 26rpx; color: #c0392b; }
+.records { background: #fff; border-radius: 20rpx; padding: 32rpx; margin-top: 28rpx; }
+.records-title { font-size: 28rpx; color: #333; font-weight: 600; margin-bottom: 16rpx; }
+.record { padding: 20rpx 0; border-bottom: 2rpx solid #f0f0f5; }
+.record:last-child { border-bottom: none; }
+.record-main { display: flex; justify-content: space-between; align-items: center; }
+.record-merchant { font-size: 28rpx; color: #333; }
+.record-deduct { font-size: 28rpx; color: #e4393c; font-weight: 600; }
+.record-sub { font-size: 22rpx; color: #999; margin-top: 8rpx; }
+
+/* ── P1-4 聚合详情：商户/卡种元信息、合规徽标、凭证浮层 ── */
+.meta { font-size: 24rpx; opacity: 0.9; margin-top: 12rpx; }
+.compliance { display: inline-block; font-size: 20rpx; margin-top: 16rpx; padding: 4rpx 16rpx; border-radius: 20rpx; background: rgba(255,255,255,0.2); }
+.refund-rule-text { font-size: 24rpx; color: #666; line-height: 1.6; margin-bottom: 16rpx; }
+.records-head { display: flex; justify-content: space-between; align-items: center; }
+.records-head .records-title { margin-bottom: 16rpx; }
+.link { font-size: 24rpx; color: #5b5fc7; padding: 8rpx 0 16rpx; }
+.empty-line { font-size: 24rpx; color: #999; padding: 16rpx 0; }
+.voucher-mask { position: fixed; left: 0; top: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 99; }
+.voucher-box { width: 600rpx; background: #fff; border-radius: 20rpx; padding: 40rpx; }
+.voucher-title { font-size: 30rpx; font-weight: 600; color: #333; text-align: center; margin-bottom: 24rpx; }
+.voucher-row { display: flex; font-size: 26rpx; padding: 14rpx 0; border-bottom: 2rpx solid #f0f0f5; }
+.voucher-row .k { width: 120rpx; color: #999; flex: none; }
+.voucher-row .v { color: #333; flex: 1; }
+.voucher-rule { font-size: 22rpx; color: #999; line-height: 1.6; margin: 20rpx 0; }

@@ -32,7 +32,8 @@ Page({
 
   // 登录成功后跳转（tab 页用 switchTab，其他用 redirectTo）
   gotoAfterLogin() {
-    const tabPages = ['/pages/index/index', '/pages/checkin/checkin', '/pages/stats/stats', '/pages/rating/rating', '/pages/profile/profile'];
+    // P3-1 极简页流：tabBar 收敛为「卡包/签到/我的」三页
+    const tabPages = ['/pages/index/index', '/pages/checkin/checkin', '/pages/profile/profile'];
     if (this.redirect) {
       if (tabPages.includes(this.redirect)) {
         wx.switchTab({ url: this.redirect });

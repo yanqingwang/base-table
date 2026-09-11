@@ -56,6 +56,16 @@
       <text class="menu-text">我的卡包</text>
       <text class="menu-arrow">›</text>
     </view>
+    <view class="menu-item" bindtap="goStats">
+      <text class="menu-icon">📈</text>
+      <text class="menu-text">消费统计</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goRating">
+      <text class="menu-icon">⭐</text>
+      <text class="menu-text">我的评价</text>
+      <text class="menu-arrow">›</text>
+    </view>
     <view class="menu-item" bindtap="goMerchant">
       <text class="menu-icon">🏪</text>
       <text class="menu-text">我是商户</text>
@@ -127,7 +137,7 @@
     <view class="menu-item">
       <text class="menu-icon">ℹ️</text>
       <text class="menu-text">版本</text>
-      <text class="menu-value">2.7.0</text>
+      <text class="menu-value">2.7.2</text>
     </view>
     <view class="menu-item">
       <text class="menu-icon">🔒</text>

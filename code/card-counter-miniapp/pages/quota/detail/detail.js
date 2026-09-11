@@ -22,11 +22,8 @@ Page({
   async loadData() {
     this.setData({ loading: true });
     try {
-      // 每次进入详情页先同步云端，确保签到明细最新
-      if (!app.globalData.token) {
-        await app.wechatLogin();
-      }
-      await syncManager.pull(app);
+      // 登录为可选：本地优先，云端同步尽力而为（失败不影响本地使用）
+      await app.bestEffortSync();
       const quotas = storage.getQuotas() || [];
       const normalized = quotas.map(util.normalizeQuota);
       const quota = normalized.find(q => q.localId === this.data.quotaId || String(q.id) === this.data.quotaId);

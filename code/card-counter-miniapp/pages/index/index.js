@@ -26,11 +26,8 @@ Page({
   async loadData() {
     this.setData({ loading: true, error: '' });
     try {
-      if (!app.globalData.token) {
-        await app.wechatLogin();
-      }
-      // 进入首页先拉取云端，保持本地与云端一致
-      await syncManager.pull(app);
+      // 登录为可选：本地优先，云端同步尽力而为（失败不影响本地使用）
+      await app.bestEffortSync();
 
       const quotas = (storage.getQuotas() || []).map(util.normalizeQuota);
       const syncStatus = storage.getSyncStatus();

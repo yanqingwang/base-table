@@ -27,11 +27,8 @@ Page({
   async loadData() {
     this.setData({ loading: true });
     try {
-      // 每次进入统计页先同步云端
-      if (!app.globalData.token) {
-        await app.wechatLogin();
-      }
-      await syncManager.pull(app);
+      // 登录为可选：本地优先，云端同步尽力而为（失败不影响本地使用）
+      await app.bestEffortSync();
       const quotas = storage.getQuotas() || [];
       const checkins = storage.getCheckins() || [];
       const ratings = storage.getRatings() || [];
@@ -126,6 +123,7 @@ Page({
   },
 
   goRating() {
-    wx.switchTab({ url: '/pages/rating/rating' });
+    // 评价已不是 tab 页（P3-1 收敛 tabBar），必须用 navigateTo
+    wx.navigateTo({ url: '/pages/rating/rating' });
   },
 });

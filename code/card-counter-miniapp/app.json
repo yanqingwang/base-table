@@ -30,10 +30,8 @@
     "backgroundColor": "#ffffff",
     "borderStyle": "black",
     "list": [
-      { "pagePath": "pages/index/index", "text": "次卡" },
+      { "pagePath": "pages/index/index", "text": "卡包" },
       { "pagePath": "pages/checkin/checkin", "text": "签到" },
-      { "pagePath": "pages/stats/stats", "text": "统计" },
-      { "pagePath": "pages/rating/rating", "text": "评价" },
       { "pagePath": "pages/profile/profile", "text": "我的" }
     ]
   },

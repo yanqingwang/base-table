@@ -310,12 +310,29 @@ App({
     });
   },
 
+  /**
+   * 登录为「可选」能力，不再强制。
+   * 用户默认可直接使用本地功能（次卡/签到/统计/评价）；
+   * 登录（静默或主动）后由后台同步云端，失败不影响本地使用。
+   * 因此永不强制跳转登录页。
+   */
   ensureLogin(redirect) {
-    if (this.globalData.token) {
-      return true;
+    return true; // 不再阻断页面
+  },
+
+  /**
+   * 尽力同步：本地优先，云端同步失败不影响本地数据展示/编辑。
+   * 用于各页面 loadData 中替代「先登录再 pull」的硬编码，
+   * 避免无 token / 云未就绪 / 离线时整页空白。
+   */
+  async bestEffortSync() {
+    try {
+      if (!this.globalData.token) {
+        await this.wechatLogin();
+      }
+      await syncManager.pull(this);
+    } catch (e) {
+      console.warn('云端同步跳过（离线/未登录，本地数据仍可用）:', e);
     }
-    const url = '/pages/login/login' + (redirect ? '?redirect=' + encodeURIComponent(redirect) : '');
-    wx.navigateTo({ url });
-    return false;
   },
 });

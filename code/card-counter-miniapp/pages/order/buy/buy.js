@@ -56,6 +56,7 @@ Page({
   },
 
   goMyCards() {
-    wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/card/list/list' }) });
+    // /pages/card/list/list 不是 tab 页，switchTab 会直接失败 → 用 navigateTo 兜底
+    wx.navigateBack({ fail: () => wx.navigateTo({ url: '/pages/card/list/list' }) });
   },
 });

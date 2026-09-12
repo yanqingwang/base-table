@@ -55,6 +55,8 @@
 | code/card-counter-flask/test_cardkey_port.py | 移植验证测试（19 用例） |
 | code/card-counter-miniapp/pages/card/keyredeem/ | 小程序卡密兑换页 |
 | code/card-counter-commercial/ | 演示/参考版（跨租户源头实现 + 网页双端 Demo） |
+| wk/wechat/docs/测试手册-次卡管家-2026-09-12.md | 三仓库测试 + 本地确认 + 生产验证手册 |
+| wk/wechat/docs/部署手册-次卡管家-2026-09-12.md | 部署手册（push 即发布/环境变量/验证/坑位/回退） |
 | wk/wechat/docs/跨租户集成-验收说明-2026-09-10.md | 跨租户交付验收（含运行/验证命令） |
 
 ## 经验教训速记

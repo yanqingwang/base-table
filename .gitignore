@@ -2,3 +2,4 @@ code/base-table/
 __pycache__/
 *.pyc
 *.db
+.secrets/

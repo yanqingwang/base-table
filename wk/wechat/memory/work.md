@@ -5,6 +5,16 @@
 
 ## 当前进度（截至 2026-09-12，全部实测通过）
 
+### 2026-09-12 晚 产品定位定型：commercial=Demo，flask=商业版（to B）
+- **定位**：card-counter-commercial 明确为 **Demo 演示版**（web 已改「次卡管家 Demo（演示版·非生产）」，`0ca26d4` 已上线 cardcount-web）；**card-counter-flask = 商业版**（小程序 C 端 + web B 端控制台，一套后端一套账本）。
+- **flask 新增 B端商业控制台（`9ca239b`，已上线）**：`/merchant/<id>/console`（员工 JWT 鉴权）
+  * 经营看板：`/api/merchant/console/summary` 聚合（卡/今日核销/顾客/线上收入 + 近7天趋势 + 卡密账本概况）
+  * 卡密中心：生成批次（明文码一次性 + CSV 导出）/ 核销报表（兑换率/未核销余额）/ 批次明细
+  * 对账中心：平台令牌（localStorage）→ 准确率/处理率 KPI、立即对账、差异单结单、全局账本流水
+- **本地确认（开发库实测）**：生成批次 B20260912-5DCB（3×¥50）→ 顾客兑换 ¥50 → 消费 ¥20（HMAC 回执）→ 钱包余 ¥30 → 对账 0 差异准确率 100% → 全局账本借贷平衡（seq1 兑换 / seq2 消费）。截图验证三个 Tab 全通过。
+- 回归：cardkey_port 19/19 · commercial_integration 44/44。
+- 注：flask 的对账中心平台令牌 = 服务级 `PLATFORM_ADMIN_TOKEN`（web 端 localStorage 填入）；commercial 平台裸头后门已在 `3d14c26` 加固。
+
 ### 2026-09-12 下午 生产上线完成（两服务）
 - **flask-z9hh（小程序后端）**：`-058` 跨租户栈上线 → `-059` +PLATFORM_ADMIN_TOKEN。**数据安全已核验**（DMC 直查 card_counter 库）：8 新表建成且 0 行、旧数据完好（users 108/checkins 214/quotas 22/login_sessions 22）、部署后仍有新写入。云端调试验证平台端点：对令牌 200、无/错 403。
 - **cardcount-web（网页版）**：从 09-05 的 -002 升到 `-014`。**根因复盘：commercial gunicorn.conf.py 用了 py3.12 f-string 嵌套引号语法，python:3.11 容器启动即崩 → -005 起所有流水线版本从未上线成功**（线上一直停在 -002），修复 `99055d8`。**安全加固 `3d14c26`：`X-Platform-Admin` 裸头后门（公网任何人可当平台超管）→ 必须同时携带 X-Platform-Token == PLATFORM_ADMIN_TOKEN**，公网验证 403/403/200。

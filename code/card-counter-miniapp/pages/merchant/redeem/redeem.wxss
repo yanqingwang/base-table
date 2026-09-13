@@ -1,0 +1,11 @@
+.container { padding: 32rpx; }
+.panel { background: #fff; border-radius: 16rpx; padding: 32rpx; margin-bottom: 24rpx; }
+.title { font-size: 32rpx; font-weight: 600; margin-bottom: 12rpx; }
+.hint { font-size: 24rpx; color: #999; line-height: 1.6; margin-bottom: 24rpx; }
+.input { background: #f4f4fb; border-radius: 12rpx; padding: 24rpx; font-size: 28rpx; margin-bottom: 24rpx; }
+.actions { display: flex; gap: 20rpx; }
+.btn.small { flex: 1; background: #eee; color: #333; font-size: 28rpx; line-height: 2.2; border-radius: 12rpx; }
+.btn.small.primary { background: #5b5fc7; color: #fff; }
+.result { text-align: center; font-size: 30rpx; padding: 12rpx; }
+.result.ok { color: #1a9d5a; }
+.result.err { color: #c0392b; }

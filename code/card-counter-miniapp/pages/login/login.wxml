@@ -1,0 +1,49 @@
+<view class="page">
+  <!-- Logo -->
+  <view class="logo-area">
+    <view class="logo-icon">🎟️</view>
+    <text class="logo-title">次卡管家</text>
+    <text class="logo-sub">预充值消费管理</text>
+  </view>
+
+  <!-- 错误提示 -->
+  <view wx:if="{{error}}" class="error-box">
+    <text>{{error}}</text>
+  </view>
+
+  <!-- 表单 -->
+  <view class="form-card">
+    <view class="form-item">
+      <text class="form-label">用户名</text>
+      <input class="form-input" placeholder="请输入用户名" value="{{username}}" bindinput="onUsernameInput" />
+    </view>
+    <view class="form-item">
+      <text class="form-label">密码</text>
+      <input class="form-input" password placeholder="请输入密码" value="{{password}}" bindinput="onPasswordInput" />
+    </view>
+    <view class="form-item" wx:if="{{mode === 'register'}}">
+      <text class="form-label">确认密码</text>
+      <input class="form-input" password placeholder="请再次输入密码" value="{{confirmPassword}}" bindinput="onConfirmInput" />
+    </view>
+    <view class="form-item" wx:if="{{mode === 'register'}}">
+      <text class="form-label">昵称（可选）</text>
+      <input class="form-input" placeholder="请输入昵称" value="{{nickname}}" bindinput="onNicknameInput" />
+    </view>
+
+    <button class="submit-btn" bindtap="doSubmit" loading="{{loading}}" disabled="{{loading}}">
+      {{mode === 'login' ? '登录' : '注册'}}
+    </button>
+
+    <view class="switch-link" bindtap="switchMode">
+      {{mode === 'login' ? '没有账号？去注册' : '已有账号？去登录'}}
+    </view>
+  </view>
+
+  <!-- 微信登录 -->
+  <view class="wechat-section">
+    <view class="divider"><text>或</text></view>
+    <button class="wechat-btn" bindtap="doWechatLogin" loading="{{loading}}" disabled="{{loading}}">
+      💬 微信一键登录
+    </button>
+  </view>
+</view>

@@ -1,0 +1,41 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/quota/quota",
+    "pages/quota/detail/detail",
+    "pages/checkin/checkin",
+    "pages/checkin/history/history",
+    "pages/checkin/edit/edit",
+    "pages/rating/rating",
+    "pages/stats/stats",
+    "pages/profile/profile",
+    "pages/login/login",
+    "pages/qr-login/qr-login",
+    "pages/card/claim/claim",
+    "pages/card/list/list",
+    "pages/card/detail/detail",
+    "pages/card/keyredeem/keyredeem",
+    "pages/order/buy/buy",
+    "pages/groupbuy/redeem/redeem",
+    "pages/merchant/index/index",
+    "pages/merchant/redeem/redeem"
+  ],
+  "window": {
+    "navigationBarTitleText": "次卡管家",
+    "navigationBarBackgroundColor": "#5b5fc7",
+    "navigationBarTextStyle": "white"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#5b5fc7",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      { "pagePath": "pages/index/index", "text": "卡包" },
+      { "pagePath": "pages/checkin/checkin", "text": "签到" },
+      { "pagePath": "pages/profile/profile", "text": "我的" }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

@@ -1,0 +1,42 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="loading-box">加载中...</view>
+
+  <view wx:elif="{{checkin}}" class="edit-wrap">
+    <view class="edit-card">
+      <view class="edit-row">
+        <text class="edit-label">商家</text>
+        <text class="edit-value">{{merchantText}}</text>
+      </view>
+      <view class="edit-row">
+        <text class="edit-label">扣减次数</text>
+        <input class="edit-input" type="number" value="{{deductTimes}}" bindinput="onDeductInput" />
+      </view>
+
+      <!-- 日期：可修改（今天前后 30 天） -->
+      <view class="edit-row">
+        <text class="edit-label">日期</text>
+        <picker class="edit-value" mode="date" value="{{checkin.checkinDate}}" start="{{dateStart}}" end="{{dateEnd}}" bindchange="onDateChange">
+          <view class="date-picker {{dateModified ? 'date-small' : ''}}">{{checkin.checkinDate}} {{checkin.checkinTime}}{{dateModified ? '（已改期）' : ''}} ▾</view>
+        </picker>
+      </view>
+
+      <!-- 备注：可修改 -->
+      <view class="edit-row">
+        <text class="edit-label">备注</text>
+        <input class="edit-input" value="{{note}}" placeholder="输入备注" bindinput="onNoteInput" />
+      </view>
+
+      <view wx:if="{{editLogs.length > 0}}" class="edit-logs">
+        <text class="edit-logs-title">改期记录</text>
+        <text wx:for="{{editLogs}}" wx:key="*this" class="edit-log-item">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="edit-actions">
+      <button class="act-btn save" bindtap="saveChanges" disabled="{{!canSave}}">💾 保存修改</button>
+      <button class="act-btn revoke" bindtap="revoke">↩️ 撤销签到</button>
+    </view>
+  </view>
+
+  <view wx:else class="empty-box">未找到该签到记录</view>
+</view>

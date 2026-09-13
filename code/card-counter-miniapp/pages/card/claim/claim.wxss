@@ -1,0 +1,7 @@
+.container { padding: 40rpx 32rpx; }
+.tip { font-size: 28rpx; color: #666; margin-bottom: 40rpx; line-height: 1.6; }
+.field { display: flex; align-items: center; background: #fff; border-radius: 16rpx; padding: 24rpx; margin-bottom: 32rpx; }
+.label { font-size: 28rpx; color: #333; width: 140rpx; }
+.input { flex: 1; font-size: 32rpx; letter-spacing: 4rpx; }
+.btn.primary { background: #5b5fc7; color: #fff; border-radius: 16rpx; }
+.hint { font-size: 24rpx; color: #999; margin-top: 24rpx; line-height: 1.6; }

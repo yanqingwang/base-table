@@ -1,0 +1,21 @@
+<view class="container">
+  <view class="card">
+    <view class="title">卡密兑换</view>
+    <view class="desc">输入 12 位卡密（渠道 / 合作方发放，格式如 XXXX-XXXX-XXXX），兑换后即时入账至本人钱包。</view>
+    <input class="input" placeholder="请输入卡密（如 53BP-EFNM-WRWB）" value="{{code}}" bindinput="onInput" />
+    <button class="btn primary" loading="{{redeeming}}" bindtap="onRedeem">
+      {{redeeming ? '兑换中…' : '立即兑换'}}
+    </button>
+  </view>
+  <view class="note">卡密兑换后即与本人账号绑定，一码仅可兑换一次；请妥善保管，谨防泄露。</view>
+</view>
+
+<view class="mask" wx:if="{{result}}">
+  <view class="dialog">
+    <view class="ok">✓ 兑换成功</view>
+    <view class="line">卡号 {{result.card.cardNo}}</view>
+    <view class="line">面额 ¥{{(result.card.amountCents / 100).toFixed(2)}}</view>
+    <view class="line">钱包余额 ¥{{(result.balanceCents / 100).toFixed(2)}}</view>
+    <button class="btn primary" bindtap="goMyCards">查看我的卡包</button>
+  </view>
+</view>

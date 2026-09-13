@@ -1,0 +1,20 @@
+<view class="container">
+  <view class="card">
+    <view class="title">团购券核销</view>
+    <view class="desc">输入美团/抖音等平台团购券码，核销后次卡自动发放至卡包。</view>
+    <input class="input" placeholder="请输入券码（如 GB-XXXX-1001）" value="{{code}}" bindinput="onInput" />
+    <button class="btn primary" loading="{{redeeming}}" bindtap="onRedeem">
+      {{redeeming ? '核销中…' : '立即核销'}}
+    </button>
+  </view>
+  <view class="note">券码核销后即与本人账号绑定，不可重复核销。</view>
+</view>
+
+<view class="mask" wx:if="{{result}}">
+  <view class="dialog">
+    <view class="ok">✓ 核销成功</view>
+    <view class="line">次卡已发放至卡包</view>
+    <view class="line">券码 {{result.code}}</view>
+    <button class="btn primary" bindtap="goMyCards">查看我的卡包</button>
+  </view>
+</view>

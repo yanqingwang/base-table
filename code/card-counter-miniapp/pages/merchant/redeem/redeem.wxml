@@ -1,0 +1,20 @@
+<view class="container">
+  <view class="panel">
+    <view class="title">核销次卡</view>
+    <view class="hint">扫描顾客「卡详情」页的动态核销码，或手动粘贴核销码。</view>
+    <input class="input" placeholder="核销码（cardId.ts.sig）" value="{{token}}" bindinput="onInput" />
+    <view class="actions">
+      <button class="btn small" bindtap="scan">扫码</button>
+      <button class="btn small primary" loading="{{loading}}" bindtap="doRedeem">核销</button>
+    </view>
+  </view>
+
+  <view class="panel" wx:if="{{result}}">
+    <block wx:if="{{result.error}}">
+      <view class="result err">{{result.error}}</view>
+    </block>
+    <block wx:else>
+      <view class="result ok">核销成功，剩余 {{result.remaining}} 次</view>
+    </block>
+  </view>
+</view>

@@ -1,0 +1,76 @@
+<view class="container" wx:if="{{card}}">
+  <view class="card">
+    <view class="card-top">
+      <text class="title">次卡 #{{card.id}}</text>
+      <text class="badge {{card.status}}">{{card.statusText}}</text>
+    </view>
+    <view class="remain-big">剩余 <text class="num">{{card.remaining}}</text> / {{card.totalTimes}} 次</view>
+    <view class="expire" wx:if="{{card.expireDate}}">有效期至 {{card.expireDate}}</view>
+    <view class="meta" wx:if="{{merchantName}}">{{merchantName}}<text wx:if="{{templateName}}"> · {{templateName}}</text></view>
+    <view class="compliance" wx:if="{{badge}}">{{badge}}</view>
+  </view>
+
+  <view class="qr-box">
+    <view class="qr-title">出示给商户核销</view>
+    <view class="qr-token">{{token}}</view>
+    <view class="qr-count">核销码 {{remainSec}}s 后自动刷新（防截图盗用）</view>
+    <button class="btn line" bindtap="copyToken">复制核销码</button>
+    <button class="btn line" bindtap="refreshToken">立即刷新</button>
+  </view>
+
+  <view class="refund" wx:if="{{refund}}">
+    <view class="refund-title">退费说明</view>
+    <view class="refund-rule-text" wx:if="{{refundRule}}">{{refundRule}}</view>
+    <block wx:if="{{refund.refundable}}">
+      <view class="refund-amt">可退估算 ¥{{refundYuan}}</view>
+    </block>
+    <view class="refund-no" wx:else>当前不符合退费条件（{{refund.reason || '按规则不予退款'}}）</view>
+  </view>
+
+  <!-- P1-4：聚合单端点返回的逐笔核销（对客可信凭证） -->
+  <view class="records" wx:if="{{useVoucher && voucher}}">
+    <view class="records-head">
+      <text class="records-title">消费凭证（{{voucher.redemptionCount}} 笔 / 共 {{voucher.totalDeductTimes}} 次）</text>
+      <text class="link" bindtap="openVoucher">查看凭证</text>
+    </view>
+    <view class="record" wx:for="{{voucher.redemptions}}" wx:key="id">
+      <view class="record-main">
+        <text class="record-merchant">{{item.staffName}}</text>
+        <text class="record-deduct">-{{item.deductTimes}} 次</text>
+      </view>
+      <view class="record-sub">{{item.when}}</view>
+    </view>
+    <view class="empty-line" wx:if="{{!voucher.redemptions.length}}">暂无核销记录</view>
+  </view>
+
+  <!-- 兜底：后端未提供聚合端点时用 /api/checkins -->
+  <view class="records" wx:if="{{!useVoucher && checkins.length}}">
+    <view class="records-title">我的核销记录</view>
+    <view class="record" wx:for="{{checkins}}" wx:key="id">
+      <view class="record-main">
+        <text class="record-merchant">{{item.staffName}}</text>
+        <text class="record-deduct">-{{item.deductTimes}} 次</text>
+      </view>
+      <view class="record-sub">{{item.when}}<text wx:if="{{item.note}}"> · {{item.note}}</text></view>
+    </view>
+  </view>
+
+  <view class="note">每次核销码仅 90 秒内有效，且一次性使用（同码重复核销不会重复扣次）。</view>
+</view>
+
+<view wx:else class="container"><view class="empty">加载中…</view></view>
+
+<!-- 凭证详情浮层：把「本地可查的消费记录」摊开给顾客，争议时可转发给商户/客服 -->
+<view class="voucher-mask" wx:if="{{voucherOpen && voucher}}" bindtap="closeVoucher">
+  <view class="voucher-box" catchtap="noop">
+    <view class="voucher-title">消费凭证 · 次卡 #{{card.id}}</view>
+    <view class="voucher-row"><text class="k">商户</text><text class="v">{{merchantName || '—'}}</text></view>
+    <view class="voucher-row" wx:if="{{legalName}}"><text class="k">主体</text><text class="v">{{legalName}}</text></view>
+    <view class="voucher-row"><text class="k">卡种</text><text class="v">{{templateName || '—'}}</text></view>
+    <view class="voucher-row"><text class="k">核销</text><text class="v">{{voucher.redemptionCount}} 笔 / 共 {{voucher.totalDeductTimes}} 次</text></view>
+    <view class="voucher-row"><text class="k">最近</text><text class="v">{{voucher.lastWhen || '—'}}</text></view>
+    <view class="voucher-rule" wx:if="{{refundRule}}">退费规则：{{refundRule}}</view>
+    <button class="btn" bindtap="shareVoucher">复制凭证内容</button>
+    <button class="btn line" bindtap="closeVoucher">关闭</button>
+  </view>
+</view>

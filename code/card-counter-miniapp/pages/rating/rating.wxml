@@ -1,0 +1,55 @@
+<view class="page">
+  <!-- 评价列表 -->
+  <view wx:if="{{loading}}" class="loading-box">加载中...</view>
+
+  <view wx:elif="{{ratings.length === 0}}" class="empty-box">
+    <text class="empty-icon">⭐</text>
+    <text class="empty-text">还没有评价，点下方按钮添加</text>
+  </view>
+
+  <view wx:else class="list">
+    <view wx:for="{{ratings}}" wx:key="localId" class="rating-card">
+      <view class="rating-header">
+        <text class="rating-merchant">{{item.merchant}}</text>
+        <text class="rating-stars">{{item.stars}}</text>
+      </view>
+      <text wx:if="{{item.comment}}" class="rating-comment">{{item.comment}}</text>
+    </view>
+  </view>
+
+  <!-- 新增按钮 -->
+  <view class="fab" bindtap="showForm">
+    <text class="fab-icon">+</text>
+  </view>
+
+  <!-- 新增评价弹窗 -->
+  <view wx:if="{{showForm}}" class="modal-mask" bindtap="hideForm">
+    <view class="modal" catchtap="">
+      <text class="modal-title">新增评价</text>
+      <view class="form-item">
+        <text class="form-label">商家名称</text>
+        <input class="form-input" value="{{form.merchant}}" bindinput="onMerchantInput" />
+      </view>
+      <view class="form-item">
+        <text class="form-label">评分</text>
+        <view class="star-row">
+          <text
+            wx:for="{{starList}}"
+            wx:key="*this"
+            class="star {{form.score >= item ? 'active' : ''}}"
+            data-score="{{item}}"
+            bindtap="onStarTap"
+          >★</text>
+        </view>
+      </view>
+      <view class="form-item">
+        <text class="form-label">评价内容</text>
+        <textarea class="form-textarea" value="{{form.comment}}" bindinput="onCommentInput" placeholder="说说体验..." />
+      </view>
+      <view class="modal-btns">
+        <button class="modal-btn cancel" bindtap="hideForm">取消</button>
+        <button class="modal-btn confirm" bindtap="submit">提交</button>
+      </view>
+    </view>
+  </view>
+</view>

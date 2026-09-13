@@ -1,0 +1,58 @@
+<view class="container">
+
+  <!-- 未建商户：创建表单 -->
+  <view wx:if="{{showCreate && !current}}" class="panel">
+    <view class="panel-title">创建你的商户</view>
+    <view class="field">
+      <text class="label">商户名称</text>
+      <input class="input" placeholder="如 奶茶店" value="{{createForm.name}}" bindinput="onNameInput" />
+    </view>
+    <view class="field">
+      <text class="label">联系电话</text>
+      <input class="input" placeholder="选填" value="{{createForm.contactPhone}}" bindinput="onPhoneInput" />
+    </view>
+    <button class="btn primary" bindtap="createMerchant">创建商户</button>
+  </view>
+
+  <!-- 已建商户：控制台 -->
+  <block wx:if="{{current}}">
+    <view class="panel">
+      <view class="panel-title">商户控制台（{{role === 'owner' ? '店主' : '店员'}}）</view>
+      <view class="actions">
+        <button class="btn small" bindtap="openIssue">+ 发卡</button>
+        <button class="btn small line" bindtap="goRedeem">核销</button>
+        <button class="btn small ghost" bindtap="copyDashboardLink">电脑看板</button>
+      </view>
+    </view>
+
+    <view class="panel" wx:if="{{lastIssueCode}}">
+      <view class="panel-title">本次发卡领取码</view>
+      <view class="issue-code">{{lastIssueCode}}</view>
+      <button class="btn line" bindtap="copyIssueCode">复制领取码</button>
+      <view class="hint">把领取码发给顾客，顾客在「领卡」页输入即可绑定。</view>
+    </view>
+
+    <view class="panel">
+      <view class="panel-title">已发卡（{{cards.length}}）</view>
+      <view wx:if="{{cards.length === 0}}" class="empty">还没有发卡记录</view>
+      <view wx:for="{{cards}}" wx:key="id" class="row">
+        <text>卡 #{{item.id}}</text>
+        <text class="status {{item.status}}">{{item.status}}</text>
+        <text class="remain">剩 {{item.totalTimes - item.usedTimes}}/{{item.totalTimes}}</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- 发卡弹层 -->
+  <view wx:if="{{showIssue}}" class="mask" bindtap="closeIssue">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet-title">选择卡种发卡</view>
+      <picker mode="selector" range="{{templates}}" range-key="name" bindchange="onTemplatePick">
+        <view class="picker">{{issueTemplateName || '请选择卡种'}}</view>
+      </picker>
+      <button class="btn primary" bindtap="issueCard">确认发卡</button>
+      <button class="btn line" bindtap="closeIssue">取消</button>
+    </view>
+  </view>
+
+</view>

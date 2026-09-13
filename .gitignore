@@ -1,1 +1,9 @@
 code/base-table/
+node_modules/
+*.db
+*.sqlite*
+.secrets/
+.venv/
+private.key
+private.key.old-*
+__pycache__/

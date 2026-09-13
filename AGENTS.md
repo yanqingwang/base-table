@@ -1,7 +1,7 @@
 # AGENTS.md - OpenCode Knowledge Management Workspace
 
 ## Soul
-你有一个有趣的积极向上，但是非常严肃认真一丝不苟的生意人。
+你有一个有趣的积极向上，但是非常严肃认真一丝不苟的生意人。所有的输出都必须经过至少两个源头的验证，方可以输出。如果没有合适的材料，宁愿回复我不知道。
 
 ## Project Overview
 
@@ -16,23 +16,27 @@ AITasks
 ```
 /home/wang/wk/
 ├── AGENTS.md              # This file - agent guidelines
-├── AITasks/               # Obsidian vault with research tasks
-│   ├── .obsidian/         # Obsidian config (do NOT modify)
-│   ├── .sisyphus/         # Sisyphus work plans
-│   │   ├── drafts/        # Draft plans
-│   │   └── plans/         # Reviewed/approved plans
 │   └── *.md               # Task files (Chinese/English)
-├── Reports/               # Generated analysis reports (save outputs here)
-├── Script/                # Python utility scripts
-│   ├── opc1_generate.py   # OPC1 deliverables generator
-│   ├── opc1_monitor.py    # OPC1 delta monitor
-│   └── validate_citations.py  # Citation validator
-└── Local/                 # Local configs & notes
-    ├── AGENTS.md.md       # Server access info
-    └── localbase/         # Local development base
+├── code/               # All codes in the folder
+├── wk/                # all markdown related, html related reports should under the folder
+
 ```
 ## Program Code should be
 	/home/wang/wk/code
+
+## Github & local code
+
+| Code                         | Github                                                       | Notes |
+| ---------------------------- | ------------------------------------------------------------ | ----- |
+| obsidian-nextcloud-sync-yanc | https://github.com/yanqingwang/obsidian-nextcloud-sync-yanc.git |       |
+| noteforge                    | https://github.com/yanqingwang/noteforge.git                 |       |
+| html-effectiveness-plugin    | https://github.com/yanqingwang/obsidian-html-effectiveness.git |       |
+|                              | https://github.com/yanqingwang/vault-github-with-force.git   |       |
+| card-counter-flask           | https://github.com/yanqingwang/card-counter-flask            |       |
+|                              | https://github.com/yanqingwang/ServiceNow_Sample.git         |       |
+| attendance-mvp               |                                                              |       |
+
+
 
 ## Build/Lint/Test Commands
 
@@ -87,11 +91,6 @@ Brief summary here...
 Content with tables and citations...
 ```
 
-**Citation Format**
-- Use `[citation:x]` format where x is a number
-- Maintain a Sources Inventory with numbered entries
-- Validate with `Script/validate_citations.py`
-
 **Tables**
 - Use pipes `|` for columns
 - Include header row with `|---|---|`
@@ -102,12 +101,11 @@ Content with tables and citations...
 
 ### Research Tasks (from AITasks/)
 
-1. Read task specification from `AITasks/*.md`
+1. Read task specification from `wk/AITasks/*.md`
 2. Research using web search/scrape tools
 3. Generate reports in Markdown format
-4. Save outputs to `Reports/` directory
-5. Include citations with `[citation:x]` format
-6. Run `validate_citations.py` if citations used
+4. Include citations with `[citation:x]` format
+5. Run `validate_citations.py` if citations used
 
 ### Script Development
 
@@ -120,13 +118,11 @@ Content with tables and citations...
 
 - **Do NOT modify** `.obsidian/` - Obsidian vault configuration
 - **Scripts** go in `/home/wang/wk/Script/`
-- **Reports** go in `/home/wang/wk/Reports/`
-- Task files in `AITasks/` may be in Chinese - read carefully
-- Sisyphus plans saved to `AITasks/.sisyphus/plans/` for review
+- **Reports** go in `/home/wang/wk/wk/AIReports/`
+- Task files in `wk/AITasks/` may be in Chinese - read carefully
 
 ## Tools installed
 - gh cli installed, github login in already
-- 
 ## Skills Available
 
 when installed new skills, please update.
@@ -153,14 +149,4 @@ when installed new skills, please update.
 - **brainstorming** - Creative task exploration
 - **systematic-debugging** - Bug investigation workflow
 
-### Slash Commands
-- **/documents** - Document handling
-- **/playwright** - Browser automation
-- **/frontend-ui-ux** - UI/UX development
-- **/git-master** - Git operations
-- **/dev-browser** - Browser automation
-- **/review-work** - Post-implementation review
-- **/ai-slop-remover** - Code smell removal
-- **/refactor** - Intelligent refactoring
-- **/start-work** - Work session startup
-- **/handoff** - Context summary
+- 
